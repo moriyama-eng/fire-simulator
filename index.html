@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIRE モンテカルロ・シミュレータ</title>
+    <meta name="description" content="リスク資産と現金バッファを用いた幾何ブラウン運動モンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .glow-border {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+            transition: transform 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* ハイブリッド数値入力のスタイル */
+        .num-input {
+            background: transparent;
+            text-align: right;
+            color: #a5b4fc;
+            font-weight: 500;
+            font-size: 0.75rem;
+            border: none;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.4);
+            outline: none;
+            padding: 1px 2px;
+            transition: border-color 0.2s;
+        }
+
+        .num-input:focus {
+            border-bottom-color: #818cf8;
+        }
+
+        .spinner {
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .kpi-success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.08));
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .kpi-median {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.08));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .toggle-bg {
+            transition: background-color 0.3s ease;
+        }
+
+        .toggle-dot {
+            transition: transform 0.3s ease;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 280px;
+            }
+        }
+
+        .btn-pulse {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-pulse::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .btn-pulse:hover::after {
+            transform: translateX(100%);
+        }
+
+        /* カスタムツールチップ用スタイル */
+        .tooltip-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content;
+            max-width: 250px;
+            background-color: rgba(30, 41, 59, 0.95);
+            color: #e2e8f0;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            right: -8px;
+            /* アイコンの右端から少しだけはみ出す程度に調整 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: opacity 0.2s, visibility 0.2s;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            pointer-events: none;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            right: 12px;
+            /* 吹き出しの矢印を右端側に配置 */
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+        }
+
+        /* ホバーまたはフォーカス（タップ）で表示 */
+        .tooltip-container:hover .tooltip-text,
+        .tooltip-container:focus-within .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* ステッパーボタンのスタイル */
+        .stepper-btn {
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .stepper-btn:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.5);
+            color: #a5b4fc;
+        }
+
+        .stepper-btn:active {
+            transform: scale(0.95);
+            background: rgba(99, 102, 241, 0.4);
+        }
+
+        .stepper-value-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            border-radius: 6px;
+            margin: 0 8px;
+            height: 36px;
+        }
+
+        /* 既存の num-input をステッパー用に調整 */
+        .stepper-input {
+            background: transparent;
+            text-align: center;
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+            outline: none;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body class="dark text-gray-100">
+
+    <header class="py-6 px-4 sm:px-8">
+        <div class="max-w-7xl mx-auto">
+            <h1
+                class="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                FIRE モンテカルロ・シミュレータ
+            </h1>
+            <p class="text-sm text-slate-300 font-medium tracking-wide mt-1">幾何ブラウン運動（対数正規モデル）による資産シミュレーション</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 pb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- 左カラム: パラメータ入力 -->
+            <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
+                <!-- 資産設定 -->
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">資産設定</h2>
+                    <div class="space-y-5">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">初期リスク資産 <span
+                                        class="text-indigo-300 ml-1">億円</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。総資産下落（ドローダウン）がドローダウン閾値未満ならば、月間取崩し額をリスク資産から取崩します。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="initialRiskAssetNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="initialRiskAssetNum" min="0" max="10" step="0.1"
+                                        value="2.0" class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="initialRiskAssetNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">初期現金バッファ <span
+                                        class="text-indigo-300 ml-1">万円</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        シミュレーション開始時点での現金（無リスク資産）の総額です。総資産下落（ドローダウン）がドローダウン閾値以上の場合は、月間取崩し額を現金バッファから取崩します。総資産が最高値を超えた時にリスク資産から補充されます。インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="initialCashBufferNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="text" inputmode="numeric" id="initialCashBufferNum" min="0" max="10000"
+                                        step="500" value="3,000" class="stepper-input formatted-number">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="initialCashBufferNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">初期月間取崩し額 <span
+                                        class="text-indigo-300 ml-1">万円</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">シミュレーション開始時点での月間取崩し額です。※税金や社会保険料等を含んだ、資産から減少する総額を入力してください。インフレ率の設定に応じて将来の取崩し額が計算されます。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="monthlyExpenseNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="monthlyExpenseNum" min="0" max="500" step="5" value="70"
+                                        class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="monthlyExpenseNum">＋</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- マーケット設定 -->
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">マーケット設定</h2>
+                    <div class="space-y-5">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">期待リターン <span
+                                        class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">リスク資産の年平均成長率（幾何平均）です。過去の市場平均などを参考に設定します。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="expectedReturnNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="expectedReturnNum" min="0" max="50" step="1.0" value="18.0"
+                                        class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="expectedReturnNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">ボラティリティ <span
+                                        class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        リスク資産のリターンのばらつき（標準偏差）です。この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="volatilityNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="volatilityNum" min="0" max="80" step="1.0" value="25.0"
+                                        class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="volatilityNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">期待インフレ率 <span
+                                        class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">長期的な平均インフレ率です。（AR-1モデルではこの値を中心にしてインフレ率が変動します）</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="inflationRateNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="inflationRateNum" min="0" max="15" step="0.5" value="2.0"
+                                        class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="inflationRateNum">＋</button>
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-700/50">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-xs font-medium text-slate-300">インフレ変動モデル (AR-1)</label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-300 font-medium">固定</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="inflationModelToggle" class="sr-only peer">
+                                        <div
+                                            class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600">
+                                        </div>
+                                        <div
+                                            class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
+                                        </div>
+                                    </label>
+                                    <span class="text-xs text-slate-300 font-medium">変動</span>
+                                </div>
+                            </div>
+
+                            <div id="arModelParams"
+                                class="space-y-4 opacity-50 pointer-events-none transition-opacity duration-300">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-xs text-slate-300 font-medium">インフレ・ボラティリティ <span
+                                                class="text-indigo-300 ml-1">%</span></label>
+                                        <div class="tooltip-container" tabindex="0">
+                                            <span
+                                                class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                            <div class="tooltip-text">
+                                                毎年のインフレ率の「ブレ幅（標準偏差）」です。米国の過去実績に合わせて 2.0%
+                                                程度に設定すると現実的です。この値が大きいほど、想定外のインフレ高騰リスクが高まります。</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <button type="button" class="stepper-btn decrement"
+                                            data-target="infVolNum">−</button>
+                                        <div class="stepper-value-container">
+                                            <input type="number" id="infVolNum" min="0" max="10" step="0.5" value="2.0"
+                                                class="stepper-input">
+                                        </div>
+                                        <button type="button" class="stepper-btn increment"
+                                            data-target="infVolNum">＋</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-xs text-slate-300 font-medium">インフレ粘着性 (AR係数) </label>
+                                        <div class="tooltip-container" tabindex="0">
+                                            <span
+                                                class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                            <div class="tooltip-text">
+                                                インフレの「長引きやすさ」を設定します。<br>0.0 (ランダム): 毎月完全にランダム。<br>0.5 (標準値):
+                                                実際の月次データに近い設定。高インフレが継続しやすくなります（スタグフレーション・リスクの再現）。<br>0.9 (極めて強い):
+                                                一度上がった物価が長期間下がらなくなります。</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <button type="button" class="stepper-btn decrement"
+                                            data-target="infArNum">−</button>
+                                        <div class="stepper-value-container">
+                                            <input type="number" id="infArNum" min="0" max="1.0" step="0.1" value="0.5"
+                                                class="stepper-input">
+                                        </div>
+                                        <button type="button" class="stepper-btn increment"
+                                            data-target="infArNum">＋</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- シミュレーション設定 -->
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">シミュレーション設定</h2>
+                    <div class="space-y-5">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">シミュレーション年数 <span
+                                        class="text-indigo-300 ml-1">年</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">資産運用と取崩しを継続する期間（年数）です。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement" data-target="simYearsNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="simYearsNum" min="5" max="60" step="5" value="20"
+                                        class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment" data-target="simYearsNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">シミュレーション回数 <span
+                                        class="text-indigo-300 ml-1">回</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">モンテカルロ・シミュレーションを試行する回数です。回数が多いほど確率の精度が増しますが、計算に時間がかかります。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement" data-target="simPathsNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="text" inputmode="numeric" id="simPathsNum" min="1000" max="100000"
+                                        step="5000" value="10,000" class="stepper-input formatted-number">
+                                </div>
+                                <button type="button" class="stepper-btn increment" data-target="simPathsNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">パーセンタイル</label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">グラフに表示するパーセンタイル線を指定します。カンマ区切りで1～99の値を入力します。</div>
+                                </div>
+                            </div>
+                            <input type="text" id="percentileInput" value="10, 30, 50, 70, 90"
+                                class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 現金バッファ設定 -->
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">現金バッファ設定</h2>
+                    <div class="space-y-5">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（取崩し開始）<span
+                                        class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        総資産の最高値からの下落（ドローダウン）がこの割合以上の場合、リスク資産の取崩しを避けて現金バッファから月間取崩し額を取崩します。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="drawdownTriggerNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="drawdownTriggerNum" min="0" max="50" step="5.0"
+                                        value="20.0" class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="drawdownTriggerNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（補充終了）<span
+                                        class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。（補充モードでは現金バッファ不足分を毎月補充します。）
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="drawdownReplenishNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="drawdownReplenishNum" min="0" max="50" step="1.0"
+                                        value="5.0" class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="drawdownReplenishNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">補充ペース（月間取崩し額比）<span
+                                        class="text-indigo-300 ml-1">倍</span></label>
+                                <div class="tooltip-container" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        総資産が最高値を超えた時に、不足している現金バッファを（リスク資産売却により）月間取崩し額の何倍のペースで補充するかを指定します。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="replenishPaceNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="replenishPaceNum" min="0" max="10" step="0.5" value="5.0"
+                                        class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="replenishPaceNum">＋</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="runBtn" class="btn-pulse w-full py-3.5 rounded-xl font-bold text-sm tracking-wide
+                               bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto]
+                               hover:bg-right transition-all duration-500
+                               shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40
+                               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
+                    シミュレーション開始
+                </button>
+            </aside>
+
+            <!-- 右カラム: 結果表示 -->
+            <section class="lg:col-span-8 xl:col-span-9 space-y-6">
+                <!-- サマリーカード・コンテナ -->
+                <div id="summaryCardContainer" class="hidden transition-all duration-500 ease-in-out"></div>
+
+                <div id="loadingOverlay"
+                    class="hidden glass-card rounded-2xl p-8 flex flex-col items-center justify-center gap-3">
+                    <div class="spinner"></div>
+                    <p class="text-sm text-slate-400">計算中…</p>
+                </div>
+
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">総資産推移（パーセンタイル）</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-300 font-medium">通常</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="logScaleToggle" class="sr-only peer" checked>
+                                <div
+                                    class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-indigo-600">
+                                </div>
+                                <div
+                                    class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
+                                </div>
+                            </label>
+                            <span class="text-xs text-slate-300 font-medium">対数</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="assetChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">現金バッファ推移（パーセンタイル）
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="cashChartCanvas"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // ====================================================================
+        // グローバル状態管理
+        // ====================================================================
+        let globalSeed = 12345;
+        let assetChart = null;
+        let cashChart = null;
+        let lastSimResult = null;
+        let isRunning = false;
+
+        // ====================================================================
+        // コア数学関数（完全指定）
+        // ====================================================================
+        function mulberry32(a) {
+            return function () {
+                var t = a += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        function randomNormal(rngFunc) {
+            let u = 0, v = 0;
+            while (u === 0) u = rngFunc();
+            while (v === 0) v = rngFunc();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        // ====================================================================
+        // 入力パラメータのDOM取得とバリデーション
+        // ====================================================================
+        const DEFAULTS = {
+            initialRiskAsset: 20000, initialCashBuffer: 3000, monthlyExpense: 70,
+            expectedReturn: 18.0, volatility: 25.0, inflationRate: 2.0,
+            simYears: 20, simPaths: 10000, drawdownTrigger: 15.0, drawdownReplenish: 5.0, replenishPace: 5.0
+        };
+
+        function safeNumber(val, fallback) {
+            if (typeof val === 'string') val = val.replace(/,/g, '');
+            const n = Number(val);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function getParams() {
+            return {
+                initialRiskAsset: safeNumber(document.getElementById('initialRiskAssetNum').value, DEFAULTS.initialRiskAsset) * 10000, // UIは億円単位、内部計算は万円
+                initialCashBuffer: safeNumber(document.getElementById('initialCashBufferNum').value, DEFAULTS.initialCashBuffer),
+                monthlyExpense: safeNumber(document.getElementById('monthlyExpenseNum').value, DEFAULTS.monthlyExpense),
+                expectedReturn: safeNumber(document.getElementById('expectedReturnNum').value, DEFAULTS.expectedReturn),
+                volatility: safeNumber(document.getElementById('volatilityNum').value, DEFAULTS.volatility),
+                inflationRate: safeNumber(document.getElementById('inflationRateNum').value, DEFAULTS.inflationRate),
+                simYears: safeNumber(document.getElementById('simYearsNum').value, DEFAULTS.simYears),
+                simPaths: Math.max(1000, Math.min(100000, Math.round(safeNumber(document.getElementById('simPathsNum').value, DEFAULTS.simPaths)))),
+                drawdownTrigger: safeNumber(document.getElementById('drawdownTriggerNum').value, DEFAULTS.drawdownTrigger),
+                drawdownReplenish: safeNumber(document.getElementById('drawdownReplenishNum').value, DEFAULTS.drawdownReplenish),
+                replenishPace: safeNumber(document.getElementById('replenishPaceNum').value, DEFAULTS.replenishPace),
+                useArInflation: document.getElementById('inflationModelToggle').checked,
+                infVol: safeNumber(document.getElementById('infVolNum').value, 2.0),
+                infAr: safeNumber(document.getElementById('infArNum').value, 0.5),
+            };
+        }
+
+        // ====================================================================
+        // ステッパーUI (長押し対応) ロジック
+        // ====================================================================
+        function setupHybridInputs() {
+            const buttons = document.querySelectorAll('.stepper-btn');
+
+            // 各インプットフィールドの属性から小数点以下の表示桁数を判定する
+            function getPrecision(input) {
+                const stepAttr = input.getAttribute('step') || "1";
+                const valueAttr = (input.getAttribute('value') || "0").replace(/,/g, '');
+
+                // step属性文字列に '.' が含まれていればその桁数を優先
+                if (stepAttr.includes('.')) {
+                    return stepAttr.split('.')[1].length;
+                }
+                // value属性に '.' が含まれていればその桁数を使用
+                if (valueAttr.includes('.')) {
+                    return valueAttr.split('.')[1].length;
+                }
+                return 0; // 整数
+            }
+
+            buttons.forEach(btn => {
+                let intervalId;
+                let timeoutId;
+
+                const startIncrement = () => {
+                    updateValue();
+                    // 最初の遅延後に連続更新開始
+                    timeoutId = setTimeout(() => {
+                        intervalId = setInterval(updateValue, 50);
+                    }, 400); // 400ms長押しで連続開始
+                };
+
+                const stopIncrement = () => {
+                    clearTimeout(timeoutId);
+                    clearInterval(intervalId);
+                };
+
+                const updateValue = () => {
+                    const targetId = btn.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    if (!input) return;
+
+                    let val = Number(input.value.replace(/,/g, ''));
+                    const step = Number(input.getAttribute('step')) || 1;
+                    const min = Number(input.getAttribute('min'));
+                    const max = Number(input.getAttribute('max'));
+                    const isIncrement = btn.classList.contains('increment');
+
+                    if (isIncrement) {
+                        val += step;
+                    } else {
+                        val -= step;
+                    }
+
+                    // min, max でクランプ
+                    if (val < min) val = min;
+                    if (val > max) val = max;
+
+                    // 浮動小数点の丸め誤差を防ぎ、かつHTML属性に基づく表示桁数を維持する
+                    const precision = getPrecision(input);
+                    const formatted = val.toFixed(precision);
+
+                    if (input.classList.contains('formatted-number')) {
+                        const parts = formatted.split('.');
+                        parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+                        input.value = parts.join('.');
+                    } else {
+                        input.value = formatted;
+                    }
+
+                    // 値が変更されたらイベントを発火（フォーカス時に実行ボタン等と連携する場合に備え）
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                };
+
+                // マウス・タッチイベントの登録
+                btn.addEventListener('mousedown', (e) => {
+                    // 左クリックのみ反応
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    startIncrement();
+                });
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // デフォルトのスワイプ等を防ぐ
+                    startIncrement();
+                });
+
+                btn.addEventListener('mouseup', stopIncrement);
+                btn.addEventListener('mouseleave', stopIncrement);
+                btn.addEventListener('touchend', stopIncrement);
+                btn.addEventListener('touchcancel', stopIncrement);
+            });
+
+            // 各インプットフィールドにフォーカスが外れた時のバリデーション（範囲内にクランプ）を追加
+            document.querySelectorAll('.stepper-input').forEach(input => {
+                input.addEventListener('blur', () => {
+                    let val = Number(input.value.replace(/,/g, ''));
+                    if (!Number.isFinite(val)) {
+                        val = Number(input.getAttribute('min')) || 0;
+                    }
+                    const min = Number(input.getAttribute('min'));
+                    const max = Number(input.getAttribute('max'));
+                    const step = Number(input.getAttribute('step')) || 1;
+
+                    if (val < min) val = min;
+                    if (val > max) val = max;
+
+                    const precision = getPrecision(input);
+                    const formatted = val.toFixed(precision);
+
+                    if (input.classList.contains('formatted-number')) {
+                        const parts = formatted.split('.');
+                        parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+                        input.value = parts.join('.');
+                    } else {
+                        input.value = formatted;
+                    }
+                });
+            });
+        }
+
+        // ====================================================================
+        // シミュレーション・エンジン（チャンク非同期処理）
+        // ====================================================================
+        function runSimulation(params, userPercentiles) {
+            if (!userPercentiles) userPercentiles = [10, 25, 50, 75, 90];
+            return new Promise((resolve) => {
+                const { initialRiskAsset, initialCashBuffer, monthlyExpense,
+                    expectedReturn, volatility, inflationRate,
+                    simYears, simPaths, drawdownTrigger, drawdownReplenish, replenishPace,
+                    useArInflation, infVol, infAr } = params;
+
+                const totalMonths = simYears * 12;
+                const dataLen = totalMonths + 1;
+
+                const annualDrift = Math.log(1 + (expectedReturn / 100));
+                const annualVol = volatility / 100;
+                const monthlyDrift = (annualDrift - (annualVol * annualVol) / 2) / 12;
+                const monthlyVol = annualVol / Math.sqrt(12);
+                const ddThreshold = -Math.abs(drawdownTrigger / 100);
+                const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
+
+                const riskPaths = [];
+                const cashPaths = [];
+                const totalPaths = [];
+                for (let p = 0; p < simPaths; p++) {
+                    riskPaths.push(new Float32Array(dataLen));
+                    cashPaths.push(new Float32Array(dataLen));
+                    totalPaths.push(new Float32Array(dataLen));
+                }
+
+                let bankruptCount = 0;
+                const CHUNK_SIZE = 100;
+                let pathIndex = 0;
+
+                function processChunk() {
+                    const end = Math.min(pathIndex + CHUNK_SIZE, simPaths);
+                    for (let p = pathIndex; p < end; p++) {
+                        let rng = mulberry32(globalSeed + p);
+                        let currentRiskAsset = initialRiskAsset;
+                        let currentCash = initialCashBuffer;
+                        let highWaterMark = initialRiskAsset + initialCashBuffer;
+                        let bankrupt = false;
+                        let isReplenishMode = false;
+
+                        riskPaths[p][0] = currentRiskAsset;
+                        cashPaths[p][0] = currentCash;
+                        totalPaths[p][0] = currentRiskAsset + currentCash;
+
+                        let currentInfRate = inflationRate / 100; // 初期インフレ率は期待値
+                        let infMultiplier = 1.0;                  // 累積インフレ係数
+
+                        for (let t = 1; t <= totalMonths; t++) {
+                            if (bankrupt) break;
+
+                            // 毎月のインフレ計算 (AR-1モデル / 固定モデル)
+                            if (useArInflation) {
+                                const annualInfVol = infVol / 100;
+                                const monthlyInfVol = annualInfVol / Math.sqrt(12);
+                                const InfZ = randomNormal(rng);
+                                const expectedLongTermInf = inflationRate / 100;
+                                const C = (1 - infAr) * expectedLongTermInf;
+
+                                // AR-1プロセス: 次月のインフレ率 = C + phi * 前月 + shock
+                                currentInfRate = C + (infAr * currentInfRate) + (monthlyInfVol * InfZ);
+                                // 今月のインフレ影響を乗算 (月次補正)
+                                infMultiplier *= (1 + currentInfRate / 12);
+                            } else {
+                                // 従来の固定インフレ複利計算
+                                infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
+                            }
+
+                            const currentExpense = monthlyExpense * infMultiplier;
+                            const currentBufferLimit = initialCashBuffer * infMultiplier;
+                            const Z = randomNormal(rng);
+                            currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
+                            const currentTotalAsset = currentRiskAsset + currentCash;
+                            const safeHWM = Math.max(highWaterMark, 0.0001);
+                            const currentDD = (currentTotalAsset - safeHWM) / safeHWM;
+
+                            if (currentTotalAsset >= highWaterMark) {
+                                isReplenishMode = true;
+                            } else if (currentDD <= ddReplenishThreshold) {
+                                // ddReplenishThreshold is a negative value (e.g. -0.05)
+                                // If drawdown is worse than this, turn off replenish mode
+                                isReplenishMode = false;
+                            }
+
+                            if (currentDD <= ddThreshold) {
+                                currentCash -= currentExpense;
+                            } else if (isReplenishMode && currentCash < currentBufferLimit) {
+                                const shortage = currentBufferLimit - currentCash;
+                                const replenishAmount = Math.min(shortage, currentExpense * replenishPace);
+                                const actualReplenish = Math.min(replenishAmount, currentRiskAsset);
+                                currentRiskAsset -= actualReplenish;
+                                currentCash += actualReplenish;
+                                currentRiskAsset -= currentExpense;
+                            } else {
+                                currentRiskAsset -= currentExpense;
+                            }
+
+                            if (currentRiskAsset + currentCash <= 0.0001) {
+                                currentRiskAsset = 0;
+                                currentCash = 0;
+                                bankrupt = true;
+                                bankruptCount++;
+                                riskPaths[p][t] = 0;
+                                cashPaths[p][t] = 0;
+                                totalPaths[p][t] = 0;
+                                break;
+                            }
+                            if (currentCash < 0) { currentRiskAsset += currentCash; currentCash = 0; }
+                            if (currentRiskAsset < 0) { currentCash += currentRiskAsset; currentRiskAsset = 0; }
+                            highWaterMark = Math.max(highWaterMark, currentRiskAsset + currentCash);
+                            riskPaths[p][t] = currentRiskAsset;
+                            cashPaths[p][t] = currentCash;
+                            totalPaths[p][t] = currentRiskAsset + currentCash;
+                        }
+                    }
+                    pathIndex = end;
+                    if (pathIndex < simPaths) {
+                        setTimeout(processChunk, 0);
+                    } else {
+                        resolve(aggregateResults(totalPaths, cashPaths, simPaths, dataLen, bankruptCount, userPercentiles));
+                    }
+                }
+                processChunk();
+            });
+        }
+
+        // ====================================================================
+        // 結果集計（断面パーセンタイル計算）— ロジック変更なし
+        // ====================================================================
+        // パーセンタイル入力のパース
+        function parsePercentiles() {
+            const raw = document.getElementById('percentileInput').value;
+            const parsed = raw.split(',').map(s => Number(s.trim())).filter(n => Number.isFinite(n) && n > 0 && n < 100);
+            if (parsed.length === 0) return [10, 30, 50, 70, 90];
+            return [...new Set(parsed)].sort((a, b) => a - b);
+        }
+
+        function aggregateResults(totalPaths, cashPaths, simPaths, dataLen, bankruptCount, percentiles) {
+            const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
+            const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
+            const sortBuffer = new Float32Array(simPaths);
+
+            for (let t = 0; t < dataLen; t++) {
+                for (let p = 0; p < simPaths; p++) sortBuffer[p] = totalPaths[p][t];
+                sortBuffer.sort();
+                for (let pi = 0; pi < percentiles.length; pi++) {
+                    const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
+                    totalPercentileData[pi][t] = sortBuffer[idx];
+                }
+                for (let p = 0; p < simPaths; p++) sortBuffer[p] = cashPaths[p][t];
+                sortBuffer.sort();
+                for (let pi = 0; pi < percentiles.length; pi++) {
+                    const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
+                    cashPercentileData[pi][t] = sortBuffer[idx];
+                }
+            }
+
+            // 50パーセンタイルのインデックスを探す（なければ中央に最も近い値）
+            let medianIdx = percentiles.indexOf(50);
+            if (medianIdx === -1) medianIdx = Math.floor(percentiles.length / 2);
+
+            return {
+                percentiles,
+                totalPercentileData,
+                cashPercentileData,
+                successRate: ((simPaths - bankruptCount) / simPaths * 100),
+                finalMedian: totalPercentileData[medianIdx][dataLen - 1],
+                dataLen,
+            };
+        }
+
+        // ====================================================================
+        // Chart.js 描画 — UI改善反映
+        // ====================================================================
+        // パーセンタイル値に応じた色を動的生成
+        const PERCENTILE_COLOR_MAP = {
+            5: '#b71c1c', 10: '#e74c3c', 15: '#e57373', 20: '#ef6c00',
+            25: '#f39c12', 30: '#ffa726', 35: '#ffca28', 40: '#66bb6a',
+            45: '#42a5f5', 50: '#3498db', 55: '#29b6f6', 60: '#26c6da',
+            65: '#26a69a', 70: '#66bb6a', 75: '#8dd36b', 80: '#43a047',
+            85: '#388e3c', 90: '#2ecc71', 95: '#1b5e20'
+        };
+        function getPercentileColor(pct) {
+            if (PERCENTILE_COLOR_MAP[pct]) return PERCENTILE_COLOR_MAP[pct];
+            // フォールバック: 低→赤(0°)、高→緑(120°)のHSLグラデーション
+            const hue = (pct / 100) * 120;
+            return `hsl(${hue}, 70%, 50%)`;
+        }
+
+        // X軸ラベル生成（インデックスのみ、tick callbackで年表示）
+        function generateLabels(dataLen) {
+            const labels = [];
+            for (let t = 0; t < dataLen; t++) labels.push(t);
+            return labels;
+        }
+
+        // X軸 tick callback: 適切な年間隔でラベルを表示
+        function xTickCallback(value, index) {
+            const totalMonths = this.chart.data.labels.length - 1;
+            const totalYears = totalMonths / 12;
+            let interval;
+            if (totalYears <= 15) interval = 2;
+            else if (totalYears <= 40) interval = 5;
+            else interval = 10;
+            if (index % (interval * 12) === 0) return `${Math.round(index / 12)}年`;
+            return null;
+        }
+
+        // ツールチップのタイトル（経過年数を常に表示）
+        function tooltipTitleCallback(tooltipItems) {
+            const index = tooltipItems[0].dataIndex;
+            const year = Math.floor(index / 12);
+            const month = index % 12;
+            if (month === 0) return `経過 ${year}年`;
+            return `経過 ${year}年${month}ヶ月`;
+        }
+
+        function renderAssetChart(result, isLogScale) {
+            const { percentiles, totalPercentileData, dataLen } = result;
+            const labels = generateLabels(dataLen);
+            const ctx = document.getElementById('assetChartCanvas').getContext('2d');
+
+            if (assetChart) { assetChart.destroy(); assetChart = null; }
+
+            // データセットを降順（高パーセンタイル→低）で作成
+            const orderedPercentiles = [...percentiles].reverse();
+            const datasets = orderedPercentiles.map((pct, idx) => {
+                const origIdx = percentiles.indexOf(pct);
+                const color = getPercentileColor(pct);
+                let data;
+                if (isLogScale) {
+                    data = Array.from(totalPercentileData[origIdx]).map(v => (v > 0 ? v : null));
+                } else {
+                    data = Array.from(totalPercentileData[origIdx]);
+                }
+
+                // ファンチャート化: 一番上の線（パーセンタイル最高値）以外は、一つ上の線までをグラデーションで塗りつぶす
+                const fillMode = (idx === 0) ? false : '-1';
+
+                return {
+                    label: `${pct}％`,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + '26', // HEXアルファ (26=約15%の透明度で一律塗りつぶし)
+                    borderWidth: pct === 50 ? 2.5 : 1.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: fillMode,
+                    spanGaps: true,
+                };
+            });
+
+            assetChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: {
+                            bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
+                            titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
+                            itemSort: function (a, b) {
+                                return (b.parsed.y || 0) - (a.parsed.y || 0);
+                            },
+                            callbacks: {
+                                title: tooltipTitleCallback,
+                                label: function (context) {
+                                    const val = context.parsed.y;
+                                    const allItems = context.chart.tooltip.dataPoints;
+                                    // ラベル部分の最大文字数を算出（1桁vs2桁のパーセンタイル桁そろえ）
+                                    const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
+                                    const lbl = context.dataset.label.padStart(maxLblLen);
+                                    if (val === null || val === undefined) return `${lbl}: — 億円`;
+                                    // 億円換算（小数第2位）
+                                    const oku = (val / 10000).toFixed(2);
+                                    // 数値部分の動的桁揃え
+                                    const maxLen = Math.max(...allItems.map(item => {
+                                        const v = item.parsed.y;
+                                        return (v !== null && v !== undefined) ? (v / 10000).toFixed(2).length : 1;
+                                    }));
+                                    return `${lbl}:${oku.padStart(maxLen + 1)} 億円`;
+                                },
+                            },
+                        },
+                        legend: {
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { size: 11 },
+                                boxWidth: 24,
+                                boxHeight: 2,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                maxRotation: 0,
+                                autoSkip: false,
+                                callback: xTickCallback,
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' },
+                        },
+                        y: {
+                            type: isLogScale ? 'logarithmic' : 'linear',
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function (value) {
+                                    // 億円換算
+                                    const oku = value / 10000;
+                                    if (oku <= 0) return null;
+
+                                    // 対数スケール時: Y軸の表示桁幅（オーダー）による動的間引きアルゴリズム
+                                    const chart = this.chart;
+                                    const isLog = chart.options.scales.y.type === 'logarithmic';
+                                    if (isLog) {
+                                        // 現在のY軸の最小値・最大値から表示桁幅を算出
+                                        // (Chart.js 3+ では min, max が this.chart.scales.y.min で取得可能。未定義時は安全側にシフト)
+                                        const yMin = chart.scales.y.min || 1000;
+                                        const yMax = chart.scales.y.max || 100000;
+                                        const minOrder = Math.floor(Math.log10(yMin / 10000));
+                                        const maxOrder = Math.floor(Math.log10(yMax / 10000));
+                                        const orderRange = Math.max(1, maxOrder - minOrder + 1);
+
+                                        const exponent = Math.floor(Math.log10(oku));
+                                        const mantissa = oku / Math.pow(10, exponent);
+
+                                        // 桁幅の種類が4つ以上なら、間引きを強化して10の累乗(mantissa=1)のみ表示
+                                        if (orderRange >= 4) {
+                                            if (Math.abs(mantissa - 1) > 0.05) return null;
+                                        } else {
+                                            // 桁幅が狭い場合は詳細を見るため 2, 4, 8 も表示
+                                            const allowed = [1, 2, 4, 8];
+                                            const isAllowed = allowed.some(a => Math.abs(mantissa - a) < 0.05);
+                                            if (!isAllowed) return null;
+                                        }
+                                    }
+
+                                    if (oku >= 100) return `${Math.round(oku).toLocaleString('ja-JP')} 億円`;
+                                    if (oku >= 1) return `${oku.toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`;
+                                    return `${(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円`;
+                                },
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' },
+                            title: { display: false },
+                        },
+                    },
+                },
+            });
+        }
+
+        function renderCashChart(result) {
+            const { percentiles, cashPercentileData, dataLen } = result;
+            const labels = generateLabels(dataLen);
+            const ctx = document.getElementById('cashChartCanvas').getContext('2d');
+
+            if (cashChart) { cashChart.destroy(); cashChart = null; }
+
+            // データセットを降順（高パーセンタイル→低）で作成
+            const orderedPercentiles = [...percentiles].reverse();
+            const datasets = orderedPercentiles.map((pct, idx) => {
+                const origIdx = percentiles.indexOf(pct);
+                const color = getPercentileColor(pct);
+                const fillMode = (idx === 0) ? false : '-1';
+
+                return {
+                    label: `${pct}％`,
+                    data: Array.from(cashPercentileData[origIdx]),
+                    borderColor: color,
+                    backgroundColor: color + '26',
+                    borderWidth: pct === 50 ? 2.5 : 1.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    fill: fillMode,
+                    spanGaps: true,
+                };
+            });
+
+            cashChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: {
+                            bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
+                            titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
+                            itemSort: function (a, b) {
+                                return (b.parsed.y || 0) - (a.parsed.y || 0);
+                            },
+                            callbacks: {
+                                title: tooltipTitleCallback,
+                                label: function (context) {
+                                    const val = context.parsed.y;
+                                    const allItems = context.chart.tooltip.dataPoints;
+                                    const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
+                                    const lbl = context.dataset.label.padStart(maxLblLen);
+                                    if (val === null || val === undefined) return `${lbl}: — 万円`;
+
+                                    const formattedVal = Math.round(val).toLocaleString('ja-JP');
+                                    const maxLen = Math.max(...allItems.map(item => {
+                                        const v = item.parsed.y;
+                                        return (v !== null && v !== undefined) ? Math.round(v).toLocaleString('ja-JP').length : 1;
+                                    }));
+                                    return `${lbl}:${formattedVal.padStart(maxLen + 1)} 万円`;
+                                },
+                            },
+                        },
+                        legend: {
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { size: 11 },
+                                boxWidth: 24,
+                                boxHeight: 2,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: false, callback: xTickCallback },
+                            grid: { color: 'rgba(100,116,139,0.1)' },
+                        },
+                        y: {
+                            type: 'linear',
+                            min: 0,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function (value) {
+                                    if (value >= 10000) return `${(value / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`;
+                                    return `${value.toLocaleString('ja-JP')} 万円`;
+                                },
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' },
+                            title: { display: false },
+                        },
+                    },
+                },
+            });
+        }
+
+        // ====================================================================
+        // KPI更新（最終資産中央値は億円表示）とサマリーカード生成
+        // ====================================================================
+        // ====================================================================
+        // サマリーカード生成（全パラメータとKPIの表示）
+        // ====================================================================
+        function updateSummaryCard(result, params) {
+            const container = document.getElementById('summaryCardContainer');
+
+            // パラメータのパース (UI表示用)
+            const initialAssetOku = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
+            const monthlyExpenseMan = params.monthlyExpense.toLocaleString('ja-JP');
+            const successRate = result.successRate.toFixed(1);
+            const medianOku = (result.finalMedian / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+
+            // インフレモデルの表記を決定
+            const infModelText = params.useArInflation ? `AR-1変動 (${params.inflationRate}%, Vol:${params.infVol}%)` : `固定 (${params.inflationRate}%)`;
+
+            // 成功率に応じたステータスカラー
+            let statusGrad = 'from-emerald-500/20 to-teal-500/5';
+            let statusText = 'text-emerald-400';
+            let statusIcon = '🎉';
+            if (result.successRate < 80) {
+                statusGrad = 'from-rose-500/20 to-red-500/5';
+                statusText = 'text-rose-400';
+                statusIcon = '⚠️';
+            } else if (result.successRate < 95) {
+                statusGrad = 'from-amber-500/20 to-orange-500/5';
+                statusText = 'text-amber-400';
+                statusIcon = '👍';
+            }
+
+            container.innerHTML = `
+                <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br ${statusGrad} opacity-30"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
+                            <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
+                            <span class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Left: KPIs -->
+                            <div class="flex flex-col justify-center items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
+                                <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
+                                        <span>FIRE 成功率</span>
+                                        <span class="text-lg opacity-90">${statusIcon}</span>
+                                    </p>
+                                    <p class="text-4xl font-extrabold ${statusText} drop-shadow-md">
+                                        ${successRate}<span class="text-xl ml-1">%</span>
+                                    </p>
+                                </div>
+                                <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終資産 中央値</p>
+                                    <p class="text-3xl font-bold text-blue-300 drop-shadow-md">
+                                        ${medianOku}<span class="text-xl ml-1">億円</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Right: Parameters -->
+                            <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 text-sm content-center">
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">初期リスク資産</p>
+                                    <p class="font-bold text-white text-base">${(params.initialRiskAsset / 10000).toLocaleString('ja-JP')} 億円</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">初期現金バッファ</p>
+                                    <p class="font-bold text-white text-base">${params.initialCashBuffer.toLocaleString('ja-JP')} 万円</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">初期月間取崩し額</p>
+                                    <p class="font-bold text-white text-base">${params.monthlyExpense.toLocaleString('ja-JP')} 万円</p>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">期待リターン / ボラ</p>
+                                    <p class="font-bold text-white text-base">${params.expectedReturn.toFixed(1)}% / ${params.volatility.toFixed(1)}%</p>
+                                </div>
+                                <div class="space-y-1 shrink-0 col-span-2 sm:col-span-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">期待インフレ率</p>
+                                    <p class="font-bold text-white text-base">${infModelText}</p>
+                                </div>
+                                <div class="space-y-1 hidden sm:block">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション年数 / 回数</p>
+                                    <p class="font-bold text-white text-base">${params.simYears} 年 / ${(params.simPaths).toLocaleString('ja-JP')} 回</p>
+                                </div>
+                                
+                                <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
+                                    <div class="font-bold text-slate-100 text-xs sm:text-sm space-y-0.5">
+                                        <p>ドローダウン${params.drawdownTrigger}%以上にて取崩し</p>
+                                        <p>最高値更新後に補充開始、ドローダウン${params.drawdownReplenish}%以上で補充終了</p>
+                                        <p>補充ペース 月間取崩し額の${params.replenishPace}倍</p>
+                                    </div>
+                                </div>
+                </div>
+            `;
+
+            // フェードイン表示
+            container.classList.remove('hidden');
+            // reflow
+            void container.offsetWidth;
+            container.classList.add('opacity-100');
+        }
+
+        // ====================================================================
+        // 未実行状態のサマリカード描画
+        // ====================================================================
+        function renderEmptySummaryCard() {
+            const container = document.getElementById('summaryCardContainer');
+            if (!container) return;
+
+            const params = getParams();
+            const infModelText = document.getElementById('inflationModelToggle').checked
+                ? `AR-1変動 (ボラ ${params.infVol.toFixed(1)}%, AR ${params.infAr.toFixed(1)})`
+                : '固定 (0%)';
+
+            container.innerHTML = `
+                <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-slate-800/20 opacity-30"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
+                            <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
+                            <span class="text-xs text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">未実行</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Left: KPIs (Empty State) -->
+                            <div class="flex flex-col justify-center items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
+                                <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
+                                        <span>FIRE 成功率</span>
+                                        <span class="text-lg opacity-50">❓</span>
+                                    </p>
+                                    <p class="text-4xl font-extrabold text-slate-500 drop-shadow-md">
+                                        -<span class="text-xl ml-1">%</span>
+                                    </p>
+                                </div>
+                                <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終資産 中央値</p>
+                                    <p class="text-3xl font-bold text-slate-500 drop-shadow-md">
+                                        -<span class="text-xl ml-1">億円</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Right: Parameters (Empty State) -->
+                            <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 text-sm content-center opacity-70">
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">初期リスク資産</p>
+                                    <p class="font-bold text-slate-500 text-base">-</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">初期現金バッファ</p>
+                                    <p class="font-bold text-slate-500 text-base">-</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">初期月間取崩し額</p>
+                                    <p class="font-bold text-slate-500 text-base">-</p>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">期待リターン / ボラ</p>
+                                    <p class="font-bold text-slate-500 text-base">-</p>
+                                </div>
+                                <div class="space-y-1 shrink-0 col-span-2 sm:col-span-1">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">期待インフレ率</p>
+                                    <p class="font-bold text-slate-500 text-base">-</p>
+                                </div>
+                                <div class="space-y-1 hidden sm:block">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション年数 / 回数</p>
+                                    <p class="font-bold text-slate-500 text-base">-</p>
+                                </div>
+                                
+                                <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
+                                    <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
+                                    <div class="font-bold text-slate-500 text-xs sm:text-sm space-y-0.5">
+                                        <p>-</p>
+                                        <p>-</p>
+                                        <p>-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.classList.remove('hidden');
+            void container.offsetWidth;
+            container.classList.add('opacity-100');
+        }
+
+        // ====================================================================
+        // メイン実行関数
+        // ====================================================================
+        async function runMain() {
+            if (isRunning) return;
+            isRunning = true;
+
+            const runBtn = document.getElementById('runBtn');
+            const loading = document.getElementById('loadingOverlay');
+
+            runBtn.disabled = true;
+            loading.classList.remove('hidden');
+            loading.classList.add('flex');
+
+            globalSeed = Date.now() >>> 0;
+            await new Promise(r => requestAnimationFrame(r));
+
+            try {
+                const params = getParams();
+                const percentiles = parsePercentiles();
+                const result = await runSimulation(params, percentiles);
+                lastSimResult = result;
+
+                const isLogScale = document.getElementById('logScaleToggle').checked;
+                renderAssetChart(result, isLogScale);
+                renderCashChart(result);
+                updateSummaryCard(result, params);
+            } finally {
+                loading.classList.add('hidden');
+                loading.classList.remove('flex');
+                runBtn.disabled = false;
+                isRunning = false;
+            }
+        }
+
+        // ====================================================================
+        // 対数/線形スケール切替（再計算なし、グラフ再描画のみ）
+        // ====================================================================
+        function onScaleToggle() {
+            if (!lastSimResult) return;
+            const isLogScale = document.getElementById('logScaleToggle').checked;
+            renderAssetChart(lastSimResult, isLogScale);
+        }
+
+        // ====================================================================
+        // イベント登録
+        // ====================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            setupHybridInputs();
+            document.getElementById('runBtn').addEventListener('click', runMain);
+            document.getElementById('logScaleToggle').addEventListener('change', onScaleToggle);
+
+            // インフレ変動モデル (AR-1) トグル連動
+            const infToggle = document.getElementById('inflationModelToggle');
+            const arParamsPanel = document.getElementById('arModelParams');
+
+            const updateArPanel = () => {
+                if (infToggle.checked) {
+                    arParamsPanel.classList.remove('opacity-50', 'pointer-events-none');
+                    arParamsPanel.classList.add('opacity-100');
+                } else {
+                    arParamsPanel.classList.add('opacity-50', 'pointer-events-none');
+                    arParamsPanel.classList.remove('opacity-100');
+                }
+            };
+
+            infToggle.addEventListener('change', updateArPanel);
+            updateArPanel(); // 初期ロード時の状態反映
+
+            // 初期状態の（未実行）サマリカードを描画
+            renderEmptySummaryCard();
+
+            // パラメータが変更されたら未実行サマリを更新するリスナーを各inputに追加
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    if (!lastSimResult) {
+                        renderEmptySummaryCard();
+                    }
+                });
+            });
+        });
+    </script>
+    <footer class="py-10 text-center border-t border-slate-800/50 mt-12 bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
+            <p class="text-slate-500 text-xs mb-4">Version 1.0.0</p>
+            <p class="text-slate-600 text-xs">&copy; 2026 もりやま</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>
