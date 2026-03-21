@@ -283,7 +283,8 @@
                 FIRE モンテカルロ・シミュレータ
             </h1>
             <div class="flex items-center gap-2 mt-1">
-                <p class="text-sm text-slate-300 font-medium tracking-wide">モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
+                <p class="text-sm text-slate-300 font-medium tracking-wide">
+                    モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
                 <div class="tooltip-container" tabindex="0">
                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                     <div class="tooltip-text">
@@ -310,7 +311,7 @@
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。総資産下落（ドローダウン）がドローダウン閾値未満ならば、月間取崩し額をリスク資産から取崩します。
+                                        シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値未満ならば、月間取崩し額をリスク資産から取崩します。
                                     </div>
                                 </div>
                             </div>
@@ -332,7 +333,7 @@
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        シミュレーション開始時点での現金（無リスク資産）の総額です。総資産下落（ドローダウン）がドローダウン閾値以上の場合は、リスク資産の売却を避け、現金バッファを取崩し対象とします。総資産が最高値を超えた時にリスク資産から補充されます。インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。
+                                        シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合は、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。
                                     </div>
                                 </div>
                             </div>
@@ -353,7 +354,9 @@
                                         class="text-indigo-300 ml-1">万円</span></label>
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">シミュレーション開始時点での月間取崩し額です。※税金や社会保険料等を含んだ、資産から減少する総額を入力してください。インフレ率の設定に応じて将来の取崩し額が計算されます。</div>
+                                    <div class="tooltip-text">
+                                        シミュレーション開始時点での月間取崩し額です。<br>※税金や社会保険料等を含んだ、資産から減少する総額を入力してください。<br>インフレ率の設定に応じて将来の取崩し額が計算されます。<br>
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -380,7 +383,7 @@
                                         class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">リスク資産の年平均成長率（幾何平均）です。過去の市場平均などを参考に設定します。</div>
+                                    <div class="tooltip-text">リスク資産の年平均成長率（幾何平均）です。<br>過去の市場平均などを参考に設定します。<br></div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -401,7 +404,7 @@
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        リスク資産のリターンのばらつき（標準偏差）です。この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。</div>
+                                        リスク資産のリターンのばらつき（標準偏差）です。<br>この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。<br></div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -421,7 +424,7 @@
                                         class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">長期的な平均インフレ率です。（AR-1モデルではこの値を中心にしてインフレ率が変動します）</div>
+                                    <div class="tooltip-text">長期的な平均インフレ率です。<br>（AR-1モデルではこの値を中心にしてインフレ率が変動します）</div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -463,8 +466,8 @@
                                             <span
                                                 class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                             <div class="tooltip-text">
-                                                毎年のインフレ率の「ブレ幅（標準偏差）」です。米国の過去実績に合わせて 2.0%
-                                                程度に設定すると現実的です。この値が大きいほど、想定外のインフレ高騰リスクが高まります。</div>
+                                                毎年のインフレ率の「ブレ幅（標準偏差）」です。<br>米国の過去実績に合わせて 2.0%
+                                                程度に設定すると現実的です。<br>この値が大きいほど、想定外のインフレ高騰リスクが高まります。<br></div>
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-between">
@@ -486,8 +489,8 @@
                                                 class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                             <div class="tooltip-text">
                                                 インフレの「長引きやすさ」を設定します。<br>0.0 (ランダム): 毎月完全にランダム。<br>0.5 (標準値):
-                                                実際の月次データに近い設定。高インフレが継続しやすくなります（スタグフレーション・リスクの再現）。<br>0.9 (極めて強い):
-                                                一度上がった物価が長期間下がらなくなります。</div>
+                                                実際の月次データに近い設定。<br>高インフレが継続しやすくなります（スタグフレーション・リスクの再現）。<br>0.9 (極めて強い):
+                                                一度上がった物価が長期間下がらなくなります。<br></div>
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-between">
@@ -516,7 +519,7 @@
                                         class="text-indigo-300 ml-1">年</span></label>
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">資産運用と取崩しを継続する期間（年数）です。</div>
+                                    <div class="tooltip-text">資産運用と取崩しを継続する期間（年数）です。<br></div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -534,7 +537,8 @@
                                         class="text-indigo-300 ml-1">回</span></label>
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">モンテカルロ・シミュレーションを試行する回数です。回数が多いほど確率の精度が増しますが、計算に時間がかかります。
+                                    <div class="tooltip-text">
+                                        モンテカルロ・シミュレーションを試行する回数です。<br>回数が多いほど確率の精度が増しますが、計算に時間がかかります。
                                     </div>
                                 </div>
                             </div>
@@ -552,7 +556,7 @@
                                 <label class="text-xs text-slate-300 font-medium">パーセンタイル</label>
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">グラフに表示するパーセンタイル線を指定します。カンマ区切りで1～99の値を入力します。</div>
+                                    <div class="tooltip-text">グラフに表示するパーセンタイル線を指定します。<br>カンマ区切りで1～99の値を入力します。<br></div>
                                 </div>
                             </div>
                             <input type="text" id="percentileInput" value="10, 30, 50, 70, 90"
@@ -572,15 +576,15 @@
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産の最高値からの下落（ドローダウン）がこの割合以上の場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。</div>
+                                        総資産の最高値からの下落（ドローダウン）がこの割合以上の場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br></div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
                                 <button type="button" class="stepper-btn decrement"
                                     data-target="drawdownTriggerNum">−</button>
                                 <div class="stepper-value-container">
-                                    <input type="number" id="drawdownTriggerNum" min="0" max="50" step="5.0"
-                                        value="20.0" class="stepper-input">
+                                    <input type="number" id="drawdownTriggerNum" min="-100" max="0" step="5.0"
+                                        value="-20.0" class="stepper-input">
                                 </div>
                                 <button type="button" class="stepper-btn increment"
                                     data-target="drawdownTriggerNum">＋</button>
@@ -593,7 +597,7 @@
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。（補充モードでは現金バッファ不足分をリスク資産から毎月補充します。）
+                                        総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。<br>補充モードでは現金バッファ不足分をリスク資産から毎月補充します。
                                     </div>
                                 </div>
                             </div>
@@ -601,8 +605,8 @@
                                 <button type="button" class="stepper-btn decrement"
                                     data-target="drawdownReplenishNum">−</button>
                                 <div class="stepper-value-container">
-                                    <input type="number" id="drawdownReplenishNum" min="0" max="50" step="1.0"
-                                        value="5.0" class="stepper-input">
+                                    <input type="number" id="drawdownReplenishNum" min="-100" max="0" step="1.0"
+                                        value="-5.0" class="stepper-input">
                                 </div>
                                 <button type="button" class="stepper-btn increment"
                                     data-target="drawdownReplenishNum">＋</button>
@@ -615,7 +619,7 @@
                                 <div class="tooltip-container" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産が最高値を超えた時に、不足している現金バッファを（リスク資産売却により）月間取崩し額の何倍のペースで補充するかを指定します。
+                                        総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。<br>補充モードでは現金バッファ不足分をリスク資産から毎月補充します。<br>
                                     </div>
                                 </div>
                             </div>
@@ -645,14 +649,21 @@
                 <div class="grid grid-cols-2 gap-3 mt-4">
                     <button type="button" id="saveImageBtn" class="w-full py-3 rounded-xl font-bold text-sm tracking-wide
                         bg-slate-800 text-slate-200 border border-slate-700/50 hover:bg-slate-700 transition-colors
-                        flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="シミュレーション実行後に使用できます">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled title="シミュレーション実行後に使用できます">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                        </svg>
                         画像を保存
                     </button>
                     <button type="button" id="shareXBtn" class="w-full py-3 rounded-xl font-bold text-sm tracking-wide
                         bg-black text-white border border-slate-700/50 hover:bg-slate-900 transition-colors
-                        flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="シミュレーション実行後に使用できます">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled title="シミュレーション実行後に使用できます">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current">
+                            <path
+                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
                         Xにポスト
                     </button>
                 </div>
@@ -663,15 +674,20 @@
                 <!-- サマリーカード・コンテナ -->
                 <div id="summaryCardContainer" class="hidden transition-all duration-500 ease-in-out"></div>
 
-                <div id="loadingOverlay"
-                    class="hidden glass-card rounded-2xl p-8 flex flex-col items-center justify-center gap-3">
-                    <div class="spinner"></div>
-                    <p class="text-sm text-slate-400">計算中…</p>
-                </div>
+
 
                 <div class="glass-card glow-border rounded-2xl p-5">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">総資産推移（パーセンタイル）</h2>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">総資産推移（パーセンタイル）
+                            </h2>
+                            <div class="tooltip-container" tabindex="0">
+                                <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                <div class="tooltip-text">
+                                    各経過年数時点における総資産額の分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>上に行くほど強気な相場、下に行くほど弱気な相場のシナリオを反映しています。
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-slate-300 font-medium">通常</span>
                             <label class="relative inline-flex items-center cursor-pointer">
@@ -692,10 +708,51 @@
                 </div>
 
                 <div class="glass-card glow-border rounded-2xl p-5">
-                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">現金バッファ推移（パーセンタイル）
-                    </h2>
+                    <div class="flex items-center gap-2 mb-4">
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">現金バッファ推移（パーセンタイル）
+                        </h2>
+                        <div class="tooltip-container" tabindex="0">
+                            <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                            <div class="tooltip-text">
+                                各経過年数時点における現金バッファの残高分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>現金バッファが取崩され、資産が回復した際にリスク資産から現金バッファが補充される挙動を可視化しています。
+                            </div>
+                        </div>
+                    </div>
                     <div class="chart-container">
                         <canvas id="cashChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card glow-border rounded-2xl p-5">
+                        <div class="flex items-center gap-2 mb-4">
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最大ドローダウン 確率密度
+                            </h2>
+                            <div class="tooltip-container" tabindex="0">
+                                <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                <div class="tooltip-text">
+                                    各シミュレーション・パスの中で経験した「総資産最高値からの最も深い下落率（最大ドローダウン）」が、どの範囲にどのくらいの割合で分布しているかを示すグラフです。<br>資産が枯渇（破綻）に至ったケースが全て右端の区間に集約されるため、グラフ右端が跳ね上がる場合があります。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="ddHistCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card glow-border rounded-2xl p-5">
+                        <div class="flex items-center gap-2 mb-4">
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最長停滞期間 確率密度</h2>
+                            <div class="tooltip-container" tabindex="0">
+                                <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                <div class="tooltip-text">
+                                    各シミュレーション・パスの中で経験した「総資産最高値から下落・停滞し続けた最長の期間」が、どの範囲にどのくらいの割合で分布しているかを示すグラフです。<br>一度下落してからシミュレーション終了まで二度と最高値を更新できなかったケースが全て右端の区間に集約されるため、グラフ右端が跳ね上がる場合があります。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="uwHistCanvas"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -709,6 +766,8 @@
         let globalSeed = 12345;
         let assetChart = null;
         let cashChart = null;
+        let ddHistChart = null;
+        let uwHistChart = null;
         let lastSimResult = null;
         let isRunning = false;
 
@@ -822,8 +881,23 @@
                     }
 
                     // min, max でクランプ
-                    if (val < min) val = min;
-                    if (val > max) val = max;
+                    let clamped = false;
+                    if (val < min) { val = min; clamped = true; }
+                    if (val > max) { val = max; clamped = true; }
+
+                    if (clamped) {
+                        const container = input.closest('.stepper-value-container');
+                        if (container) {
+                            container.classList.add('ring-2', 'ring-rose-500', 'ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-300');
+                            setTimeout(() => {
+                                container.classList.remove('ring-2', 'ring-rose-500');
+                                setTimeout(() => container.classList.remove('ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-300'), 300);
+                            }, 500);
+                        } else {
+                            input.classList.add('ring-2', 'ring-rose-500');
+                            setTimeout(() => input.classList.remove('ring-2', 'ring-rose-500'), 500);
+                        }
+                    }
 
                     // 浮動小数点の丸め誤差を防ぎ、かつHTML属性に基づく表示桁数を維持する
                     const precision = getPrecision(input);
@@ -870,8 +944,23 @@
                     const max = Number(input.getAttribute('max'));
                     const step = Number(input.getAttribute('step')) || 1;
 
-                    if (val < min) val = min;
-                    if (val > max) val = max;
+                    let clamped = false;
+                    if (val < min) { val = min; clamped = true; }
+                    if (val > max) { val = max; clamped = true; }
+
+                    if (clamped) {
+                        const container = input.closest('.stepper-value-container');
+                        if (container) {
+                            container.classList.add('ring-2', 'ring-rose-500', 'ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-300');
+                            setTimeout(() => {
+                                container.classList.remove('ring-2', 'ring-rose-500');
+                                setTimeout(() => container.classList.remove('ring-offset-2', 'ring-offset-slate-900', 'transition-all', 'duration-300'), 300);
+                            }, 500);
+                        } else {
+                            input.classList.add('ring-2', 'ring-rose-500');
+                            setTimeout(() => input.classList.remove('ring-2', 'ring-rose-500'), 500);
+                        }
+                    }
 
                     const precision = getPrecision(input);
                     const formatted = val.toFixed(precision);
@@ -911,10 +1000,14 @@
                 const riskPaths = [];
                 const cashPaths = [];
                 const totalPaths = [];
+                const ddPaths = [];
+                const maxDdPerPath = new Float32Array(simPaths);
+                const maxUwPerPath = new Float32Array(simPaths);
                 for (let p = 0; p < simPaths; p++) {
                     riskPaths.push(new Float32Array(dataLen));
                     cashPaths.push(new Float32Array(dataLen));
                     totalPaths.push(new Float32Array(dataLen));
+                    ddPaths.push(new Float32Array(dataLen));
                 }
 
                 let bankruptCount = 0;
@@ -931,9 +1024,14 @@
                         let bankrupt = false;
                         let isReplenishMode = false;
 
+                        let currentUwMonths = 0;
+                        let maxUwMonths = 0;
+                        let maxDD = 0;
+
                         riskPaths[p][0] = currentRiskAsset;
                         cashPaths[p][0] = currentCash;
                         totalPaths[p][0] = currentRiskAsset + currentCash;
+                        ddPaths[p][0] = 0; // 初期時点のドローダウンは0%
 
                         let currentInfRate = inflationRate / 100; // 初期インフレ率は期待値
                         let infMultiplier = 1.0;                  // 累積インフレ係数
@@ -995,21 +1093,51 @@
                                 riskPaths[p][t] = 0;
                                 cashPaths[p][t] = 0;
                                 totalPaths[p][t] = 0;
+                                ddPaths[p][t] = -1.0;
+                                maxDD = -1.0;
+                                currentUwMonths += (totalMonths - t) + 1;
+                                if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
                                 break;
                             }
                             if (currentCash < 0) { currentRiskAsset += currentCash; currentCash = 0; }
                             if (currentRiskAsset < 0) { currentCash += currentRiskAsset; currentRiskAsset = 0; }
-                            highWaterMark = Math.max(highWaterMark, currentRiskAsset + currentCash);
+
+                            const eomAsset = currentRiskAsset + currentCash;
+                            if (eomAsset >= highWaterMark) {
+                                currentUwMonths = 0;
+                                highWaterMark = eomAsset;
+                            } else {
+                                currentUwMonths++;
+                                if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
+                            }
+
+                            let eomDD = Math.min(0, (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001));
+                            if (eomDD < maxDD) maxDD = eomDD;
+
                             riskPaths[p][t] = currentRiskAsset;
                             cashPaths[p][t] = currentCash;
-                            totalPaths[p][t] = currentRiskAsset + currentCash;
+                            totalPaths[p][t] = eomAsset;
+                            ddPaths[p][t] = eomDD; // ドローダウン率を蓄積
                         }
+                        maxDdPerPath[p] = maxDD;
+                        maxUwPerPath[p] = maxUwMonths;
                     }
                     pathIndex = end;
                     if (pathIndex < simPaths) {
+                        const progress = Math.round((pathIndex / simPaths) * 100);
+                        const btn = document.getElementById('runBtn');
+                        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中... ${progress}%`;
+                        btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
+
                         setTimeout(processChunk, 0);
                     } else {
-                        resolve(aggregateResults(totalPaths, cashPaths, simPaths, dataLen, bankruptCount, userPercentiles));
+                        const btn = document.getElementById('runBtn');
+                        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 📊 結果を集計・描画中...`;
+                        btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) 100%, rgba(30, 41, 59, 1) 100%)`;
+
+                        setTimeout(() => {
+                            resolve(aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, userPercentiles));
+                        }, 50);
                     }
                 }
                 processChunk();
@@ -1027,9 +1155,10 @@
             return [...new Set(parsed)].sort((a, b) => a - b);
         }
 
-        function aggregateResults(totalPaths, cashPaths, simPaths, dataLen, bankruptCount, percentiles) {
+        function aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, percentiles) {
             const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
             const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
+            const ddPercentileData = percentiles.map(() => new Float32Array(dataLen));
             const sortBuffer = new Float32Array(simPaths);
 
             for (let t = 0; t < dataLen; t++) {
@@ -1045,18 +1174,45 @@
                     const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
                     cashPercentileData[pi][t] = sortBuffer[idx];
                 }
+                // ドローダウンのパーセンタイル集計
+                for (let p = 0; p < simPaths; p++) sortBuffer[p] = ddPaths[p][t];
+                sortBuffer.sort();
+                for (let pi = 0; pi < percentiles.length; pi++) {
+                    const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
+                    ddPercentileData[pi][t] = sortBuffer[idx];
+                }
             }
 
             // 50パーセンタイルのインデックスを探す（なければ中央に最も近い値）
             let medianIdx = percentiles.indexOf(50);
             if (medianIdx === -1) medianIdx = Math.floor(percentiles.length / 2);
 
+            const sortedMaxDd = Float32Array.from(maxDdPerPath).sort();
+            const worst10Idx = Math.floor(0.10 * (simPaths - 1));
+            const worst5Idx = Math.floor(0.05 * (simPaths - 1));
+            const worst10MaxDd = sortedMaxDd[worst10Idx];
+            const worst5MaxDd = sortedMaxDd[worst5Idx];
+
+            const sortedMaxUw = Float32Array.from(maxUwPerPath).sort();
+            const medianUwIdx = Math.floor(0.50 * (simPaths - 1));
+            const medianMaxUw = sortedMaxUw[medianUwIdx];
+            const worst10IdxUw = Math.floor(0.90 * (simPaths - 1));
+            const worst10MaxUw = sortedMaxUw[worst10IdxUw];
+
             return {
                 percentiles,
                 totalPercentileData,
                 cashPercentileData,
+                ddPercentileData,
                 successRate: ((simPaths - bankruptCount) / simPaths * 100),
                 finalMedian: totalPercentileData[medianIdx][dataLen - 1],
+                worst10MaxDd: worst10MaxDd,
+                worst5MaxDd: worst5MaxDd,
+                medianMaxUw: medianMaxUw,
+                worst10MaxUw: worst10MaxUw,
+                maxDdPerPath: maxDdPerPath,
+                maxUwPerPath: maxUwPerPath,
+                params: { simPaths: simPaths, totalMonths: dataLen - 1 },
                 dataLen,
             };
         }
@@ -1346,6 +1502,210 @@
         }
 
         // ====================================================================
+        // 近似曲線（PDF）描画用ヘルパー関数
+        // ====================================================================
+        function smoothArray(data, windowSize) {
+            const result = new Array(data.length).fill(0);
+            const half = Math.floor(windowSize / 2);
+            for (let i = 0; i < data.length; i++) {
+                let sum = 0;
+                let count = 0;
+                for (let j = -half; j <= half; j++) {
+                    if (i + j >= 0 && i + j < data.length) {
+                        sum += data[i + j];
+                        count++;
+                    }
+                }
+                result[i] = sum / count;
+            }
+            return result;
+        }
+
+        function renderDdHistChart(result) {
+            const { maxDdPerPath, params } = result;
+            const BIN_WIDTH = 2; // 2%
+            const bins = 51; // 0 to -100%
+            const counts = new Array(bins).fill(0);
+            for (let i = 0; i < maxDdPerPath.length; i++) {
+                let pct = maxDdPerPath[i] * 100;
+                if (pct < -100) pct = -100;
+                if (pct > 0) pct = 0;
+                let binIdx = Math.floor(Math.abs(pct) / BIN_WIDTH);
+                if (binIdx >= bins) binIdx = bins - 1;
+                counts[binIdx]++;
+            }
+            const freq = counts.map(c => (c / params.simPaths) * 100);
+            const smoothed = smoothArray(freq, 3);
+
+            let cumulative = 0;
+            const cumProb = new Array(bins).fill(0);
+            const points = [];
+            for (let i = 0; i < bins; i++) {
+                cumulative += counts[i] / params.simPaths * 100;
+                cumProb[i] = cumulative;
+                points.push({ x: -(i * BIN_WIDTH), y: smoothed[i] });
+            }
+
+            const ctx = document.getElementById('ddHistCanvas').getContext('2d');
+            if (ddHistChart) { ddHistChart.destroy(); }
+
+            ddHistChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: '発生確率',
+                        data: points,
+                        borderColor: '#f43f5e',
+                        backgroundColor: 'rgba(244, 63, 94, 0.2)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: () => '最大ドローダウン',
+                                label: function (context) {
+                                    const binX = Math.abs(context.parsed.x);
+                                    const binIdx = Math.floor(binX / BIN_WIDTH);
+                                    const cum = cumProb[binIdx] ? cumProb[binIdx].toFixed(1) : "0.0";
+                                    return `${context.parsed.x}% 以内に収まる確率: ${cum}%`;
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: -100,
+                            max: 0,
+                            reverse: true,
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function (value) { return value + "%"; }
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#94a3b8',
+                                stepSize: 1,
+                                callback: function (value) { return value + "%"; }
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' },
+                            title: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderUwHistChart(result) {
+            const { maxUwPerPath, params } = result;
+            const BIN_WIDTH = 6; // 6ヶ月
+            const bins = Math.ceil((params.totalMonths + 1) / BIN_WIDTH) + 1;
+            const counts = new Array(bins).fill(0);
+            for (let i = 0; i < maxUwPerPath.length; i++) {
+                let m = maxUwPerPath[i];
+                let binIdx = Math.floor(m / BIN_WIDTH);
+                if (binIdx >= bins) binIdx = bins - 1;
+                counts[binIdx]++;
+            }
+            const freq = counts.map(c => (c / params.simPaths) * 100);
+            const smoothed = smoothArray(freq, 3);
+
+            let cumulative = 0;
+            const cumProb = new Array(bins).fill(0);
+            for (let i = 0; i < bins; i++) {
+                cumulative += counts[i] / params.simPaths * 100;
+                cumProb[i] = cumulative;
+            }
+
+            const labels = [];
+            for (let i = 0; i < bins; i++) {
+                let mo = i * BIN_WIDTH;
+                if (mo === 0) {
+                    labels.push('0年');
+                } else {
+                    let y = Math.floor(mo / 12);
+                    let rem = mo % 12;
+                    labels.push(y > 0 ? (rem > 0 ? `${y}年半` : `${y}年`) : `${mo}ヶ月`);
+                }
+            }
+
+            const ctx = document.getElementById('uwHistCanvas').getContext('2d');
+            if (uwHistChart) { uwHistChart.destroy(); }
+
+            uwHistChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '発生確率',
+                        data: smoothed,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: () => '最長停滞期間',
+                                label: function (context) {
+                                    const binIdx = context.dataIndex;
+                                    const cum = cumProb[binIdx].toFixed(1);
+                                    return `${labels[binIdx]} 以内に最高値を更新する確率: ${cum}%`;
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                maxRotation: 0,
+                                autoSkip: false,
+                                callback: function (value, index) {
+                                    const mo = index * BIN_WIDTH;
+                                    if (mo % 60 === 0) { // 5年刻み
+                                        return `${mo / 12}年`;
+                                    }
+                                    return null;
+                                }
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#94a3b8',
+                                stepSize: 1,
+                                callback: function (value) { return value + "%"; }
+                            },
+                            grid: { color: 'rgba(100,116,139,0.1)' },
+                            title: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ====================================================================
         // KPI更新（最終資産中央値は億円表示）とサマリーカード生成
         // ====================================================================
         // ====================================================================
@@ -1371,7 +1731,7 @@
                 statusGrad = 'from-rose-500/20 to-red-500/5';
                 statusText = 'text-rose-400';
                 statusIcon = '⚠️';
-            } else if (result.successRate < 95) {
+            } else if (result.successRate < 90) {
                 statusGrad = 'from-amber-500/20 to-orange-500/5';
                 statusText = 'text-amber-400';
                 statusIcon = '👍';
@@ -1392,7 +1752,6 @@
                                 <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                                     <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
                                         <span>FIRE 成功率</span>
-                                        <span class="text-lg opacity-90">${statusIcon}</span>
                                     </p>
                                     <p class="text-4xl font-extrabold ${statusText} drop-shadow-md">
                                         ${successRate}<span class="text-xl ml-1">%</span>
@@ -1479,7 +1838,6 @@
                                 <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                                     <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
                                         <span>FIRE 成功率</span>
-                                        <span class="text-lg opacity-50">❓</span>
                                     </p>
                                     <p class="text-4xl font-extrabold text-slate-500 drop-shadow-md">
                                         -<span class="text-xl ml-1">%</span>
@@ -1548,11 +1906,10 @@
             isRunning = true;
 
             const runBtn = document.getElementById('runBtn');
-            const loading = document.getElementById('loadingOverlay');
+
 
             runBtn.disabled = true;
-            loading.classList.remove('hidden');
-            loading.classList.add('flex');
+
 
             globalSeed = Date.now() >>> 0;
             await new Promise(r => requestAnimationFrame(r));
@@ -1566,7 +1923,12 @@
                 const isLogScale = document.getElementById('logScaleToggle').checked;
                 renderAssetChart(result, isLogScale);
                 renderCashChart(result);
+                renderDdHistChart(result);
+                renderUwHistChart(result);
                 updateSummaryCard(result, params);
+                setTimeout(() => {
+                    document.getElementById('summaryCardContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
 
                 // 共有ボタンの有効化
                 const shareXBtn = document.getElementById('shareXBtn');
@@ -1580,9 +1942,10 @@
                     saveImageBtn.removeAttribute('title');
                 }
             } finally {
-                loading.classList.add('hidden');
-                loading.classList.remove('flex');
+
                 runBtn.disabled = false;
+                runBtn.innerHTML = 'シミュレーション開始';
+                runBtn.style.background = '';
                 isRunning = false;
             }
         }
@@ -1602,7 +1965,7 @@
         function shareToX() {
             if (!lastSimResult) return;
             const params = getParams();
-            
+
             const riskAssetOku = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
             const cashMan = params.initialCashBuffer.toLocaleString('ja-JP');
             const expenseMan = params.monthlyExpense.toLocaleString('ja-JP');
@@ -1634,14 +1997,14 @@ https://moriyama-eng.github.io/fire-simulator/`;
             if (!lastSimResult || isRunning) return;
             const btn = document.getElementById('saveImageBtn');
             const originalHtml = btn.innerHTML;
-            
+
             try {
                 // ボタンをローディング状態に
                 btn.disabled = true;
                 btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>画像生成中...`;
 
                 const params = getParams();
-                
+
                 // 1. キャプチャ用DOM（シミュレーション条件）にデータを反映
                 document.getElementById('capRiskAsset').textContent = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円';
                 document.getElementById('capCash').textContent = params.initialCashBuffer.toLocaleString('ja-JP') + '万円';
@@ -1657,52 +2020,52 @@ https://moriyama-eng.github.io/fire-simulator/`;
                 // 2. グラフ画像を転写（スマホでもPC表示のアスペクト比を維持するため一時的に固定サイズへ変更）
                 const chartCanvas = document.getElementById('assetChartCanvas');
                 if (!chartCanvas) throw new Error("グラフ要素が見つかりませんでした (assetChartCanvas not found)");
-                
+
                 const chartContainer = chartCanvas.parentElement;
                 const chartCard = chartContainer.parentElement;
-                
+
                 const origCardOverflow = chartCard.style.overflow;
                 const origWidth = chartContainer.style.width;
                 const origHeight = chartContainer.style.height;
-                
+
                 chartCard.style.overflow = 'hidden';
                 chartContainer.style.width = '1000px';
                 chartContainer.style.height = '600px';
-                
+
                 // 画像出力用にフォントサイズを一時的に拡大
                 if (assetChart) {
                     // ツールチップを強制的に非表示にする
-                    assetChart.tooltip.setActiveElements([], {x: 0, y: 0});
-                    
+                    assetChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+
                     const origLegendSize = assetChart.options.plugins.legend.labels.font.size;
                     const origXTickSize = assetChart.options.scales.x.ticks.font.size;
                     const origYTickSize = assetChart.options.scales.y.ticks.font.size;
-                    
+
                     // 保存用にフォントサイズを極限まで拡大 (1080px幅に対して他項目と調和するサイズ)
                     assetChart.options.plugins.legend.labels.font.size = 38;
                     assetChart.options.scales.x.ticks.font.size = 34;
                     assetChart.options.scales.y.ticks.font.size = 34;
-                    
+
                     assetChart.resize();
-                    assetChart.update('none'); 
-                    
+                    assetChart.update('none');
+
                     await new Promise(r => requestAnimationFrame(r));
-                    await new Promise(r => setTimeout(r, 200)); 
-                    
+                    await new Promise(r => setTimeout(r, 200));
+
                     const chartDataUrl = chartCanvas.toDataURL('image/png', 1.0);
-                    
+
                     // サイズとフォントを元に戻す
                     assetChart.options.plugins.legend.labels.font.size = origLegendSize;
                     assetChart.options.scales.x.ticks.font.size = origXTickSize;
                     assetChart.options.scales.y.ticks.font.size = origYTickSize;
-                    
+
                     chartContainer.style.width = origWidth;
                     chartContainer.style.height = origHeight;
                     chartCard.style.overflow = origCardOverflow;
-                    
+
                     assetChart.resize();
                     assetChart.update('none');
-                    
+
                     const capImg = document.getElementById('capChartImg');
                     if (!capImg) throw new Error("プレビュー用の画像要素が見つかりませんでした (capChartImg not found)");
                     capImg.src = chartDataUrl;
@@ -1713,7 +2076,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
                 // 3. html2canvasでオフスクリーン・コンテナをキャプチャ
                 const container = document.getElementById('captureContainer');
                 if (!container) throw new Error("書き出し用のテンプレートが見つかりませんでした (captureContainer not found)");
-                
+
                 // スマホ等のビューポートによる影響を最小化するため、一時的にスクロール位置をリセット（念のため）
                 const origScrollX = window.scrollX;
                 const origScrollY = window.scrollY;
@@ -1763,7 +2126,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
             setupHybridInputs();
             document.getElementById('runBtn').addEventListener('click', runMain);
             document.getElementById('logScaleToggle').addEventListener('change', onScaleToggle);
-            
+
             // X共有ボタン・画像保存ボタンのイベント登録
             document.getElementById('shareXBtn').addEventListener('click', shareToX);
             document.getElementById('saveImageBtn').addEventListener('click', saveImage);
@@ -1803,18 +2166,22 @@ https://moriyama-eng.github.io/fire-simulator/`;
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>Version 1.1.0</span>
+                <span>Version 1.2.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
-                <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
+                <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
+                    class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                        <path
+                            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                     </svg>
                     GitHub Repository
                 </a>
                 <span class="hidden sm:inline text-slate-700">|</span>
-                <a href="https://x.com/moriyama_eng" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
+                <a href="https://x.com/moriyama_eng" target="_blank" rel="noopener noreferrer"
+                    class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        <path
+                            d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                     </svg>
                     Created by @moriyama_eng
                 </a>
@@ -1826,61 +2193,95 @@ https://moriyama-eng.github.io/fire-simulator/`;
     <!-- 画像保存用オフスクリーン・コンテナ (1080x1350, 4:5比率仕様) -->
     <!-- position: fixedにしてビューポートやスクロールの影響を完全に遮断する -->
     <div id="captureContainer"
-         style="position: fixed; left: -2000px; top: 0; width: 1080px; height: 1350px; background: #0f172a; font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; z-index: -9999;">
+        style="position: fixed; left: -2000px; top: 0; width: 1080px; height: 1350px; background: #0f172a; font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; z-index: -9999;">
         <!-- ヘッダー（固定高にしてタイトルを垂直中央配置、上部余白を極小化） -->
         <div style="height: 140px; display: flex; align-items: center; justify-content: center; padding: 0 48px;">
-            <h1 class="font-extrabold tracking-tight" style="font-size: 52px; color: #e2e8f0; line-height: 1.2; margin: 0; text-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); text-align: center;">
+            <h1 class="font-extrabold tracking-tight"
+                style="font-size: 52px; color: #e2e8f0; line-height: 1.2; margin: 0; text-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); text-align: center;">
                 FIRE モンテカルロ・シミュレータ
             </h1>
         </div>
-        
+
         <!-- コンテンツエリア（固定高を積み上げ、余白を厳密に管理） -->
         <div style="flex: 1; padding: 0 32px; display: flex; flex-direction: column; gap: 10px;">
             <!-- シミュレーション条件 (高さ 300px) -->
-            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 p-6 shadow-2xl relative" style="height: 300px;">
-                <div class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-3xl pointer-events-none"></div>
+            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 p-6 shadow-2xl relative"
+                style="height: 300px;">
+                <div
+                    class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-3xl pointer-events-none">
+                </div>
                 <h2 class="font-bold text-indigo-300 mb-6 flex items-center gap-4" style="font-size: 30px;">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
                     シミュレーション条件
                 </h2>
                 <div class="grid grid-cols-2 gap-y-7 gap-x-8 text-2xl text-slate-300 px-4">
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💼</span> <span>リスク資産: <strong id="capRiskAsset" class="text-white font-bold" style="font-size: 32px; white-space: nowrap;">-億円</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💰</span> <span>現金バッファ: <strong id="capCash" class="text-white font-bold" style="font-size: 32px; white-space: nowrap;">-万円</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💸</span> <span>月間取崩し額: <strong id="capExpense" class="text-white font-bold" style="font-size: 32px; white-space: nowrap;">-万円</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">📈</span> <span>リターン/ボラ: <strong id="capReturnVol" class="text-white font-bold" style="font-size: 30px; white-space: nowrap;">-% / -%</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">📉</span> <span>インフレ率: <strong id="capInf" class="text-white font-bold" style="font-size: 32px; white-space: nowrap;">-%</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">⏳</span> <span>期間: <strong id="capYears" class="text-white font-bold" style="font-size: 32px; white-space: nowrap;">-年</strong></span></div>
+                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💼</span>
+                        <span>リスク資産: <strong id="capRiskAsset" class="text-white font-bold"
+                                style="font-size: 32px; white-space: nowrap;">-億円</strong></span></div>
+                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💰</span>
+                        <span>現金バッファ: <strong id="capCash" class="text-white font-bold"
+                                style="font-size: 32px; white-space: nowrap;">-万円</strong></span></div>
+                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💸</span>
+                        <span>月間取崩し額: <strong id="capExpense" class="text-white font-bold"
+                                style="font-size: 32px; white-space: nowrap;">-万円</strong></span></div>
+                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">📈</span>
+                        <span>リターン/ボラ: <strong id="capReturnVol" class="text-white font-bold"
+                                style="font-size: 30px; white-space: nowrap;">-% / -%</strong></span></div>
+                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">📉</span>
+                        <span>インフレ率: <strong id="capInf" class="text-white font-bold"
+                                style="font-size: 32px; white-space: nowrap;">-%</strong></span></div>
+                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">⏳</span>
+                        <span>期間: <strong id="capYears" class="text-white font-bold"
+                                style="font-size: 32px; white-space: nowrap;">-年</strong></span></div>
                 </div>
             </div>
 
             <!-- 総資産推移 (高さ 480px) -->
-            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 pt-5 pb-5 shadow-2xl flex flex-col" style="height: 480px;">
+            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 pt-5 pb-5 shadow-2xl flex flex-col"
+                style="height: 480px;">
                 <h2 class="font-bold text-indigo-300 mb-4 px-10 flex items-center gap-4" style="font-size: 30px;">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                    </svg>
                     総資産推移
                 </h2>
                 <!-- グラフ画像の差し込み先 -->
                 <div class="flex-1 flex items-center justify-center px-4 overflow-hidden">
-                    <img id="capChartImg" src="" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain;" alt="Chart" />
+                    <img id="capChartImg" src=""
+                        style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain;"
+                        alt="Chart" />
                 </div>
             </div>
 
             <!-- シミュレーション結果 (高さ 315px) -->
-            <div class="bg-indigo-900/40 rounded-3xl border border-indigo-500/40 p-6 shadow-[0_0_40px_rgba(99,102,241,0.2)] relative overflow-hidden" style="height: 315px;">
-                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 mix-blend-overlay"></div>
+            <div class="bg-indigo-900/40 rounded-3xl border border-indigo-500/40 p-6 shadow-[0_0_40px_rgba(99,102,241,0.2)] relative overflow-hidden"
+                style="height: 315px;">
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 mix-blend-overlay">
+                </div>
                 <div class="relative z-10">
                     <h2 class="font-bold text-indigo-300 mb-4 flex items-center gap-4" style="font-size: 30px;">
                         <span style="font-size: 32px; line-height: 1;">🏆</span> シミュレーション結果
                     </h2>
                     <div class="flex flex-col gap-3 text-slate-200 px-4">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4"><span style="font-size: 32px; line-height: 1;">🔥</span> <span class="font-bold" style="font-size: 30px;">FIRE 成功率</span></div>
-                            <strong id="capSuccess" class="font-black text-emerald-400 drop-shadow-lg" style="font-size: 64px;">-%</strong>
+                            <div class="flex items-center gap-4"><span
+                                    style="font-size: 32px; line-height: 1;">🔥</span> <span class="font-bold"
+                                    style="font-size: 30px;">FIRE 成功率</span></div>
+                            <strong id="capSuccess" class="font-black text-emerald-400 drop-shadow-lg"
+                                style="font-size: 64px;">-%</strong>
                         </div>
                         <div class="h-px bg-indigo-500/20 w-full"></div>
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4"><span style="font-size: 32px; line-height: 1;">💰</span> <span class="font-bold" style="font-size: 30px;">最終資産(中央値)</span></div>
-                            <strong id="capMedian" class="font-black text-blue-300 drop-shadow-lg" style="font-size: 52px;">-億円</strong>
+                            <div class="flex items-center gap-4"><span
+                                    style="font-size: 32px; line-height: 1;">💰</span> <span class="font-bold"
+                                    style="font-size: 30px;">最終資産(中央値)</span></div>
+                            <strong id="capMedian" class="font-black text-blue-300 drop-shadow-lg"
+                                style="font-size: 52px;">-億円</strong>
                         </div>
                     </div>
                 </div>
@@ -1888,17 +2289,23 @@ https://moriyama-eng.github.io/fire-simulator/`;
         </div>
 
         <!-- フッター / クレジット (高さ 100px) -->
-        <div style="height: 100px; padding: 0 40px; border-top: 1px solid rgba(30, 41, 59, 0.5); display: flex; align-items: center; justify-content: space-between; color: #94a3b8;">
+        <div
+            style="height: 100px; padding: 0 40px; border-top: 1px solid rgba(30, 41, 59, 0.5); display: flex; align-items: center; justify-content: space-between; color: #94a3b8;">
             <div class="flex items-center gap-3">
                 <span style="font-size: 24px;">🌐</span>
                 <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/</span>
             </div>
             <div class="flex items-center gap-3">
-                <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">
+                    <path
+                        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
+                    </path>
+                </svg>
                 <span style="font-size: 22px; font-weight: 700; color: #cbd5e1;">Created by @moriyama_eng</span>
             </div>
         </div>
     </div>
     </div>
 </body>
+
 </html>
