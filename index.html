@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.3.0</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.3.1</title>
     <meta name="description" content="リスク資産と現金バッファを用いた幾何ブラウン運動モンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -235,6 +235,23 @@
             opacity: 1;
         }
 
+        /* 中央配置 */
+        .tooltip-center-align .tooltip-text {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .tooltip-center-align .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+        }
+
         /* ステッパーボタンのスタイル */
         .stepper-btn {
             background: rgba(99, 102, 241, 0.1);
@@ -303,7 +320,7 @@
             <div class="flex items-center gap-2 mt-1">
                 <p class="text-sm text-slate-300 font-medium tracking-wide">
                     モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
-                <div class="tooltip-container tooltip-left-align" tabindex="0">
+                <div class="tooltip-container tooltip-right-align" tabindex="0">
                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                     <div class="tooltip-text">
                         将来の価格変動予測には、金融実務で広く使われる「幾何ブラウン運動（対数正規モデル）」を採用しています。
@@ -699,7 +716,7 @@
                         <div class="flex items-center gap-2">
                             <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">総資産推移（パーセンタイル）
                             </h2>
-                            <div class="tooltip-container tooltip-left-align" tabindex="0">
+                            <div class="tooltip-container tooltip-center-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
                                     各経過年数時点における総資産額の分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>上に行くほど強気な相場、下に行くほど弱気な相場のシナリオを反映しています。
@@ -729,7 +746,7 @@
                     <div class="flex items-center gap-2 mb-4">
                         <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">現金バッファ推移（パーセンタイル）
                         </h2>
-                        <div class="tooltip-container tooltip-left-align" tabindex="0">
+                        <div class="tooltip-container tooltip-right-align" tabindex="0">
                             <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                             <div class="tooltip-text">
                                 各経過年数時点における現金バッファの残高分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>現金バッファが取崩され、資産が回復した際にリスク資産から現金バッファが補充される挙動を可視化しています。
@@ -746,7 +763,7 @@
                         <div class="flex items-center gap-2 mb-4">
                             <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最大ドローダウン 発生確率
                             </h2>
-                            <div class="tooltip-container tooltip-left-align" tabindex="0">
+                            <div class="tooltip-container tooltip-center-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
                                     最大ドローダウン（総資産の過去最高値からの最大下落率）が、特定の値よりも悪化する（下回る）確率を表します。<br>例えばグラフ上で横軸が-50%、縦軸が30%の場合、「最大ドローダウンが-50%より悪化する確率が30%ある」ことを意味します。
@@ -761,7 +778,7 @@
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex items-center gap-2 mb-4">
                             <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最長停滞期間 発生確率</h2>
-                            <div class="tooltip-container tooltip-left-align" tabindex="0">
+                            <div class="tooltip-container tooltip-center-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
                                     総資産が過去最高値を更新できずに停滞し続ける期間（最長停滞期間）が、特定の年数以上長引く確率を表します。<br>例えばグラフ上で横軸が5年、縦軸が20%の場合、「最高値の回復までに5年以上かかる確率が20%ある」ことを意味します。
@@ -2213,7 +2230,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>Version 1.3.0</span>
+                <span>v1.3.1</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -2343,7 +2360,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
             style="height: 100px; padding: 0 40px; border-top: 1px solid rgba(30, 41, 59, 0.5); display: flex; align-items: center; justify-content: space-between; color: #94a3b8;">
             <div class="flex items-center gap-3">
                 <span style="font-size: 24px;">🌐</span>
-                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/ | v1.3.0</span>
+                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/ | v1.3.1</span>
             </div>
             <div class="flex items-center gap-3">
                 <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">
