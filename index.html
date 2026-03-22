@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.3.0</title>
     <meta name="description" content="リスク資産と現金バッファを用いた幾何ブラウン運動モンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -189,8 +189,7 @@
             position: absolute;
             z-index: 50;
             bottom: 125%;
-            right: -8px;
-            /* アイコンの右端から少しだけはみ出す程度に調整 */
+            /* right: -8px; 削除: 個別クラスで制御 */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transition: opacity 0.2s, visibility 0.2s;
             font-size: 0.75rem;
@@ -199,12 +198,31 @@
             pointer-events: none;
         }
 
-        .tooltip-text::after {
+        /* 右端起点（左に伸びる） */
+        .tooltip-right-align .tooltip-text {
+            right: -8px;
+        }
+
+        .tooltip-right-align .tooltip-text::after {
             content: "";
             position: absolute;
             top: 100%;
             right: 12px;
-            /* 吹き出しの矢印を右端側に配置 */
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+        }
+
+        /* 左端起点（右に伸びる） */
+        .tooltip-left-align .tooltip-text {
+            left: -8px;
+        }
+
+        .tooltip-left-align .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 12px;
             border-width: 5px;
             border-style: solid;
             border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
@@ -285,7 +303,7 @@
             <div class="flex items-center gap-2 mt-1">
                 <p class="text-sm text-slate-300 font-medium tracking-wide">
                     モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
-                <div class="tooltip-container" tabindex="0">
+                <div class="tooltip-container tooltip-left-align" tabindex="0">
                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                     <div class="tooltip-text">
                         将来の価格変動予測には、金融実務で広く使われる「幾何ブラウン運動（対数正規モデル）」を採用しています。
@@ -308,7 +326,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">初期リスク資産 <span
                                         class="text-indigo-300 ml-1">億円</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値未満ならば、月間取崩し額をリスク資産から取崩します。
@@ -330,7 +348,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">初期現金バッファ <span
                                         class="text-indigo-300 ml-1">万円</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合は、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。
@@ -352,7 +370,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">初期月間取崩し額 <span
                                         class="text-indigo-300 ml-1">万円</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         シミュレーション開始時点での月間取崩し額です。<br>※税金や社会保険料等を含んだ、資産から減少する総額を入力してください。<br>インフレ率の設定に応じて将来の取崩し額が計算されます。<br>
@@ -381,7 +399,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">期待リターン <span
                                         class="text-indigo-300 ml-1">%</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">リスク資産の年平均成長率（幾何平均）です。<br>過去の市場平均などを参考に設定します。<br></div>
                                 </div>
@@ -401,7 +419,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">ボラティリティ <span
                                         class="text-indigo-300 ml-1">%</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         リスク資産のリターンのばらつき（標準偏差）です。<br>この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。<br></div>
@@ -422,7 +440,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">期待インフレ率 <span
                                         class="text-indigo-300 ml-1">%</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">長期的な平均インフレ率です。<br>（AR-1モデルではこの値を中心にしてインフレ率が変動します）</div>
                                 </div>
@@ -462,7 +480,7 @@
                                     <div class="flex justify-between items-center mb-2">
                                         <label class="text-xs text-slate-300 font-medium">インフレ・ボラティリティ <span
                                                 class="text-indigo-300 ml-1">%</span></label>
-                                        <div class="tooltip-container" tabindex="0">
+                                        <div class="tooltip-container tooltip-right-align" tabindex="0">
                                             <span
                                                 class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                             <div class="tooltip-text">
@@ -484,7 +502,7 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-2">
                                         <label class="text-xs text-slate-300 font-medium">インフレ粘着性 (AR係数) </label>
-                                        <div class="tooltip-container" tabindex="0">
+                                        <div class="tooltip-container tooltip-right-align" tabindex="0">
                                             <span
                                                 class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                             <div class="tooltip-text">
@@ -517,7 +535,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">シミュレーション年数 <span
                                         class="text-indigo-300 ml-1">年</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">資産運用と取崩しを継続する期間（年数）です。<br></div>
                                 </div>
@@ -535,7 +553,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">シミュレーション回数 <span
                                         class="text-indigo-300 ml-1">回</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         モンテカルロ・シミュレーションを試行する回数です。<br>回数が多いほど確率の精度が増しますが、計算に時間がかかります。
@@ -554,7 +572,7 @@
                         <div>
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">パーセンタイル</label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">グラフに表示するパーセンタイル線を指定します。<br>カンマ区切りで1～99の値を入力します。<br></div>
                                 </div>
@@ -573,7 +591,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（取崩し開始）<span
                                         class="text-indigo-300 ml-1">%</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         総資産の最高値からの下落（ドローダウン）がこの割合以上の場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br></div>
@@ -594,7 +612,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（補充終了）<span
                                         class="text-indigo-300 ml-1">%</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。<br>補充モードでは現金バッファ不足分をリスク資産から毎月補充します。
@@ -616,7 +634,7 @@
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">補充ペース（月間取崩し額比）<span
                                         class="text-indigo-300 ml-1">倍</span></label>
-                                <div class="tooltip-container" tabindex="0">
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。<br>補充モードでは現金バッファ不足分をリスク資産から毎月補充します。<br>
@@ -681,7 +699,7 @@
                         <div class="flex items-center gap-2">
                             <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">総資産推移（パーセンタイル）
                             </h2>
-                            <div class="tooltip-container" tabindex="0">
+                            <div class="tooltip-container tooltip-left-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
                                     各経過年数時点における総資産額の分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>上に行くほど強気な相場、下に行くほど弱気な相場のシナリオを反映しています。
@@ -711,7 +729,7 @@
                     <div class="flex items-center gap-2 mb-4">
                         <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">現金バッファ推移（パーセンタイル）
                         </h2>
-                        <div class="tooltip-container" tabindex="0">
+                        <div class="tooltip-container tooltip-left-align" tabindex="0">
                             <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                             <div class="tooltip-text">
                                 各経過年数時点における現金バッファの残高分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>現金バッファが取崩され、資産が回復した際にリスク資産から現金バッファが補充される挙動を可視化しています。
@@ -726,12 +744,12 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex items-center gap-2 mb-4">
-                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最大ドローダウン 確率密度
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最大ドローダウン 発生確率
                             </h2>
-                            <div class="tooltip-container" tabindex="0">
+                            <div class="tooltip-container tooltip-left-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
-                                    各シミュレーション・パスの中で経験した「総資産最高値からの最も深い下落率（最大ドローダウン）」が、どの範囲にどのくらいの割合で分布しているかを示すグラフです。<br>資産が枯渇（破綻）に至ったケースが全て右端の区間に集約されるため、グラフ右端が跳ね上がる場合があります。
+                                    最大ドローダウン（総資産の過去最高値からの最大下落率）が、特定の値よりも悪化する（下回る）確率を表します。<br>例えばグラフ上で横軸が-50%、縦軸が30%の場合、「最大ドローダウンが-50%より悪化する確率が30%ある」ことを意味します。
                                 </div>
                             </div>
                         </div>
@@ -742,11 +760,11 @@
 
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex items-center gap-2 mb-4">
-                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最長停滞期間 確率密度</h2>
-                            <div class="tooltip-container" tabindex="0">
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最長停滞期間 発生確率</h2>
+                            <div class="tooltip-container tooltip-left-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
-                                    各シミュレーション・パスの中で経験した「総資産最高値から下落・停滞し続けた最長の期間」が、どの範囲にどのくらいの割合で分布しているかを示すグラフです。<br>一度下落してからシミュレーション終了まで二度と最高値を更新できなかったケースが全て右端の区間に集約されるため、グラフ右端が跳ね上がる場合があります。
+                                    総資産が過去最高値を更新できずに停滞し続ける期間（最長停滞期間）が、特定の年数以上長引く確率を表します。<br>例えばグラフ上で横軸が5年、縦軸が20%の場合、「最高値の回復までに5年以上かかる確率が20%ある」ことを意味します。
                                 </div>
                             </div>
                         </div>
@@ -1521,30 +1539,36 @@
             return result;
         }
 
-        function renderDdHistChart(result) {
+        function renderDdCdfChart(result) {
             const { maxDdPerPath, params } = result;
-            const BIN_WIDTH = 2; // 2%
-            const bins = 51; // 0 to -100%
-            const counts = new Array(bins).fill(0);
-            for (let i = 0; i < maxDdPerPath.length; i++) {
-                let pct = maxDdPerPath[i] * 100;
+
+            // 最大ドローダウン（マイナス値）の配列を昇順ソート
+            const sortedDd = Float32Array.from(maxDdPerPath).sort();
+            const simPaths = params.simPaths;
+            
+            // 同一X座標(-100%での破綻など)に対する「垂直な壁」の発生を防ぐため、Mapで一意化して最大の発生確率を残す
+            const pointsMap = new Map();
+            const step = Math.max(1, Math.floor(simPaths / 1000));
+            
+            for (let i = 0; i < simPaths; i += step) {
+                let pct = sortedDd[i] * 100;
                 if (pct < -100) pct = -100;
                 if (pct > 0) pct = 0;
-                let binIdx = Math.floor(Math.abs(pct) / BIN_WIDTH);
-                if (binIdx >= bins) binIdx = bins - 1;
-                counts[binIdx]++;
+                // 小数第1位で丸めて一意化
+                pct = Math.round(pct * 10) / 10;
+                // 昇順イテレーションのため同XならY（累積確率）が上書きされて最大のものが残る
+                pointsMap.set(pct, (i + 1) / simPaths * 100);
             }
-            const freq = counts.map(c => (c / params.simPaths) * 100);
-            const smoothed = smoothArray(freq, 3);
+            
+            // 横軸0% (縦軸100%) の点を強制的に追加してグラフが0%まで伸びるようにする
+            if (!pointsMap.has(0)) {
+                pointsMap.set(0, 100);
+            }
 
-            let cumulative = 0;
-            const cumProb = new Array(bins).fill(0);
-            const points = [];
-            for (let i = 0; i < bins; i++) {
-                cumulative += counts[i] / params.simPaths * 100;
-                cumProb[i] = cumulative;
-                points.push({ x: -(i * BIN_WIDTH), y: smoothed[i] });
-            }
+            // Mapから配列に戻してXの昇順でソート（Mapは挿入順なので念のため再ソート）
+            const points = Array.from(pointsMap.entries())
+                                .map(([x, y]) => ({ x, y }))
+                                .sort((a, b) => a.x - b.x);
 
             const ctx = document.getElementById('ddHistCanvas').getContext('2d');
             if (ddHistChart) { ddHistChart.destroy(); }
@@ -1557,10 +1581,10 @@
                         data: points,
                         borderColor: '#f43f5e',
                         backgroundColor: 'rgba(244, 63, 94, 0.2)',
-                        tension: 0.4,
+                        tension: 0.1,
                         fill: true,
                         pointRadius: 0,
-                        pointHoverRadius: 6
+                        pointHoverRadius: 6,
                     }]
                 },
                 options: {
@@ -1569,34 +1593,42 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         tooltip: {
+                            bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
+                            titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
                             callbacks: {
-                                title: () => '最大ドローダウン',
+                                title: () => '最大ドローダウン 発生確率',
                                 label: function (context) {
-                                    const binX = Math.abs(context.parsed.x);
-                                    const binIdx = Math.floor(binX / BIN_WIDTH);
-                                    const cum = cumProb[binIdx] ? cumProb[binIdx].toFixed(1) : "0.0";
-                                    return `${context.parsed.x}% 以内に収まる確率: ${cum}%`;
+                                    if (context.parsed.x === -100) {
+                                        return '総資産が枯渇する確率: ' + context.parsed.y.toFixed(1) + '%';
+                                    }
+                                    return '最大ドローダウンが ' + context.parsed.x.toFixed(1) + '% より悪化する確率: ' + context.parsed.y.toFixed(1) + '%';
                                 }
                             }
                         },
-                        legend: { display: false }
+                        legend: {
+                            display: false
+                        }
                     },
                     scales: {
                         x: {
                             type: 'linear',
+                            title: { display: true, text: '最大ドローダウン', color: '#94a3b8' },
                             min: -100,
                             max: 0,
-                            reverse: true,
                             ticks: {
                                 color: '#94a3b8',
+                                font: { size: 13 },
                                 callback: function (value) { return value + "%"; }
                             },
                             grid: { color: 'rgba(100,116,139,0.1)' }
                         },
                         y: {
+                            min: 0,
+                            max: 100,
                             ticks: {
                                 color: '#94a3b8',
-                                stepSize: 1,
+                                font: { size: 13 },
+                                stepSize: 20,
                                 callback: function (value) { return value + "%"; }
                             },
                             grid: { color: 'rgba(100,116,139,0.1)' },
@@ -1607,36 +1639,35 @@
             });
         }
 
-        function renderUwHistChart(result) {
+        function renderUwCdfChart(result) {
             const { maxUwPerPath, params } = result;
-            const BIN_WIDTH = 6; // 6ヶ月
-            const bins = Math.ceil((params.totalMonths + 1) / BIN_WIDTH) + 1;
-            const counts = new Array(bins).fill(0);
-            for (let i = 0; i < maxUwPerPath.length; i++) {
-                let m = maxUwPerPath[i];
-                let binIdx = Math.floor(m / BIN_WIDTH);
-                if (binIdx >= bins) binIdx = bins - 1;
-                counts[binIdx]++;
-            }
-            const freq = counts.map(c => (c / params.simPaths) * 100);
-            const smoothed = smoothArray(freq, 3);
 
-            let cumulative = 0;
-            const cumProb = new Array(bins).fill(0);
-            for (let i = 0; i < bins; i++) {
-                cumulative += counts[i] / params.simPaths * 100;
-                cumProb[i] = cumulative;
-            }
+            // 最長停滞期間（プラス値）の配列を昇順ソート
+            const sortedUw = Float32Array.from(maxUwPerPath).sort();
+            const simPaths = params.simPaths;
+            
+            const points = [];
+            // 横軸0年 (縦軸100%) の点を強制的に先頭に追加
+            points.push({ x: 0, y: 100 });
 
-            const labels = [];
-            for (let i = 0; i < bins; i++) {
-                let mo = i * BIN_WIDTH;
-                if (mo === 0) {
-                    labels.push('0年');
+            // UIの負荷軽減のための間引き幅（約1000点）
+            const step = Math.max(1, Math.floor(simPaths / 1000));
+            
+            for (let i = 0; i < simPaths; i += step) {
+                let mo = sortedUw[i];
+                if (points.length > 0 && points[points.length - 1].x === mo) {
+                    // 超過確率なので、同一月数の場合は「最初の登場（最も高いY）」が数学的に正しい P(X >= mo) となるため、Yは上書き「しない」
                 } else {
-                    let y = Math.floor(mo / 12);
-                    let rem = mo % 12;
-                    labels.push(y > 0 ? (rem > 0 ? `${y}年半` : `${y}年`) : `${mo}ヶ月`);
+                    points.push({ x: mo, y: (simPaths - i) / simPaths * 100 });
+                }
+            }
+            // 最後の点（一番停滞期間が長かったケース）を確実に拾う
+            if ((simPaths - 1) % step !== 0) {
+                let mo = sortedUw[simPaths - 1];
+                if (points.length > 0 && points[points.length - 1].x === mo) {
+                    // 同一X回避
+                } else {
+                    points.push({ x: mo, y: 1 / simPaths * 100 });
                 }
             }
 
@@ -1646,16 +1677,15 @@
             uwHistChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
                     datasets: [{
                         label: '発生確率',
-                        data: smoothed,
+                        data: points,
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                        tension: 0.4,
+                        tension: 0.1,
                         fill: true,
                         pointRadius: 0,
-                        pointHoverRadius: 6
+                        pointHoverRadius: 6,
                     }]
                 },
                 options: {
@@ -1664,37 +1694,49 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         tooltip: {
+                            bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
+                            titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
                             callbacks: {
-                                title: () => '最長停滞期間',
+                                title: () => '最長停滞期間 発生確率',
                                 label: function (context) {
-                                    const binIdx = context.dataIndex;
-                                    const cum = cumProb[binIdx].toFixed(1);
-                                    return `${labels[binIdx]} 以内に最高値を更新する確率: ${cum}%`;
+                                    const totalMo = Math.round(context.parsed.x);
+                                    const y = Math.floor(totalMo / 12);
+                                    const m = totalMo % 12;
+                                    let str = "";
+                                    if (y > 0) str += y + "年";
+                                    if (m > 0) str += m + "ヶ月";
+                                    if (y === 0 && m === 0) str = "0年";
+                                    
+                                    return '最長停滞期間が ' + str + ' 以上続く確率: ' + context.parsed.y.toFixed(1) + '%';
                                 }
                             }
                         },
-                        legend: { display: false }
+                        legend: {
+                            display: false
+                        }
                     },
                     scales: {
                         x: {
+                            type: 'linear',
+                            title: { display: true, text: '最長停滞期間', color: '#94a3b8' },
+                            min: 0,
                             ticks: {
                                 color: '#94a3b8',
-                                maxRotation: 0,
-                                autoSkip: false,
-                                callback: function (value, index) {
-                                    const mo = index * BIN_WIDTH;
-                                    if (mo % 60 === 0) { // 5年刻み
-                                        return `${mo / 12}年`;
-                                    }
-                                    return null;
+                                font: { size: 13 },
+                                stepSize: 60, // 5年(60ヵ月)刻みに統一
+                                callback: function (value) {
+                                    return (value / 12) + '年';
                                 }
                             },
                             grid: { color: 'rgba(100,116,139,0.1)' }
                         },
                         y: {
+                            min: 0,
+                            max: 100,
                             ticks: {
                                 color: '#94a3b8',
-                                stepSize: 1,
+                                font: { size: 13 },
+                                stepSize: 20,
                                 callback: function (value) { return value + "%"; }
                             },
                             grid: { color: 'rgba(100,116,139,0.1)' },
@@ -1743,7 +1785,7 @@
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
                             <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
-                            <span class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span id="uiExecTime" class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1758,7 +1800,7 @@
                                     </p>
                                 </div>
                                 <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終資産 中央値</p>
+                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終総資産 中央値</p>
                                     <p class="text-3xl font-bold text-blue-300 drop-shadow-md">
                                         ${medianOku}<span class="text-xl ml-1">億円</span>
                                     </p>
@@ -1844,7 +1886,7 @@
                                     </p>
                                 </div>
                                 <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終資産 中央値</p>
+                                    <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終総資産 中央値</p>
                                     <p class="text-3xl font-bold text-slate-500 drop-shadow-md">
                                         -<span class="text-xl ml-1">億円</span>
                                     </p>
@@ -1923,8 +1965,8 @@
                 const isLogScale = document.getElementById('logScaleToggle').checked;
                 renderAssetChart(result, isLogScale);
                 renderCashChart(result);
-                renderDdHistChart(result);
-                renderUwHistChart(result);
+                renderDdCdfChart(result);
+                renderUwCdfChart(result);
                 updateSummaryCard(result, params);
                 setTimeout(() => {
                     document.getElementById('summaryCardContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2006,6 +2048,10 @@ https://moriyama-eng.github.io/fire-simulator/`;
                 const params = getParams();
 
                 // 1. キャプチャ用DOM（シミュレーション条件）にデータを反映
+                const uiExecTime = document.getElementById('uiExecTime');
+                if (uiExecTime) {
+                    document.getElementById('capExecTime').textContent = "実行日時: " + uiExecTime.textContent;
+                }
                 document.getElementById('capRiskAsset').textContent = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円';
                 document.getElementById('capCash').textContent = params.initialCashBuffer.toLocaleString('ja-JP') + '万円';
                 document.getElementById('capExpense').textContent = params.monthlyExpense.toLocaleString('ja-JP') + '万円';
@@ -2104,7 +2150,8 @@ https://moriyama-eng.github.io/fire-simulator/`;
                 const url = canvas.toDataURL('image/png', 1.0);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `FIRE_Sim_Result_${Date.now()}.png`;
+                const dateStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/[^0-9]/g, '');
+                a.download = `FIRE_Sim_Result_${dateStr}.png`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -2166,7 +2213,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>Version 1.2.0</span>
+                <span>Version 1.3.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -2264,9 +2311,12 @@ https://moriyama-eng.github.io/fire-simulator/`;
                 <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 mix-blend-overlay">
                 </div>
                 <div class="relative z-10">
-                    <h2 class="font-bold text-indigo-300 mb-4 flex items-center gap-4" style="font-size: 30px;">
-                        <span style="font-size: 32px; line-height: 1;">🏆</span> シミュレーション結果
-                    </h2>
+                    <div class="flex items-baseline justify-between mb-4">
+                        <h2 class="font-bold text-indigo-300 flex items-center gap-4" style="font-size: 30px;">
+                            <span style="font-size: 32px; line-height: 1;">🏆</span> シミュレーション結果
+                        </h2>
+                        <div id="capExecTime" style="color: #94a3b8; font-size: 24px; font-weight: 500;"></div>
+                    </div>
                     <div class="flex flex-col gap-3 text-slate-200 px-4">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4"><span
@@ -2279,7 +2329,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4"><span
                                     style="font-size: 32px; line-height: 1;">💰</span> <span class="font-bold"
-                                    style="font-size: 30px;">最終資産(中央値)</span></div>
+                                    style="font-size: 30px;">最終総資産(中央値)</span></div>
                             <strong id="capMedian" class="font-black text-blue-300 drop-shadow-lg"
                                 style="font-size: 52px;">-億円</strong>
                         </div>
@@ -2293,7 +2343,7 @@ https://moriyama-eng.github.io/fire-simulator/`;
             style="height: 100px; padding: 0 40px; border-top: 1px solid rgba(30, 41, 59, 0.5); display: flex; align-items: center; justify-content: space-between; color: #94a3b8;">
             <div class="flex items-center gap-3">
                 <span style="font-size: 24px;">🌐</span>
-                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/</span>
+                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/ | v1.3.0</span>
             </div>
             <div class="flex items-center gap-3">
                 <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">
