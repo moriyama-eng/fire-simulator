@@ -1,0 +1,280 @@
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    min-height: 100vh;
+}
+
+.glass-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.glow-border {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+    transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* ハイブリッド数値入力のスタイル */
+.num-input {
+    background: transparent;
+    text-align: right;
+    color: #a5b4fc;
+    font-weight: 500;
+    font-size: 0.75rem;
+    border: none;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.4);
+    outline: none;
+    padding: 1px 2px;
+    transition: border-color 0.2s;
+}
+
+.num-input:focus {
+    border-bottom-color: #818cf8;
+}
+
+.spinner {
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.kpi-success {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.08));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.kpi-median {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.toggle-bg {
+    transition: background-color 0.3s ease;
+}
+
+.toggle-dot {
+    transition: transform 0.3s ease;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+@media (max-width: 640px) {
+    .chart-container {
+        height: 280px;
+    }
+}
+
+.btn-pulse {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+}
+
+.btn-pulse:hover::after {
+    transform: translateX(100%);
+}
+
+/* カスタムツールチップ用スタイル */
+.tooltip-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: max-content;
+    max-width: 250px;
+    background-color: rgba(30, 41, 59, 0.95);
+    color: #e2e8f0;
+    text-align: left;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 50;
+    bottom: 125%;
+    /* right: -8px; 削除: 個別クラスで制御 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: opacity 0.2s, visibility 0.2s;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    pointer-events: none;
+}
+
+/* 右端起点（左に伸びる） */
+.tooltip-right-align .tooltip-text {
+    right: -8px;
+}
+
+.tooltip-right-align .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    right: 12px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+}
+
+/* 左端起点（右に伸びる） */
+.tooltip-left-align .tooltip-text {
+    left: -8px;
+}
+
+.tooltip-left-align .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+}
+
+/* ホバーまたはフォーカス（タップ）で表示 */
+.tooltip-container:hover .tooltip-text,
+.tooltip-container:focus-within .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 中央配置 */
+.tooltip-center-align .tooltip-text {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tooltip-center-align .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+}
+
+/* ステッパーボタンのスタイル */
+.stepper-btn {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.stepper-btn:hover {
+    background: rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #a5b4fc;
+}
+
+.stepper-btn:active {
+    transform: scale(0.95);
+    background: rgba(99, 102, 241, 0.4);
+}
+
+.stepper-value-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    border-radius: 6px;
+    margin: 0 8px;
+    height: 36px;
+}
+
+/* 既存の num-input をステッパー用に調整 */
+.stepper-input {
+    background: transparent;
+    text-align: center;
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    outline: none;
+    width: 100%;
+    height: 100%;
+}
