@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.3.2</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.4.0</title>
     <meta name="description" content="リスク資産と現金バッファを用いた幾何ブラウン運動モンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -137,7 +137,7 @@
                                         class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">リスク資産の年平均成長率（幾何平均）です。<br>過去の市場平均などを参考に設定します。<br></div>
+                                    <div class="tooltip-text">リスク資産の年平均成長率（算術平均）です。<br>過去の市場平均などを参考に設定します。<br>※内部計算では伊藤の補題（ドリフト調整）により幾何平均へ自動変換されます。</div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -321,8 +321,19 @@
 
                 <!-- 現金バッファ設定 -->
                 <div class="glass-card glow-border rounded-2xl p-5">
-                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">現金バッファ設定</h2>
-                    <div class="space-y-5">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">現金バッファ設定</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-300 font-medium">OFF</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="cashBufferToggle" class="sr-only peer" checked>
+                                <div class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600"></div>
+                                <div class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5"></div>
+                            </label>
+                            <span class="text-xs text-slate-300 font-medium">ON</span>
+                        </div>
+                    </div>
+                    <div id="cashBufferParams" class="space-y-5 transition-opacity duration-300">
                         <div>
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（取崩し開始）<span
@@ -386,6 +397,60 @@
                                 </div>
                                 <button type="button" class="stepper-btn increment"
                                     data-target="replenishPaceNum">＋</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 支出ガードレール設定 -->
+                <div class="glass-card glow-border rounded-2xl p-5">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">支出ガードレール設定</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-300 font-medium">OFF</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="guardrailToggle" class="sr-only peer">
+                                <div class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600"></div>
+                                <div class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5"></div>
+                            </label>
+                            <span class="text-xs text-slate-300 font-medium">ON</span>
+                        </div>
+                    </div>
+                    <div id="guardrailParams" class="space-y-5 opacity-50 pointer-events-none transition-opacity duration-300">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">支出削減発動トリガー<span class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        ドローダウン（総資産の過去最高値からの下落率）がこの割合以上に悪化した場合、月間の取崩し額を一時的に削減します。<br>※現金バッファの枯渇リスクを軽減するための防衛策です。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement" data-target="guardrailTriggerNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="guardrailTriggerNum" min="-100" max="0" step="5.0" value="-20.0" class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment" data-target="guardrailTriggerNum">＋</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">支出削減率<span class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        ガードレール発動中、本来の取崩し額からここで指定した割合分を減額（節約）します。<br>※相場が回復しドローダウンがトリガー値より改善されると、元の取崩し額に戻ります。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement" data-target="guardrailReductionNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="guardrailReductionNum" min="0" max="100" step="5.0" value="20.0" class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment" data-target="guardrailReductionNum">＋</button>
                             </div>
                         </div>
                     </div>
@@ -539,7 +604,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v1.3.2</span>
+                <span>v1.4.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -669,7 +734,7 @@
             style="height: 100px; padding: 0 40px; border-top: 1px solid rgba(30, 41, 59, 0.5); display: flex; align-items: center; justify-content: space-between; color: #94a3b8;">
             <div class="flex items-center gap-3">
                 <span style="font-size: 24px;">🌐</span>
-                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/ | v1.3.2</span>
+                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/ | v1.4.0</span>
             </div>
             <div class="flex items-center gap-3">
                 <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">

@@ -1377,6 +1377,40 @@ document.addEventListener('DOMContentLoaded', () => {
     infToggle.addEventListener('change', updateArPanel);
     updateArPanel(); // 初期ロード時の状態反映
 
+    // 現金バッファ トグル連動
+    const cbToggle = document.getElementById('cashBufferToggle');
+    const cbParamsPanel = document.getElementById('cashBufferParams');
+
+    const updateCbPanel = () => {
+        if (cbToggle.checked) {
+            cbParamsPanel.classList.remove('opacity-50', 'pointer-events-none');
+            cbParamsPanel.classList.add('opacity-100');
+        } else {
+            cbParamsPanel.classList.add('opacity-50', 'pointer-events-none');
+            cbParamsPanel.classList.remove('opacity-100');
+        }
+    };
+
+    cbToggle.addEventListener('change', updateCbPanel);
+    updateCbPanel();
+
+    // 支出ガードレール トグル連動
+    const grToggle = document.getElementById('guardrailToggle');
+    const grParamsPanel = document.getElementById('guardrailParams');
+
+    const updateGrPanel = () => {
+        if (grToggle.checked) {
+            grParamsPanel.classList.remove('opacity-50', 'pointer-events-none');
+            grParamsPanel.classList.add('opacity-100');
+        } else {
+            grParamsPanel.classList.add('opacity-50', 'pointer-events-none');
+            grParamsPanel.classList.remove('opacity-100');
+        }
+    };
+
+    grToggle.addEventListener('change', updateGrPanel);
+    updateGrPanel();
+
     // 初期状態の（未実行）サマリカードを描画
     renderEmptySummaryCard();
 
