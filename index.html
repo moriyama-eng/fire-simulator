@@ -341,7 +341,7 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産の最高値からの下落（ドローダウン）がこの割合以上の場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br></div>
+                                        総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br></div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -362,7 +362,7 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。<br>補充モードでは現金バッファ不足分をリスク資産から毎月補充します。
+                                        ドローダウンが改善しこの割合を上回ると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。
                                     </div>
                                 </div>
                             </div>
@@ -384,7 +384,7 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産が最高値を更新すると「補充モード」に入り、この割合以上下落（ドローダウン）すると補充モードを終了します。<br>補充モードでは現金バッファ不足分をリスク資産から毎月補充します。<br>
+                                        補充モード中、毎月リスク資産から現金バッファへ補填する額を指定します。「月間取崩し額」に対する倍率です。<br>
                                     </div>
                                 </div>
                             </div>
@@ -419,11 +419,11 @@
                     <div id="guardrailParams" class="space-y-5 opacity-50 pointer-events-none transition-opacity duration-300">
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">支出削減発動トリガー<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">ガードレール発動閾値<span class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ドローダウン（総資産の過去最高値からの下落率）がこの割合以上に悪化した場合、月間の取崩し額を一時的に削減します。<br>※現金バッファの枯渇リスクを軽減するための防衛策です。
+                                        ドローダウン（総資産の過去最高値からの下落率）がこの割合を下回って悪化した場合、一時的な防衛策としてガードレールが発動します。<br>※資産枯渇リスクを軽減するための機能です。
                                     </div>
                                 </div>
                             </div>
@@ -437,18 +437,18 @@
                         </div>
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">支出削減率<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">発動時の支出変動率<span class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ガードレール発動中、本来の取崩し額からここで指定した割合分を減額（節約）します。<br>※相場が回復しドローダウンがトリガー値より改善されると、元の取崩し額に戻ります。
+                                        ガードレール発動中、本来の月間取崩し額にこの割合（マイナス値）を適用し、実質的な支出を減額します。<br>※相場が回復しドローダウンが「ガードレール発動閾値」より改善されると、ガードレールは自動解除され元の取崩し額に戻ります。
                                     </div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
                                 <button type="button" class="stepper-btn decrement" data-target="guardrailReductionNum">−</button>
                                 <div class="stepper-value-container">
-                                    <input type="number" id="guardrailReductionNum" min="0" max="100" step="5.0" value="20.0" class="stepper-input">
+                                    <input type="number" id="guardrailReductionNum" min="-100" max="0" step="5.0" value="-20.0" class="stepper-input">
                                 </div>
                                 <button type="button" class="stepper-btn increment" data-target="guardrailReductionNum">＋</button>
                             </div>

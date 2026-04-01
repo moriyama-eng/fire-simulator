@@ -35,7 +35,7 @@ const DEFAULTS = {
     initialRiskAsset: 10000, initialCashBuffer: 1000, monthlyExpense: 30,
     expectedReturn: 10.0, volatility: 18.0, inflationRate: 2.0,
     simYears: 30, simPaths: 10000, drawdownTrigger: -20.0, drawdownReplenish: -5.0, replenishPace: 5.0,
-    guardrailTrigger: -20.0, guardrailReduction: 20.0
+    guardrailTrigger: -20.0, guardrailReduction: -20.0
 };
 
 function safeNumber(val, fallback) {
@@ -60,7 +60,7 @@ function getParams() {
         replenishPace: Math.max(0, safeNumber(document.getElementById('replenishPaceNum').value, DEFAULTS.replenishPace)),
         guardrailToggle: document.getElementById('guardrailToggle').checked,
         guardrailTrigger: Math.min(0, safeNumber(document.getElementById('guardrailTriggerNum').value, DEFAULTS.guardrailTrigger)),
-        guardrailReduction: Math.max(0, safeNumber(document.getElementById('guardrailReductionNum').value, DEFAULTS.guardrailReduction)),
+        guardrailReduction: Math.min(0, safeNumber(document.getElementById('guardrailReductionNum').value, DEFAULTS.guardrailReduction)),
         useArInflation: document.getElementById('inflationModelToggle').checked,
         infVol: safeNumber(document.getElementById('infVolNum').value, 2.0),
         infAr: safeNumber(document.getElementById('infArNum').value, 0.5),
