@@ -228,17 +228,22 @@ function runSimulation(params, userPercentiles) {
         const { initialRiskAsset, initialCashBuffer, monthlyExpense,
             expectedReturn, volatility, inflationRate,
             simYears, simPaths, drawdownTrigger, drawdownReplenish, replenishPace,
+            cashBufferToggle, guardrailToggle, guardrailTrigger, guardrailReduction,
             useArInflation, infVol, infAr } = params;
 
         const totalMonths = simYears * 12;
         const dataLen = totalMonths + 1;
 
-        const annualDrift = Math.log(1 + (expectedReturn / 100));
+        const arithmeticReturn = expectedReturn / 100;
         const annualVol = volatility / 100;
-        const monthlyDrift = (annualDrift - (annualVol * annualVol) / 2) / 12;
+        const adjustedAnnualDrift = Math.log(1 + arithmeticReturn) - (annualVol * annualVol) / 2;
+        const monthlyDrift = adjustedAnnualDrift / 12;
         const monthlyVol = annualVol / Math.sqrt(12);
+
+        const activeInitialCashBuffer = cashBufferToggle ? initialCashBuffer : 0;
         const ddThreshold = -Math.abs(drawdownTrigger / 100);
         const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
+        const triggerGR = guardrailTrigger / 100;
 
         const riskPaths = [];
         const cashPaths = [];
@@ -262,10 +267,11 @@ function runSimulation(params, userPercentiles) {
             for (let p = pathIndex; p < end; p++) {
                 let rng = mulberry32(globalSeed + p);
                 let currentRiskAsset = initialRiskAsset;
-                let currentCash = initialCashBuffer;
-                let highWaterMark = initialRiskAsset + initialCashBuffer;
+                let currentCash = activeInitialCashBuffer;
+                let highWaterMark = initialRiskAsset + currentCash;
                 let bankrupt = false;
                 let isReplenishMode = false;
+                let isGuardrailActive = false;
 
                 let currentUwMonths = 0;
                 let maxUwMonths = 0;
@@ -299,25 +305,37 @@ function runSimulation(params, userPercentiles) {
                         infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
                     }
 
-                    const currentExpense = monthlyExpense * infMultiplier;
-                    const currentBufferLimit = initialCashBuffer * infMultiplier;
+                    let currentExpense = monthlyExpense * infMultiplier;
+                    const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
                     const Z = randomNormal(rng);
                     currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
                     const currentTotalAsset = currentRiskAsset + currentCash;
                     const safeHWM = Math.max(highWaterMark, 0.0001);
                     const currentDD = (currentTotalAsset - safeHWM) / safeHWM;
 
+                    // ガードレール判定
+                    if (guardrailToggle) {
+                        if (currentDD <= triggerGR) {
+                            isGuardrailActive = true;
+                        } else if (currentDD > triggerGR) {
+                            isGuardrailActive = false;
+                        }
+
+                        if (isGuardrailActive) {
+                            // guardrailReductionはマイナス（例：-20.0 => 1 - 0.20 = 0.8倍）
+                            currentExpense *= (1 + guardrailReduction / 100);
+                        }
+                    }
+
                     if (currentTotalAsset >= highWaterMark) {
                         isReplenishMode = true;
                     } else if (currentDD <= ddReplenishThreshold) {
-                        // ddReplenishThreshold is a negative value (e.g. -0.05)
-                        // If drawdown is worse than this, turn off replenish mode
                         isReplenishMode = false;
                     }
 
-                    if (currentDD <= ddThreshold) {
+                    if (cashBufferToggle && currentDD <= ddThreshold) {
                         currentCash -= currentExpense;
-                    } else if (isReplenishMode && currentCash < currentBufferLimit) {
+                    } else if (cashBufferToggle && isReplenishMode && currentCash < currentBufferLimit) {
                         const shortage = currentBufferLimit - currentCash;
                         const replenishAmount = Math.min(shortage, currentExpense * replenishPace);
                         const actualReplenish = Math.min(replenishAmount, currentRiskAsset);
