@@ -35,7 +35,7 @@ const DEFAULTS = {
     initialRiskAsset: 10000, initialCashBuffer: 1000, monthlyExpense: 30,
     expectedReturn: 10.0, volatility: 18.0, inflationRate: 2.0,
     simYears: 30, simPaths: 10000, drawdownTrigger: -20.0, drawdownReplenish: -5.0, replenishPace: 5.0,
-    guardrailTrigger: -20.0, guardrailReduction: -20.0
+    guardrailTrigger: -20.0, guardrailReduction: -20.0, guardrailRelease: -15.0
 };
 
 function safeNumber(val, fallback) {
@@ -61,6 +61,7 @@ function getParams() {
         guardrailToggle: document.getElementById('guardrailToggle').checked,
         guardrailTrigger: Math.min(0, safeNumber(document.getElementById('guardrailTriggerNum').value, DEFAULTS.guardrailTrigger)),
         guardrailReduction: Math.min(0, safeNumber(document.getElementById('guardrailReductionNum').value, DEFAULTS.guardrailReduction)),
+        guardrailRelease: Math.min(0, safeNumber(document.getElementById('guardrailReleaseNum').value, DEFAULTS.guardrailRelease)),
         useArInflation: document.getElementById('inflationModelToggle').checked,
         infVol: safeNumber(document.getElementById('infVolNum').value, 2.0),
         infAr: safeNumber(document.getElementById('infArNum').value, 0.5),
@@ -228,7 +229,7 @@ function runSimulation(params, userPercentiles) {
         const { initialRiskAsset, initialCashBuffer, monthlyExpense,
             expectedReturn, volatility, inflationRate,
             simYears, simPaths, drawdownTrigger, drawdownReplenish, replenishPace,
-            cashBufferToggle, guardrailToggle, guardrailTrigger, guardrailReduction,
+            cashBufferToggle, guardrailToggle, guardrailTrigger, guardrailReduction, guardrailRelease,
             useArInflation, infVol, infAr } = params;
 
         const totalMonths = simYears * 12;
@@ -244,6 +245,7 @@ function runSimulation(params, userPercentiles) {
         const ddThreshold = -Math.abs(drawdownTrigger / 100);
         const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
         const triggerGR = guardrailTrigger / 100;
+        const releaseGR = guardrailRelease / 100; // ガードレール解除閾値（発動閾値より緩い負値）
 
         const riskPaths = [];
         const cashPaths = [];
@@ -298,8 +300,8 @@ function runSimulation(params, userPercentiles) {
 
                         // AR-1プロセス: 次月のインフレ率 = C + phi * 前月 + shock
                         currentInfRate = C + (infAr * currentInfRate) + (monthlyInfVol * InfZ);
-                        // 今月のインフレ影響を乗算 (月次補正)
-                        infMultiplier *= (1 + currentInfRate / 12);
+                        // 今月のインフレ影響を乗算（対数空間で積算し固定モデルと対称性を持たせる）
+                        infMultiplier *= Math.exp(currentInfRate / 12);
                     } else {
                         // 従来の固定インフレ複利計算
                         infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
@@ -313,11 +315,12 @@ function runSimulation(params, userPercentiles) {
                     const safeHWM = Math.max(highWaterMark, 0.0001);
                     const currentDD = (currentTotalAsset - safeHWM) / safeHWM;
 
-                    // ガードレール判定
+                    // ガードレール判定（発動閾値以下に悪化したら発動、終了閾値以上まで回復したら解除）
                     if (guardrailToggle) {
                         if (currentDD <= triggerGR) {
                             isGuardrailActive = true;
-                        } else if (currentDD > triggerGR) {
+                        } else if (isGuardrailActive && currentDD >= releaseGR) {
+                            // ガードレール終了閾値（releaseGR）を上回った場合に解除
                             isGuardrailActive = false;
                         }
 
@@ -327,11 +330,7 @@ function runSimulation(params, userPercentiles) {
                         }
                     }
 
-                    if (currentTotalAsset >= highWaterMark) {
-                        isReplenishMode = true;
-                    } else if (currentDD <= ddReplenishThreshold) {
-                        isReplenishMode = false;
-                    }
+                    // isReplenishMode の更新は取崩し後の eomAsset ベースで後述
 
                     if (cashBufferToggle && currentDD <= ddThreshold) {
                         currentCash -= currentExpense;
@@ -367,9 +366,16 @@ function runSimulation(params, userPercentiles) {
                     if (eomAsset >= highWaterMark) {
                         currentUwMonths = 0;
                         highWaterMark = eomAsset;
+                        // 取崩し後に高値更新 → バッファ補充モードを開始（ドローダウン辺暌で補充終了邖値を下回ると終了）
+                        isReplenishMode = true;
                     } else {
                         currentUwMonths++;
                         if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
+                        // ドローダウンが補充終了閾値を下回ったら補充モードを終了
+                        const replenishCheckDD = (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001);
+                        if (replenishCheckDD <= ddReplenishThreshold) {
+                            isReplenishMode = false;
+                        }
                     }
 
                     let eomDD = Math.min(0, (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001));
@@ -786,11 +792,11 @@ function renderDdCdfChart(result) {
     // 最大ドローダウン（マイナス値）の配列を昇順ソート
     const sortedDd = Float32Array.from(maxDdPerPath).sort();
     const simPaths = params.simPaths;
-    
+
     // 同一X座標(-100%での破綻など)に対する「垂直な壁」の発生を防ぐため、Mapで一意化して最大の発生確率を残す
     const pointsMap = new Map();
     const step = Math.max(1, Math.floor(simPaths / 1000));
-    
+
     for (let i = 0; i < simPaths; i += step) {
         let pct = sortedDd[i] * 100;
         if (pct < -100) pct = -100;
@@ -800,7 +806,7 @@ function renderDdCdfChart(result) {
         // 昇順イテレーションのため同XならY（累積確率）が上書きされて最大のものが残る
         pointsMap.set(pct, (i + 1) / simPaths * 100);
     }
-    
+
     // 横軸0% (縦軸100%) の点を強制的に追加してグラフが0%まで伸びるようにする
     if (!pointsMap.has(0)) {
         pointsMap.set(0, 100);
@@ -808,8 +814,8 @@ function renderDdCdfChart(result) {
 
     // Mapから配列に戻してXの昇順でソート（Mapは挿入順なので念のため再ソート）
     const points = Array.from(pointsMap.entries())
-                        .map(([x, y]) => ({ x, y }))
-                        .sort((a, b) => a.x - b.x);
+        .map(([x, y]) => ({ x, y }))
+        .sort((a, b) => a.x - b.x);
 
     const ctx = document.getElementById('ddHistCanvas').getContext('2d');
     if (ddHistChart) { ddHistChart.destroy(); }
@@ -886,14 +892,14 @@ function renderUwCdfChart(result) {
     // 最長停滞期間（プラス値）の配列を昇順ソート
     const sortedUw = Float32Array.from(maxUwPerPath).sort();
     const simPaths = params.simPaths;
-    
+
     const points = [];
     // 横軸0年 (縦軸100%) の点を強制的に先頭に追加
     points.push({ x: 0, y: 100 });
 
     // UIの負荷軽減のための間引き幅（約1000点）
     const step = Math.max(1, Math.floor(simPaths / 1000));
-    
+
     for (let i = 0; i < simPaths; i += step) {
         let mo = sortedUw[i];
         if (points.length > 0 && points[points.length - 1].x === mo) {
@@ -947,7 +953,7 @@ function renderUwCdfChart(result) {
                             if (y > 0) str += y + "年";
                             if (m > 0) str += m + "ヶ月";
                             if (y === 0 && m === 0) str = "0年";
-                            
+
                             return '最長停滞期間が ' + str + ' 以上続く確率: ' + context.parsed.y.toFixed(1) + '%';
                         }
                     }
@@ -1053,7 +1059,7 @@ function updateSummaryCard(result, params) {
                         </div>
                         <div class="space-y-1">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">初期現金バッファ</p>
-                            <p class="font-bold text-white text-base">${params.initialCashBuffer.toLocaleString('ja-JP')} 万円</p>
+                            <p class="font-bold text-white text-base">${params.cashBufferToggle ? params.initialCashBuffer.toLocaleString('ja-JP') + ' 万円' : '<span class="text-slate-500">0 万円</span>'}</p>
                         </div>
                         <div class="space-y-1">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">初期月間取崩し額</p>
@@ -1076,9 +1082,23 @@ function updateSummaryCard(result, params) {
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
                             <div class="font-bold text-slate-100 text-xs sm:text-sm space-y-0.5">
-                                <p>ドローダウン${params.drawdownTrigger}%以上にて取崩し</p>
-                                <p>最高値更新後に補充開始、ドローダウン${params.drawdownReplenish}%以上で補充終了</p>
-                                <p>補充ペース 月間取崩し額の${params.replenishPace}倍</p>
+                                ${params.cashBufferToggle ? `
+                                 <p><span class="text-slate-400">取崩し判定：</span>ドローダウン ${params.drawdownTrigger}%</p>
+                                 <p><span class="text-slate-400">補充開始：</span>総資産最高値更新</p>
+                                 <p><span class="text-slate-400">補充終了：</span>ドローダウン ${params.drawdownReplenish}%以下に悪化</p>
+                                 <p><span class="text-slate-400">補充ペース：</span>月間取崩し額の${params.replenishPace}倍</p>
+                                 ` : `<p class="text-slate-500">OFF</p>`}
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">支出ガードレール設定</p>
+                            <div class="font-bold text-slate-100 text-xs sm:text-sm">
+                                ${params.guardrailToggle
+            ? `<p><span class="text-slate-400">ガードレール発動：</span>ドローダウン ${params.guardrailTrigger}%以下に悪化</p>
+                                       <p><span class="text-slate-400">ガードレール終了：</span>ドローダウン ${params.guardrailRelease}%以上まで回復</p>
+                                       <p><span class="text-slate-400">発動時の支出調整率：</span>${params.guardrailReduction}%（月間取崩し額に適用）</p>`
+            : `<p class="text-slate-500">OFF</p>`}
                             </div>
                         </div>
         </div>
@@ -1094,7 +1114,7 @@ function updateSummaryCard(result, params) {
 // ====================================================================
 // 未実行状態のサマリカード描画
 // ====================================================================
-function renderEmptySummaryCard() {
+function renderEmptySummaryCard(cbChecked = false) {
     const container = document.getElementById('summaryCardContainer');
     if (!container) return;
 
@@ -1159,11 +1179,23 @@ function renderEmptySummaryCard() {
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         
+                        ${cbChecked ? `
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
-                            <div class="font-bold text-slate-500 text-xs sm:text-sm space-y-0.5">
+                            <div class="font-bold text-slate-500 text-xs sm:text-sm">
                                 <p>-</p>
+                            </div>
+                        </div>` : `
+                        <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
+                            <div class="font-bold text-slate-500 text-xs sm:text-sm">
                                 <p>-</p>
+                            </div>
+                        </div>`}
+                        
+                        <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">支出ガードレール設定</p>
+                            <div class="font-bold text-slate-500 text-xs sm:text-sm">
                                 <p>-</p>
                             </div>
                         </div>
@@ -1193,6 +1225,13 @@ async function runMain() {
 
     try {
         const params = getParams();
+
+        // バリデーション：ガードレール終了閾値が発動閾値より小さい場合は発動閾値と同値に補正
+        if (params.guardrailToggle && params.guardrailRelease < params.guardrailTrigger) {
+            params.guardrailRelease = params.guardrailTrigger;
+            const releaseInput = document.getElementById('guardrailReleaseNum');
+            if (releaseInput) releaseInput.value = params.guardrailTrigger.toFixed(1);
+        }
         const percentiles = parsePercentiles();
         const result = await runSimulation(params, percentiles);
         lastSimResult = result;
@@ -1263,6 +1302,9 @@ async function saveImage() {
         document.getElementById('capReturnVol').textContent = params.expectedReturn.toFixed(1) + '% / ' + params.volatility.toFixed(1) + '%';
         document.getElementById('capInf').textContent = params.inflationRate.toFixed(1) + '%';
         document.getElementById('capYears').textContent = params.simYears + '年';
+
+        // ガードレール状態を反映（ON/OFFのみ表示）
+        document.getElementById('capGuardrail').textContent = params.guardrailToggle ? 'ON' : 'OFF';
 
         // キャプチャ用DOM（シミュレーション結果）にデータを反映
         document.getElementById('capSuccess').textContent = lastSimResult.successRate.toFixed(1) + '%';
@@ -1400,10 +1442,12 @@ document.addEventListener('DOMContentLoaded', () => {
     infToggle.addEventListener('change', updateArPanel);
     updateArPanel(); // 初期ロード時の状態反映
 
-    // 現金バッファ トグル連動
+    // 現金バッファ トグル連動（双方向）
     const cbToggle = document.getElementById('cashBufferToggle');
     const cbParamsPanel = document.getElementById('cashBufferParams');
+    const cbInput = document.getElementById('initialCashBufferNum');
 
+    // パネルのグレーアウト状態を更新する関数
     const updateCbPanel = () => {
         if (cbToggle.checked) {
             cbParamsPanel.classList.remove('opacity-50', 'pointer-events-none');
@@ -1414,8 +1458,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    cbToggle.addEventListener('change', updateCbPanel);
-    updateCbPanel();
+    // トグルが変更されたとき → inputの値を更新する
+    cbToggle.addEventListener('change', () => {
+        if (cbToggle.checked) {
+            // ONにした場合：デフォルト値に戻す（現在値が0の場合のみ）
+            if (parseFloat(cbInput.value.replace(/,/g, '')) === 0) {
+                cbInput.value = DEFAULTS.initialCashBuffer.toLocaleString('en-US');
+                cbInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        } else {
+            // OFFにした場合：0に設定
+            cbInput.value = '0';
+            cbInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        updateCbPanel();
+        // 未実行状態ならサマリカードを更新
+        if (!lastSimResult) renderEmptySummaryCard(cbToggle.checked);
+    });
+
+    // inputの値が変更されたとき → トグル状態を更新する
+    cbInput.addEventListener('input', () => {
+        const val = parseFloat(cbInput.value.replace(/,/g, ''));
+        if (val === 0) {
+            if (cbToggle.checked) {
+                cbToggle.checked = false;
+                updateCbPanel();
+            }
+        } else {
+            if (!cbToggle.checked) {
+                cbToggle.checked = true;
+                updateCbPanel();
+            }
+        }
+        if (!lastSimResult) renderEmptySummaryCard(cbToggle.checked);
+    });
+
+    updateCbPanel(); // 初期ロード時の状態反映
 
     // 支出ガードレール トグル連動
     const grToggle = document.getElementById('guardrailToggle');
@@ -1435,14 +1513,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateGrPanel();
 
     // 初期状態の（未実行）サマリカードを描画
-    renderEmptySummaryCard();
+    renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
 
     // パラメータが変更されたら未実行サマリを更新するリスナーを各inputに追加
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
         input.addEventListener('change', () => {
             if (!lastSimResult) {
-                renderEmptySummaryCard();
+                renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
             }
         });
     });

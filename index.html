@@ -65,7 +65,7 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値未満ならば、月間取崩し額をリスク資産から取崩します。
+                                        シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値（取崩し判定）未満ならば、月間取崩し額をリスク資産から取崩します。
                                     </div>
                                 </div>
                             </div>
@@ -137,7 +137,7 @@
                                         class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">リスク資産の年平均成長率（算術平均）です。<br>過去の市場平均などを参考に設定します。<br>※内部計算では伊藤の補題（ドリフト調整）により幾何平均へ自動変換されます。</div>
+                                    <div class="tooltip-text">リスク資産の年平均成長率（算術平均）です。<br>過去の市場平均などを参考に設定します。</div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -336,7 +336,7 @@
                     <div id="cashBufferParams" class="space-y-5 transition-opacity duration-300">
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（取崩し開始）<span
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（取崩し判定）<span
                                         class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
@@ -362,7 +362,7 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ドローダウンが改善しこの割合を上回ると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。
+                                        ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。
                                     </div>
                                 </div>
                             </div>
@@ -417,13 +417,14 @@
                         </div>
                     </div>
                     <div id="guardrailParams" class="space-y-5 opacity-50 pointer-events-none transition-opacity duration-300">
+                        <!-- 1: ドローダウン閾値（ガードレール発動） -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">ガードレール発動閾値<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール発動）<span class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ドローダウン（総資産の過去最高値からの下落率）がこの割合を下回って悪化した場合、一時的な防衛策としてガードレールが発動します。<br>※資産枯渇リスクを軽減するための機能です。
+                                        総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% = 資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。
                                     </div>
                                 </div>
                             </div>
@@ -435,13 +436,33 @@
                                 <button type="button" class="stepper-btn increment" data-target="guardrailTriggerNum">＋</button>
                             </div>
                         </div>
+                        <!-- 2: ドローダウン閾値（ガードレール終了） -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">発動時の支出変動率<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール終了）<span class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ガードレール発動中、本来の月間取崩し額にこの割合（マイナス値）を適用し、実質的な支出を減額します。<br>※相場が回復しドローダウンが「ガードレール発動閾値」より改善されると、ガードレールは自動解除され元の取崩し額に戻ります。
+                                        ガードレール発動中、ドローダウンが改善しこの割合を上回るとガードレールが自動解除され、元の取崩し額に戻ります。<br>例：-15% = ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <button type="button" class="stepper-btn decrement" data-target="guardrailReleaseNum">−</button>
+                                <div class="stepper-value-container">
+                                    <input type="number" id="guardrailReleaseNum" min="-100" max="0" step="5.0" value="-15.0" class="stepper-input">
+                                </div>
+                                <button type="button" class="stepper-btn increment" data-target="guardrailReleaseNum">＋</button>
+                            </div>
+                        </div>
+                        <!-- 3: 発動時の支出調整率 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs text-slate-300 font-medium">発動時の支出調整率<span class="text-indigo-300 ml-1">%</span></label>
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        ガードレール発動中、月間取崩し額にこの割合を掛けて支出を自動調整します。<br>例：-20% = 取崩し額を20%削減して支出を抑制。<br>「ドローダウン閾値（ガードレール終了）」を上回るまで回復すると自動解除され、元の取崩し額に戻ります。
                                     </div>
                                 </div>
                             </div>
@@ -461,7 +482,7 @@
                                hover:bg-right transition-all duration-500
                                shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40
                                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
-                    シミュレーション開始
+                    シミュレーション実行
                 </button>
 
                 <!-- 共有ボタンエリア -->
@@ -588,8 +609,8 @@
             const p = getParams();
             const s = lastSimResult.successRate.toFixed(1);
             const text = '【FIREシミュレーション結果】\n' +
-                '💼 リスク資産: ' + (p.initialRiskAsset / 10000).toLocaleString() + '億円\n' +
-                '💰 現金バッファ: ' + p.initialCashBuffer.toLocaleString() + '万円\n' +
+                '💰 リスク資産: ' + (p.initialRiskAsset / 10000).toLocaleString() + '億円\n' +
+                '💴 現金バッファ: ' + p.initialCashBuffer.toLocaleString() + '万円\n' +
                 '💸 月間取崩し額: ' + p.monthlyExpense.toLocaleString() + '万円\n' +
                 '📈 リターン/ボラ: ' + p.expectedReturn + '% / ' + p.volatility + '%\n' +
                 '📉 インフレ率: ' + p.inflationRate + '%\n' +
@@ -642,13 +663,13 @@
 
         <!-- コンテンツエリア（固定高を積み上げ、余白を厳密に管理） -->
         <div style="flex: 1; padding: 0 32px; display: flex; flex-direction: column; gap: 10px;">
-            <!-- シミュレーション条件 (高さ 300px) -->
-            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 p-6 shadow-2xl relative"
-                style="height: 300px;">
+            <!-- シミュレーション条件 (高さ 320px) -->
+            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 p-5 shadow-2xl relative"
+                style="height: 320px;">
                 <div
                     class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-3xl pointer-events-none">
                 </div>
-                <h2 class="font-bold text-indigo-300 mb-6 flex items-center gap-4" style="font-size: 30px;">
+                <h2 class="font-bold text-indigo-300 mb-5 flex items-center gap-4" style="font-size: 30px;">
                     <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
@@ -656,25 +677,36 @@
                     </svg>
                     シミュレーション条件
                 </h2>
-                <div class="grid grid-cols-2 gap-y-7 gap-x-8 text-2xl text-slate-300 px-4">
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💼</span>
+                <div class="grid grid-cols-2 gap-y-5 gap-x-6 text-2xl text-slate-300 px-4">
+                    <!-- 1行目 -->
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">💰</span>
                         <span>リスク資産: <strong id="capRiskAsset" class="text-white font-bold"
-                                style="font-size: 32px; white-space: nowrap;">-億円</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💰</span>
+                                style="font-size: 30px; white-space: nowrap;">-億円</strong></span></div>
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">💴</span>
                         <span>現金バッファ: <strong id="capCash" class="text-white font-bold"
-                                style="font-size: 32px; white-space: nowrap;">-万円</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">💸</span>
-                        <span>月間取崩し額: <strong id="capExpense" class="text-white font-bold"
-                                style="font-size: 32px; white-space: nowrap;">-万円</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">📈</span>
-                        <span>リターン/ボラ: <strong id="capReturnVol" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-% / -%</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">📉</span>
+                                style="font-size: 30px; white-space: nowrap;">-万円</strong></span></div>
+                    
+                    <!-- 2行目：月間取崩し + 空欄 -->
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">💸</span>
+                        <span>月間取崩し: <strong id="capExpense" class="text-white font-bold"
+                                style="font-size: 30px; white-space: nowrap;">-万円</strong></span></div>
+                    <div></div><!-- 意図的な空欄 -->
+                    
+                    <!-- 3行目：リターン/ボラ + インフレ率 -->
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">📈</span>
+                        <span>ﾘﾀｰﾝ / ﾎﾞﾗ: <strong id="capReturnVol" class="text-white font-bold"
+                                style="font-size: 30px; white-space: nowrap;">-%/-%</strong></span></div>
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">📉</span>
                         <span>インフレ率: <strong id="capInf" class="text-white font-bold"
-                                style="font-size: 32px; white-space: nowrap;">-%</strong></span></div>
-                    <div class="flex items-center gap-4"><span style="font-size: 30px; line-height: 1;">⏳</span>
+                                style="font-size: 30px; white-space: nowrap;">-%</strong></span></div>
+                    
+                    <!-- 4行目：期間 + 支出ガードレール -->
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">⏳</span>
                         <span>期間: <strong id="capYears" class="text-white font-bold"
-                                style="font-size: 32px; white-space: nowrap;">-年</strong></span></div>
+                                style="font-size: 30px; white-space: nowrap;">-年</strong></span></div>
+                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">🛡️</span>
+                        <span>支出ガードレール: <strong id="capGuardrail" class="text-white font-bold"
+                                style="font-size: 30px; white-space: nowrap;">OFF</strong></span></div>
                 </div>
             </div>
 
