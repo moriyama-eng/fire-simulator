@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.4.0</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.5.0</title>
     <meta name="description" content="リスク資産と現金バッファを用いた幾何ブラウン運動モンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -39,12 +39,7 @@
             <div class="flex items-center gap-2 mt-1">
                 <p class="text-sm text-slate-300 font-medium tracking-wide">
                     モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
-                <div class="tooltip-container tooltip-right-align" tabindex="0">
-                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                    <div class="tooltip-text">
-                        将来の価格変動予測には、金融実務で広く使われる「幾何ブラウン運動（対数正規モデル）」を採用しています。
-                    </div>
-                </div>
+
             </div>
         </div>
     </header>
@@ -192,6 +187,72 @@
                                     data-target="inflationRateNum">＋</button>
                             </div>
                         </div>
+
+                        <div class="pt-2 border-t border-slate-700/50">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-xs font-medium text-slate-300">リスク資産変動モデル</label>
+                                <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        リスク資産の価格変動パターンを選択します。<br>対数正規分布は伝統的な金融理論に基づくモデルです。<br>対数t分布はファットテール（極端な暴落）を考慮した現実的なリスク管理モデルです。
+                                    </div>
+                                </div>
+                            </div>
+                            <select id="returnModelSelect"
+                                class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-3 cursor-pointer appearance-none"
+                                style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%239ca3af%22 d=%22M3 5l3 3 3-3%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.75rem center;">
+                                <option value="log-normal">対数正規分布（伝統的な金融理論）</option>
+                                <option value="log-t">対数t分布（現実的なリスク管理）</option>
+                            </select>
+                            <!-- t分布パラメータ -->
+                            <div id="tDistParams" class="space-y-4 transition-opacity duration-300 hidden">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-xs text-slate-300 font-medium">t分布 自由度</label>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-[10px] text-slate-300 font-medium">固定</span>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="simDfToggle" class="sr-only peer" checked>
+                                                <div
+                                                    class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-indigo-600">
+                                                </div>
+                                                <div
+                                                    class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5">
+                                                </div>
+                                            </label>
+                                            <span class="text-[10px] text-slate-300 font-medium">自動</span>
+                                            <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
+                                                <span
+                                                    class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                                <div class="tooltip-text">
+                                                    t分布の裾の重さを制御するパラメータです。<br>値が小さいほど極端な暴落が頻発します。<br>自動モードではボラティリティから自動計算します。
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 自動表示 -->
+                                    <div id="dfAutoDisplayWrapper" class="text-xs text-slate-400 mb-2">
+                                        ボラティリティから自動計算: <span id="autoDfDisplay"
+                                            class="font-bold text-indigo-300">5.0</span>
+                                    </div>
+
+                                    <!-- 手動入力 -->
+                                    <div id="dfManualWrapper"
+                                        class="flex items-center justify-between opacity-50 pointer-events-none h-0 overflow-hidden transition-all duration-300">
+                                        <button type="button" class="stepper-btn decrement"
+                                            data-target="simDfNum">−</button>
+                                        <div class="stepper-value-container">
+                                            <input type="number" id="simDfNum" min="2.5" max="30" step="0.1" value="4.0"
+                                                class="stepper-input">
+                                        </div>
+                                        <button type="button" class="stepper-btn increment"
+                                            data-target="simDfNum">＋</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="pt-2 border-t border-slate-700/50">
                             <div class="flex justify-between items-center mb-3">
                                 <label class="text-xs font-medium text-slate-300">インフレ変動モデル (AR-1)</label>
@@ -327,8 +388,12 @@
                             <span class="text-xs text-slate-300 font-medium">OFF</span>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="cashBufferToggle" class="sr-only peer" checked>
-                                <div class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600"></div>
-                                <div class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5"></div>
+                                <div
+                                    class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600">
+                                </div>
+                                <div
+                                    class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
+                                </div>
                             </label>
                             <span class="text-xs text-slate-300 font-medium">ON</span>
                         </div>
@@ -410,70 +475,121 @@
                             <span class="text-xs text-slate-300 font-medium">OFF</span>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="guardrailToggle" class="sr-only peer">
-                                <div class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600"></div>
-                                <div class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5"></div>
+                                <div
+                                    class="toggle-bg w-10 h-5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600">
+                                </div>
+                                <div
+                                    class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
+                                </div>
                             </label>
                             <span class="text-xs text-slate-300 font-medium">ON</span>
                         </div>
                     </div>
-                    <div id="guardrailParams" class="space-y-5 opacity-50 pointer-events-none transition-opacity duration-300">
+                    <div id="guardrailParams"
+                        class="space-y-5 opacity-50 pointer-events-none transition-opacity duration-300">
                         <!-- 1: ドローダウン閾値（ガードレール発動） -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール発動）<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール発動）<span
+                                        class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% = 資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。
+                                        総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% =
+                                        資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。
                                     </div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
-                                <button type="button" class="stepper-btn decrement" data-target="guardrailTriggerNum">−</button>
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="guardrailTriggerNum">−</button>
                                 <div class="stepper-value-container">
-                                    <input type="number" id="guardrailTriggerNum" min="-100" max="0" step="5.0" value="-20.0" class="stepper-input">
+                                    <input type="number" id="guardrailTriggerNum" min="-100" max="0" step="5.0"
+                                        value="-20.0" class="stepper-input">
                                 </div>
-                                <button type="button" class="stepper-btn increment" data-target="guardrailTriggerNum">＋</button>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="guardrailTriggerNum">＋</button>
                             </div>
                         </div>
                         <!-- 2: ドローダウン閾値（ガードレール終了） -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール終了）<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール終了）<span
+                                        class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ガードレール発動中、ドローダウンが改善しこの割合を上回るとガードレールが自動解除され、元の取崩し額に戻ります。<br>例：-15% = ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。
+                                        ガードレール発動中、ドローダウンが改善しこの割合を上回るとガードレールが自動解除され、元の取崩し額に戻ります。<br>例：-15% =
+                                        ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。
                                     </div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
-                                <button type="button" class="stepper-btn decrement" data-target="guardrailReleaseNum">−</button>
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="guardrailReleaseNum">−</button>
                                 <div class="stepper-value-container">
-                                    <input type="number" id="guardrailReleaseNum" min="-100" max="0" step="5.0" value="-15.0" class="stepper-input">
+                                    <input type="number" id="guardrailReleaseNum" min="-100" max="0" step="5.0"
+                                        value="-15.0" class="stepper-input">
                                 </div>
-                                <button type="button" class="stepper-btn increment" data-target="guardrailReleaseNum">＋</button>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="guardrailReleaseNum">＋</button>
                             </div>
                         </div>
                         <!-- 3: 発動時の支出調整率 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs text-slate-300 font-medium">発動時の支出調整率<span class="text-indigo-300 ml-1">%</span></label>
+                                <label class="text-xs text-slate-300 font-medium">発動時の支出調整率<span
+                                        class="text-indigo-300 ml-1">%</span></label>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ガードレール発動中、月間取崩し額にこの割合を掛けて支出を自動調整します。<br>例：-20% = 取崩し額を20%削減して支出を抑制。<br>「ドローダウン閾値（ガードレール終了）」を上回るまで回復すると自動解除され、元の取崩し額に戻ります。
+                                        ガードレール発動中、月間取崩し額にこの割合を掛けて支出を自動調整します。<br>例：-20% =
+                                        取崩し額を20%削減して支出を抑制。<br>「ドローダウン閾値（ガードレール終了）」を上回るまで回復すると自動解除され、元の取崩し額に戻ります。
                                     </div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
-                                <button type="button" class="stepper-btn decrement" data-target="guardrailReductionNum">−</button>
+                                <button type="button" class="stepper-btn decrement"
+                                    data-target="guardrailReductionNum">−</button>
                                 <div class="stepper-value-container">
-                                    <input type="number" id="guardrailReductionNum" min="-100" max="0" step="5.0" value="-20.0" class="stepper-input">
+                                    <input type="number" id="guardrailReductionNum" min="-100" max="0" step="5.0"
+                                        value="-20.0" class="stepper-input">
                                 </div>
-                                <button type="button" class="stepper-btn increment" data-target="guardrailReductionNum">＋</button>
+                                <button type="button" class="stepper-btn increment"
+                                    data-target="guardrailReductionNum">＋</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- シミュレーションシード設定 -->
+                <div class="glass-card glow-border rounded-xl p-4 mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-xs font-semibold text-slate-300">乱数シード値</label>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-300 font-medium">固定</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="seedToggle" class="sr-only peer" checked>
+                                <div
+                                    class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600">
+                                </div>
+                                <div
+                                    class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5">
+                                </div>
+                            </label>
+                            <span class="text-[10px] text-slate-300 font-medium">ランダム</span>
+                            <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
+                                <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                <div class="tooltip-text">
+                                    乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現可能なシミュレーション結果が得られます。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="seedInputWrapper"
+                        class="opacity-50 pointer-events-none transition-opacity duration-300">
+                        <input type="number" id="seedNum" value="123456" min="1" max="99999999"
+                            class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 text-center font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
                     </div>
                 </div>
 
@@ -625,7 +741,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v1.4.0</span>
+                <span>v1.5.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -651,25 +767,23 @@
 
     <!-- 画像保存用オフスクリーン・コンテナ (1080x1350, 4:5比率仕様) -->
     <!-- position: fixedにしてビューポートやスクロールの影響を完全に遮断する -->
-    <div id="captureContainer"
-        style="position: fixed; left: -2000px; top: 0; width: 1080px; height: 1350px; background: #0f172a; font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; z-index: -9999;">
+
+    <div id="captureContainer">
         <!-- ヘッダー（固定高にしてタイトルを垂直中央配置、上部余白を極小化） -->
-        <div style="height: 140px; display: flex; align-items: center; justify-content: center; padding: 0 48px;">
-            <h1 class="font-extrabold tracking-tight"
-                style="font-size: 52px; color: #e2e8f0; line-height: 1.2; margin: 0; text-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); text-align: center;">
+        <div class="h-[140px] flex items-center justify-center px-12">
+            <h1 class="font-extrabold tracking-tight text-[52px] text-slate-200 leading-[1.2] m-0 text-center drop-shadow-[0_4px_20px_#6366f166]">
                 FIRE モンテカルロ・シミュレータ
             </h1>
         </div>
 
         <!-- コンテンツエリア（固定高を積み上げ、余白を厳密に管理） -->
-        <div style="flex: 1; padding: 0 32px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="flex-1 px-8 flex flex-col gap-[10px]">
             <!-- シミュレーション条件 (高さ 320px) -->
-            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 p-5 shadow-2xl relative"
-                style="height: 320px;">
+            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 p-5 shadow-2xl relative h-[320px]">
                 <div
                     class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-3xl pointer-events-none">
                 </div>
-                <h2 class="font-bold text-indigo-300 mb-5 flex items-center gap-4" style="font-size: 30px;">
+                <h2 class="font-bold text-indigo-300 mb-5 flex items-center gap-4 text-[30px]">
                     <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
@@ -679,41 +793,42 @@
                 </h2>
                 <div class="grid grid-cols-2 gap-y-5 gap-x-6 text-2xl text-slate-300 px-4">
                     <!-- 1行目 -->
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">💰</span>
-                        <span>リスク資産: <strong id="capRiskAsset" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-億円</strong></span></div>
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">💴</span>
-                        <span>現金バッファ: <strong id="capCash" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-万円</strong></span></div>
-                    
-                    <!-- 2行目：月間取崩し + 空欄 -->
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">💸</span>
-                        <span>月間取崩し: <strong id="capExpense" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-万円</strong></span></div>
-                    <div></div><!-- 意図的な空欄 -->
-                    
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">💰</span>
+                        <span>リスク資産: <strong id="capRiskAsset" class="text-white font-bold text-[30px] whitespace-nowrap">-億円</strong></span>
+                    </div>
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">💴</span>
+                        <span>現金バッファ: <strong id="capCash" class="text-white font-bold text-[30px] whitespace-nowrap">-万円</strong></span>
+                    </div>
+
+                    <!-- 2行目：月間取崩し + 変動モデル -->
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">💸</span>
+                        <span>月間取崩し: <strong id="capExpense" class="text-white font-bold text-[30px] whitespace-nowrap">-万円</strong></span>
+                    </div>
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">🌊</span>
+                        <span>変動モデル: <strong id="capModel" class="text-white font-bold text-[30px] whitespace-nowrap">対数正規分布</strong></span>
+                    </div>
+
                     <!-- 3行目：リターン/ボラ + インフレ率 -->
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">📈</span>
-                        <span>ﾘﾀｰﾝ / ﾎﾞﾗ: <strong id="capReturnVol" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-%/-%</strong></span></div>
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">📉</span>
-                        <span>インフレ率: <strong id="capInf" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-%</strong></span></div>
-                    
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">📈</span>
+                        <span>ﾘﾀｰﾝ / ﾎﾞﾗ: <strong id="capReturnVol" class="text-white font-bold text-[30px] whitespace-nowrap">-%/-%</strong></span>
+                    </div>
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">📉</span>
+                        <span>インフレ率: <strong id="capInf" class="text-white font-bold text-[30px] whitespace-nowrap">-%</strong></span>
+                    </div>
+
                     <!-- 4行目：期間 + 支出ガードレール -->
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">⏳</span>
-                        <span>期間: <strong id="capYears" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">-年</strong></span></div>
-                    <div class="flex items-center gap-3"><span style="font-size: 28px; line-height: 1;">🛡️</span>
-                        <span>支出ガードレール: <strong id="capGuardrail" class="text-white font-bold"
-                                style="font-size: 30px; white-space: nowrap;">OFF</strong></span></div>
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">⏳</span>
+                        <span>期間: <strong id="capYears" class="text-white font-bold text-[30px] whitespace-nowrap">-年</strong></span>
+                    </div>
+                    <div class="flex items-center gap-3"><span class="text-[28px] leading-none">🛡️</span>
+                        <span>支出ガードレール: <strong id="capGuardrail" class="text-white font-bold text-[30px] whitespace-nowrap">OFF</strong></span>
+                    </div>
                 </div>
             </div>
 
             <!-- 総資産推移 (高さ 480px) -->
-            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 pt-5 pb-5 shadow-2xl flex flex-col"
-                style="height: 480px;">
-                <h2 class="font-bold text-indigo-300 mb-4 px-10 flex items-center gap-4" style="font-size: 30px;">
+            <div class="bg-slate-900/60 rounded-3xl border border-slate-700/50 pt-5 pb-5 shadow-2xl flex flex-col h-[480px]">
+                <h2 class="font-bold text-indigo-300 mb-4 px-10 flex items-center gap-4 text-[30px]">
                     <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
@@ -723,38 +838,33 @@
                 <!-- グラフ画像の差し込み先 -->
                 <div class="flex-1 flex items-center justify-center px-4 overflow-hidden">
                     <img id="capChartImg" src=""
-                        style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain;"
+                        class="w-auto h-auto max-w-full max-h-full object-contain"
                         alt="Chart" />
                 </div>
             </div>
 
             <!-- シミュレーション結果 (高さ 315px) -->
-            <div class="bg-indigo-900/40 rounded-3xl border border-indigo-500/40 p-6 shadow-[0_0_40px_rgba(99,102,241,0.2)] relative overflow-hidden"
-                style="height: 315px;">
+            <div class="bg-indigo-900/40 rounded-3xl border border-indigo-500/40 p-6 shadow-[0_0_40px_#6366f133] relative overflow-hidden h-[315px]">
                 <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 mix-blend-overlay">
                 </div>
                 <div class="relative z-10">
                     <div class="flex items-baseline justify-between mb-4">
-                        <h2 class="font-bold text-indigo-300 flex items-center gap-4" style="font-size: 30px;">
-                            <span style="font-size: 32px; line-height: 1;">🏆</span> シミュレーション結果
+                        <h2 class="font-bold text-indigo-300 flex items-center gap-4 text-[30px]">
+                            <span class="text-[32px] leading-none">🏆</span> シミュレーション結果
                         </h2>
-                        <div id="capExecTime" style="color: #94a3b8; font-size: 24px; font-weight: 500;"></div>
+                        <div id="capExecTime" class="text-slate-400 text-[24px] font-medium"></div>
                     </div>
                     <div class="flex flex-col gap-3 text-slate-200 px-4">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4"><span
-                                    style="font-size: 32px; line-height: 1;">🔥</span> <span class="font-bold"
-                                    style="font-size: 30px;">FIRE 成功率</span></div>
-                            <strong id="capSuccess" class="font-black text-emerald-400 drop-shadow-lg"
-                                style="font-size: 64px;">-%</strong>
+                                    class="text-[32px] leading-none">🔥</span> <span class="font-bold text-[30px]">FIRE 成功率</span></div>
+                            <strong id="capSuccess" class="font-black text-emerald-400 drop-shadow-lg text-[64px]">-%</strong>
                         </div>
                         <div class="h-px bg-indigo-500/20 w-full"></div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4"><span
-                                    style="font-size: 32px; line-height: 1;">💰</span> <span class="font-bold"
-                                    style="font-size: 30px;">最終総資産(中央値)</span></div>
-                            <strong id="capMedian" class="font-black text-blue-300 drop-shadow-lg"
-                                style="font-size: 52px;">-億円</strong>
+                                    class="text-[32px] leading-none">💰</span> <span class="font-bold text-[30px]">最終総資産(中央値)</span></div>
+                            <strong id="capMedian" class="font-black text-blue-300 drop-shadow-lg text-[52px]">-億円</strong>
                         </div>
                     </div>
                 </div>
@@ -762,23 +872,21 @@
         </div>
 
         <!-- フッター / クレジット (高さ 100px) -->
-        <div
-            style="height: 100px; padding: 0 40px; border-top: 1px solid rgba(30, 41, 59, 0.5); display: flex; align-items: center; justify-content: space-between; color: #94a3b8;">
-            <div class="flex items-center gap-3">
-                <span style="font-size: 24px;">🌐</span>
-                <span style="font-size: 22px; font-weight: 600;">https://moriyama-eng.github.io/fire-simulator/ | v1.4.0</span>
+        <div class="h-[100px] px-10 border-t border-slate-800/50 flex flex-row items-center justify-between text-slate-400 gap-3">
+            <div class="flex flex-row items-center gap-3">
+                <span class="text-[24px]">🌐</span>
+                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.5.0</span>
             </div>
-            <div class="flex items-center gap-3">
-                <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">
+            <div class="flex flex-row items-center gap-3">
+                <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">
                     <path
                         d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
                     </path>
                 </svg>
-                <span style="font-size: 22px; font-weight: 700; color: #cbd5e1;">Created by @moriyama_eng</span>
+                <span class="text-[22px] font-bold text-slate-300">Created by @moriyama_eng</span>
             </div>
         </div>
     </div>
 </body>
 
 </html>
-
