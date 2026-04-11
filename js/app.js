@@ -1,7 +1,6 @@
 // ====================================================================
 // グローバル状態管理
 // ====================================================================
-let globalSeed = 12345;
 let assetChart = null;
 let cashChart = null;
 let ddHistChart = null;
@@ -12,12 +11,32 @@ let isRunning = false;
 // ====================================================================
 // コア数学関数（完全指定）
 // ====================================================================
-function mulberry32(a) {
+function splitmix32(seed) {
     return function () {
-        var t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        seed |= 0;
+        seed = seed + 0x9e3779b9 | 0;
+        let t = seed ^ seed >>> 16;
+        t = Math.imul(t, 0x21f0aaad);
+        t = t ^ t >>> 15;
+        t = Math.imul(t, 0x735a2d97);
+        return ((t = t ^ t >>> 15) >>> 0);
+    };
+}
+
+function xoshiro128ss(seed) {
+    const sm = splitmix32(seed);
+    let s0 = sm(), s1 = sm(), s2 = sm(), s3 = sm();
+    return function () {
+        const rotl = (x, k) => (x << k) | (x >>> (32 - k));
+        const result = (Math.imul(rotl(Math.imul(s1, 5), 7), 9) >>> 0) / 4294967296.0;
+        const t = s1 << 9;
+        s2 ^= s0;
+        s3 ^= s1;
+        s1 ^= s2;
+        s0 ^= s3;
+        s2 ^= t;
+        s3 = rotl(s3, 11);
+        return result;
     }
 }
 
@@ -26,6 +45,43 @@ function randomNormal(rngFunc) {
     while (u === 0) u = rngFunc();
     while (v === 0) v = rngFunc();
     return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function gammaRand(rngFunc, alpha) {
+    if (alpha <= 0.0) return 0.0;
+    let a = alpha;
+    if (alpha < 1.0) {
+        a = alpha + 1.0;
+    }
+    const d = a - 1.0 / 3.0;
+    const c = 1.0 / Math.sqrt(9.0 * d);
+    let v, x;
+    while (true) {
+        x = randomNormal(rngFunc);
+        v = 1.0 + c * x;
+        while (v <= 0.0) {
+            x = randomNormal(rngFunc);
+            v = 1.0 + c * x;
+        }
+        v = v * v * v;
+        const u = rngFunc();
+        const x2 = x * x;
+        if (u < 1.0 - 0.0331 * x2 * x2) break;
+        if (Math.log(u) < 0.5 * x2 + d * (1.0 - v + Math.log(v))) break;
+    }
+    let res = d * v;
+    if (alpha < 1.0) {
+        let u2 = rngFunc();
+        while (u2 === 0) u2 = rngFunc();
+        res *= Math.pow(u2, 1.0 / alpha);
+    }
+    return res;
+}
+
+function randomT(rngFunc, df) {
+    const Z = randomNormal(rngFunc);
+    const chi2 = 2.0 * gammaRand(rngFunc, df / 2.0);
+    return Z / Math.sqrt(chi2 / df);
 }
 
 // ====================================================================
@@ -42,6 +98,14 @@ function safeNumber(val, fallback) {
     if (typeof val === 'string') val = val.replace(/,/g, '');
     const n = Number(val);
     return Number.isFinite(n) ? n : fallback;
+}
+
+function calcAutoDf(volatility) {
+    if (volatility <= 0) return 30.0;
+    let df = 5.0 - 0.1 * (volatility - 10.0);
+    if (volatility < 10) df = 5.0;
+    if (volatility > 30) df = 3.0;
+    return Math.max(2.5, Math.min(30.0, df));
 }
 
 function getParams() {
@@ -65,6 +129,11 @@ function getParams() {
         useArInflation: document.getElementById('inflationModelToggle').checked,
         infVol: safeNumber(document.getElementById('infVolNum').value, 2.0),
         infAr: safeNumber(document.getElementById('infArNum').value, 0.5),
+        useTDistribution: document.getElementById('returnModelSelect').value === 'log-t',
+        simDfManual: !document.getElementById('simDfToggle').checked,
+        simDfNum: Math.max(2.5, safeNumber(document.getElementById('simDfNum').value, 5.0)),
+        useFixedSeed: !document.getElementById('seedToggle').checked,
+        seedNum: safeNumber(document.getElementById('seedNum').value, 123456),
     };
 }
 
@@ -230,7 +299,9 @@ function runSimulation(params, userPercentiles) {
             expectedReturn, volatility, inflationRate,
             simYears, simPaths, drawdownTrigger, drawdownReplenish, replenishPace,
             cashBufferToggle, guardrailToggle, guardrailTrigger, guardrailReduction, guardrailRelease,
-            useArInflation, infVol, infAr } = params;
+            useArInflation, infVol, infAr,
+            useTDistribution, simDfManual, simDfNum,
+            useFixedSeed, seedNum } = params;
 
         const totalMonths = simYears * 12;
         const dataLen = totalMonths + 1;
@@ -246,6 +317,8 @@ function runSimulation(params, userPercentiles) {
         const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
         const triggerGR = guardrailTrigger / 100;
         const releaseGR = guardrailRelease / 100; // ガードレール解除閾値（発動閾値より緩い負値）
+
+        const simDf = simDfManual ? simDfNum : calcAutoDf(volatility);
 
         const riskPaths = [];
         const cashPaths = [];
@@ -267,7 +340,7 @@ function runSimulation(params, userPercentiles) {
         function processChunk() {
             const end = Math.min(pathIndex + CHUNK_SIZE, simPaths);
             for (let p = pathIndex; p < end; p++) {
-                let rng = mulberry32(globalSeed + p);
+                let rng = xoshiro128ss(seedNum + p);
                 let currentRiskAsset = initialRiskAsset;
                 let currentCash = activeInitialCashBuffer;
                 let highWaterMark = initialRiskAsset + currentCash;
@@ -309,7 +382,15 @@ function runSimulation(params, userPercentiles) {
 
                     let currentExpense = monthlyExpense * infMultiplier;
                     const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
-                    const Z = randomNormal(rng);
+
+                    let Z;
+                    if (useTDistribution) {
+                        const tRand = randomT(rng, simDf);
+                        Z = tRand / Math.sqrt(simDf / (simDf - 2));
+                    } else {
+                        Z = randomNormal(rng);
+                    }
+
                     currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
                     const currentTotalAsset = currentRiskAsset + currentCash;
                     const safeHWM = Math.max(highWaterMark, 0.0001);
@@ -403,7 +484,11 @@ function runSimulation(params, userPercentiles) {
                 btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) 100%, rgba(30, 41, 59, 1) 100%)`;
 
                 setTimeout(() => {
-                    resolve(aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, userPercentiles));
+                    const result = aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, userPercentiles);
+                    result.usedSeed = seedNum;
+                    result.modelType = useTDistribution ? "log-t" : "log-normal";
+                    result.usedDf = Math.max(2.1, simDf);
+                    resolve(result);
                 }, 50);
             }
         }
@@ -1034,7 +1119,7 @@ function updateSummaryCard(result, params) {
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Left: KPIs -->
-                    <div class="flex flex-col justify-center items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
+                    <div class="flex flex-col justify-start items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
                         <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                             <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
                                 <span>FIRE 成功率</span>
@@ -1070,14 +1155,25 @@ function updateSummaryCard(result, params) {
                             <p class="text-xs text-slate-300 font-medium tracking-wide">期待リターン / ボラ</p>
                             <p class="font-bold text-white text-base">${params.expectedReturn.toFixed(1)}% / ${params.volatility.toFixed(1)}%</p>
                         </div>
-                        <div class="space-y-1 shrink-0 col-span-2 sm:col-span-1">
+                        <div class="space-y-1 shrink-0">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">期待インフレ率</p>
                             <p class="font-bold text-white text-base">${infModelText}</p>
                         </div>
-                        <div class="space-y-1 col-span-2 sm:col-span-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション年数 / 回数</p>
+                        <div class="space-y-1">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション設定</p>
                             <p class="font-bold text-white text-base">${params.simYears} 年 / ${(params.simPaths).toLocaleString('ja-JP')} 回</p>
                         </div>
+                        <div class="space-y-1 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">変動モデル</p>
+                            <p class="font-bold text-white text-base">
+                                ${result.modelType === 'log-t' ? `対数t分布 <span class="text-xs ml-1">(自由度: ${result.usedDf.toFixed(1)})</span>` : '対数正規分布'}
+                            </p>
+                        </div>
+                        <div class="space-y-1 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">乱数シード値</p>
+                            <p class="font-bold text-white text-base">${result.usedSeed.toString()}</p>
+                        </div>
+                        <div class="hidden sm:block pt-2 border-t border-slate-700/50"></div>
                         
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
@@ -1101,6 +1197,7 @@ function updateSummaryCard(result, params) {
             : `<p class="text-slate-500">OFF</p>`}
                             </div>
                         </div>
+
         </div>
     `;
 
@@ -1134,7 +1231,7 @@ function renderEmptySummaryCard(cbChecked = false) {
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Left: KPIs (Empty State) -->
-                    <div class="flex flex-col justify-center items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
+                    <div class="flex flex-col justify-start items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
                         <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                             <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
                                 <span>FIRE 成功率</span>
@@ -1170,14 +1267,23 @@ function renderEmptySummaryCard(cbChecked = false) {
                             <p class="text-xs text-slate-300 font-medium tracking-wide">期待リターン / ボラ</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
-                        <div class="space-y-1 shrink-0 col-span-2 sm:col-span-1">
+                        <div class="space-y-1 shrink-0">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">期待インフレ率</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
-                        <div class="space-y-1 col-span-2 sm:col-span-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション年数 / 回数</p>
+                        <div class="space-y-1">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション設定</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
+                        <div class="space-y-1 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">変動モデル</p>
+                            <p class="font-bold text-slate-500 text-base">-</p>
+                        </div>
+                        <div class="space-y-1 pt-2 border-t border-slate-700/50">
+                            <p class="text-xs text-slate-300 font-medium tracking-wide">乱数シード値</p>
+                            <p class="font-bold text-slate-500 text-base">-</p>
+                        </div>
+                        <div class="hidden sm:block pt-2 border-t border-slate-700/50"></div>
                         
                         ${cbChecked ? `
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
@@ -1199,6 +1305,7 @@ function renderEmptySummaryCard(cbChecked = false) {
                                 <p>-</p>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -1220,11 +1327,16 @@ async function runMain() {
     const runBtn = document.getElementById('runBtn');
     runBtn.disabled = true;
 
-    globalSeed = Date.now() >>> 0;
+    const simSeedInput = document.getElementById('seedNum');
+    if (document.getElementById('seedToggle').checked || !simSeedInput.value) {
+        simSeedInput.value = Date.now() >>> 0;
+    }
+
+    const params = getParams();
+
     await new Promise(r => requestAnimationFrame(r));
 
     try {
-        const params = getParams();
 
         // バリデーション：ガードレール終了閾値が発動閾値より小さい場合は発動閾値と同値に補正
         if (params.guardrailToggle && params.guardrailRelease < params.guardrailTrigger) {
@@ -1259,7 +1371,7 @@ async function runMain() {
         }
     } finally {
         runBtn.disabled = false;
-        runBtn.innerHTML = 'シミュレーション開始';
+        runBtn.innerHTML = 'シミュレーション実行';
         runBtn.style.background = '';
         isRunning = false;
     }
@@ -1299,6 +1411,10 @@ async function saveImage() {
         document.getElementById('capRiskAsset').textContent = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円';
         document.getElementById('capCash').textContent = params.initialCashBuffer.toLocaleString('ja-JP') + '万円';
         document.getElementById('capExpense').textContent = params.monthlyExpense.toLocaleString('ja-JP') + '万円';
+
+        const modelText = lastSimResult.modelType === 'log-t' ? '対数t分布' : '対数正規分布';
+        document.getElementById('capModel').textContent = modelText;
+
         document.getElementById('capReturnVol').textContent = params.expectedReturn.toFixed(1) + '% / ' + params.volatility.toFixed(1) + '%';
         document.getElementById('capInf').textContent = params.inflationRate.toFixed(1) + '%';
         document.getElementById('capYears').textContent = params.simYears + '年';
@@ -1424,6 +1540,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // X共有ボタン画像保存ボタンのイベント登録
     document.getElementById('shareXBtn').addEventListener('click', shareToX);
     document.getElementById('saveImageBtn').addEventListener('click', saveImage);
+
+    // マーケット変動モデル セレクトボックス連動
+    const modelSelect = document.getElementById('returnModelSelect');
+    const tDistParams = document.getElementById('tDistParams');
+    const updateModelPanel = () => {
+        if (modelSelect.value === 'log-t') {
+            tDistParams.classList.remove('opacity-50', 'pointer-events-none', 'hidden');
+            tDistParams.classList.add('opacity-100');
+        } else {
+            tDistParams.classList.add('opacity-50', 'pointer-events-none', 'hidden');
+            tDistParams.classList.remove('opacity-100');
+        }
+    };
+    if (modelSelect) {
+        modelSelect.addEventListener('change', updateModelPanel);
+        updateModelPanel();
+    }
+
+    // 自由度 (自動/固定) トグル連動
+    const dfToggle = document.getElementById('simDfToggle');
+    const dfAutoDisplayWrapper = document.getElementById('dfAutoDisplayWrapper');
+    const dfManualWrapper = document.getElementById('dfManualWrapper');
+    const volatilityInput = document.getElementById('volatilityNum');
+    const autoDfDisplay = document.getElementById('autoDfDisplay');
+
+    const updateDfPanel = () => {
+        if (!dfToggle) return;
+        if (!dfToggle.checked) {
+            // 固定 (unchecked)
+            dfAutoDisplayWrapper.classList.add('hidden');
+            dfManualWrapper.classList.remove('h-0', 'opacity-50', 'pointer-events-none');
+            setTimeout(() => { dfManualWrapper.classList.add('opacity-100'); }, 10);
+        } else {
+            // 自動 (checked)
+            dfAutoDisplayWrapper.classList.remove('hidden');
+            dfManualWrapper.classList.add('h-0', 'opacity-50', 'pointer-events-none');
+            dfManualWrapper.classList.remove('opacity-100');
+            // 値の更新
+            const vol = parseFloat(volatilityInput.value) || 18.0;
+            autoDfDisplay.textContent = calcAutoDf(vol).toFixed(1);
+        }
+    };
+    if (dfToggle && volatilityInput) {
+        dfToggle.addEventListener('change', updateDfPanel);
+        volatilityInput.addEventListener('input', () => {
+            if (dfToggle.checked) {
+                const vol = parseFloat(volatilityInput.value) || 18.0;
+                autoDfDisplay.textContent = calcAutoDf(vol).toFixed(1);
+            }
+        });
+        updateDfPanel();
+    }
+
+    // 乱数シード トグル連動
+    const seedToggle = document.getElementById('seedToggle');
+    const seedInputWrapper = document.getElementById('seedInputWrapper');
+    const updateSeedPanel = () => {
+        if (!seedToggle) return;
+        if (!seedToggle.checked) {
+            // 固定 (unchecked)
+            seedInputWrapper.classList.remove('opacity-50', 'pointer-events-none');
+            seedInputWrapper.classList.add('opacity-100');
+        } else {
+            // ランダム (checked)
+            seedInputWrapper.classList.add('opacity-50', 'pointer-events-none');
+            seedInputWrapper.classList.remove('opacity-100');
+        }
+    };
+    if (seedToggle) {
+        seedToggle.addEventListener('change', updateSeedPanel);
+        updateSeedPanel();
+    }
 
     // インフレ変動モデル (AR-1) トグル連動
     const infToggle = document.getElementById('inflationModelToggle');

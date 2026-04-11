@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[codz]
-*$py.class
+*.py[cod]
+*.class
 
 # C extensions
 *.so
@@ -13,7 +13,6 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
 lib/
 lib64/
 parts/
@@ -46,8 +45,8 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py.cover
-.hypothesis/
+*.py,cover
+.hypothesistest/
 .pytest_cache/
 cover/
 
@@ -90,53 +89,32 @@ ipython_config.py
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+#   having no cross-platform support, pipenv may install dependencies that don't work on other
+#   platforms.
+# Pipfile.lock
 
 # poetry
 #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
 #   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-#poetry.toml
+# poetry.lock
 
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
-#   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
-#pdm.lock
-#pdm.toml
-.pdm-python
-.pdm-build/
+#   https://pdm.fming.dev/latest/usage/project/#commit-the-lock-file
+# pdm.lock
 
-# pixi
-#   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
-#pixi.lock
-#   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
-#   in the .venv directory. It is recommended not to include this directory in version control.
-.pixi
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and pdm
 __pypackages__/
 
 # Celery stuff
 celerybeat-schedule
 celerybeat.pid
 
-# SageMath parsed files
+# SageMath libraries
 *.sage.py
 
 # Environments
 .env
-.envrc
 .venv
 env/
 venv/
@@ -146,7 +124,7 @@ venv.bak/
 
 # Spyder project settings
 .spyderproject
-.spyproject
+.spyder-py3
 
 # Rope project settings
 .ropeproject
@@ -169,40 +147,26 @@ dmypy.json
 cython_debug/
 
 # PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+#  JetBrains specific template is maintained in a separate local directory
+.idea/
 
-# Abstra
-# Abstra is an AI-powered process automation framework.
-# Ignore directories containing user credentials, local state, and settings.
-# Learn more at https://abstra.io/docs
-.abstra/
-
-# Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#  you could uncomment the following to ignore the entire vscode folder
-# .vscode/
-
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Cursor
-#  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
+#  Cursor is an AI-powered code editor. .cursorignore specifies which files and 
+#  directories should be ignored by Cursor's indexing and AI features. 
+#  For more information, refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
 
-# Marimo
+# ruff
+.ruff_cache/
+
+# marimo
+#  marimo is a reactive Python notebook and a tool-powered process automation framework. 
+#  The following marimo specific template is maintained in a separate local directory
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-*.py
+
+# Agent internal plans and state
+.agent/
+GEMINI.md
+.archive/
