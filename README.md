@@ -64,7 +64,7 @@
 > **[シミュレーターを今すぐ実行する (GitHub Pages)](https://moriyama-eng.github.io/fire-simulator/)**
 > インストール不要・環境構築不要でそのまま使用できます。
 
-ローカル環境でリポジトリをクローンして実行する場合、Web Worker を使用しているため `index.html` をブラウザで直接開いても動作しません。VS Code をお使いの場合は [**Live Server 拡張機能**](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) をインストールし、`index.html` を右クリックして「Open with Live Server」を選択してください。
+ローカル環境でリポジトリをクローンして実行する場合、Web Worker を使用しているため `index.html` をブラウザで直接開いても動作しない可能性が高いです（セキュリティ制限による）。VS Code を利用している場合は [**Live Server 拡張機能**] をインストールし、`index.html` を右クリック、「Open with Live Server」を選択して立ち上がったブラウザで動作確認をしてください。
 
 ## 免責事項
 
@@ -74,4 +74,3 @@
 ## ライセンス
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
