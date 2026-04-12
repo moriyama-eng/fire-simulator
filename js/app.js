@@ -9,80 +9,8 @@ let lastSimResult = null;
 let isRunning = false;
 
 // ====================================================================
-// コア数学関数（完全指定）
+// コア数学関数（worker.js に移譲済み。このファイルからは削除）
 // ====================================================================
-function splitmix32(seed) {
-    return function () {
-        seed |= 0;
-        seed = seed + 0x9e3779b9 | 0;
-        let t = seed ^ seed >>> 16;
-        t = Math.imul(t, 0x21f0aaad);
-        t = t ^ t >>> 15;
-        t = Math.imul(t, 0x735a2d97);
-        return ((t = t ^ t >>> 15) >>> 0);
-    };
-}
-
-function xoshiro128ss(seed) {
-    const sm = splitmix32(seed);
-    let s0 = sm(), s1 = sm(), s2 = sm(), s3 = sm();
-    return function () {
-        const rotl = (x, k) => (x << k) | (x >>> (32 - k));
-        const result = (Math.imul(rotl(Math.imul(s1, 5), 7), 9) >>> 0) / 4294967296.0;
-        const t = s1 << 9;
-        s2 ^= s0;
-        s3 ^= s1;
-        s1 ^= s2;
-        s0 ^= s3;
-        s2 ^= t;
-        s3 = rotl(s3, 11);
-        return result;
-    }
-}
-
-function randomNormal(rngFunc) {
-    let u = 0, v = 0;
-    while (u === 0) u = rngFunc();
-    while (v === 0) v = rngFunc();
-    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}
-
-function gammaRand(rngFunc, alpha) {
-    if (alpha <= 0.0) return 0.0;
-    let a = alpha;
-    if (alpha < 1.0) {
-        a = alpha + 1.0;
-    }
-    const d = a - 1.0 / 3.0;
-    const c = 1.0 / Math.sqrt(9.0 * d);
-    let v, x;
-    while (true) {
-        x = randomNormal(rngFunc);
-        v = 1.0 + c * x;
-        while (v <= 0.0) {
-            x = randomNormal(rngFunc);
-            v = 1.0 + c * x;
-        }
-        v = v * v * v;
-        const u = rngFunc();
-        const x2 = x * x;
-        if (u < 1.0 - 0.0331 * x2 * x2) break;
-        if (Math.log(u) < 0.5 * x2 + d * (1.0 - v + Math.log(v))) break;
-    }
-    let res = d * v;
-    if (alpha < 1.0) {
-        let u2 = rngFunc();
-        while (u2 === 0) u2 = rngFunc();
-        res *= Math.pow(u2, 1.0 / alpha);
-    }
-    return res;
-}
-
-function randomT(rngFunc, df) {
-    const Z = randomNormal(rngFunc);
-    const chi2 = 2.0 * gammaRand(rngFunc, df / 2.0);
-    return Z / Math.sqrt(chi2 / df);
-}
 
 // ====================================================================
 // 入力パラメータのDOM取得とバリデーション
@@ -290,209 +218,124 @@ function setupHybridInputs() {
 }
 
 // ====================================================================
-// シミュレーションエンジン（チャンク非同期処理）
+// シミュレーションエンジン（Web Workers マルチコア並列処理）
 // ====================================================================
 function runSimulation(params, userPercentiles) {
     if (!userPercentiles) userPercentiles = [10, 25, 50, 75, 90];
-    return new Promise((resolve) => {
-        const { initialRiskAsset, initialCashBuffer, monthlyExpense,
-            expectedReturn, volatility, inflationRate,
-            simYears, simPaths, drawdownTrigger, drawdownReplenish, replenishPace,
-            cashBufferToggle, guardrailToggle, guardrailTrigger, guardrailReduction, guardrailRelease,
-            useArInflation, infVol, infAr,
-            useTDistribution, simDfManual, simDfNum,
-            useFixedSeed, seedNum } = params;
+    return new Promise((resolve, reject) => {
+        const { simYears, simPaths, useTDistribution, simDfManual, simDfNum, volatility, seedNum } = params;
+
+        // CPU コア数に基づいてワーカー数を決定（上限8）
+        const numWorkers = Math.min(navigator.hardwareConcurrency || 4, 8);
+        const basePaths = Math.floor(simPaths / numWorkers);
+        const remainder = simPaths % numWorkers;
 
         const totalMonths = simYears * 12;
         const dataLen = totalMonths + 1;
 
-        const arithmeticReturn = expectedReturn / 100;
-        const annualVol = volatility / 100;
-        const adjustedAnnualDrift = Math.log(1 + arithmeticReturn) - (annualVol * annualVol) / 2;
-        const monthlyDrift = adjustedAnnualDrift / 12;
-        const monthlyVol = annualVol / Math.sqrt(12);
+        let currentSeedOffset = 0;
+        const workerPromises = [];
+        // 各ワーカーの進捗を個別に管理
+        const workerProgress = new Array(numWorkers).fill(0);
 
-        const activeInitialCashBuffer = cashBufferToggle ? initialCashBuffer : 0;
-        const ddThreshold = -Math.abs(drawdownTrigger / 100);
-        const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
-        const triggerGR = guardrailTrigger / 100;
-        const releaseGR = guardrailRelease / 100; // ガードレール解除閾値（発動閾値より緩い負値）
+        for (let i = 0; i < numWorkers; i++) {
+            const pathsCount = basePaths + (i < remainder ? 1 : 0);
+            if (pathsCount === 0) break;
 
-        const simDf = simDfManual ? simDfNum : calcAutoDf(volatility);
+            const worker = new Worker('js/worker.js');
 
-        const riskPaths = [];
-        const cashPaths = [];
-        const totalPaths = [];
-        const ddPaths = [];
-        const maxDdPerPath = new Float32Array(simPaths);
-        const maxUwPerPath = new Float32Array(simPaths);
-        for (let p = 0; p < simPaths; p++) {
-            riskPaths.push(new Float32Array(dataLen));
-            cashPaths.push(new Float32Array(dataLen));
-            totalPaths.push(new Float32Array(dataLen));
-            ddPaths.push(new Float32Array(dataLen));
+            const p = new Promise((resW, rejW) => {
+                worker.onmessage = (e) => {
+                    if (e.data.type === 'complete') {
+                        // 完了時に進捗を 100% へ補正してからワーカーを破棄
+                        workerProgress[i] = pathsCount;
+                        worker.terminate();
+                        resW(e.data);
+                    } else if (e.data.type === 'progress') {
+                        workerProgress[i] = e.data.completed;
+                        const totalCompleted = workerProgress.reduce((a, b) => a + b, 0);
+                        const progress = Math.round((totalCompleted / simPaths) * 100);
+
+                        // 既存のUIプログレス更新ロジックを忠実に維持
+                        const btn = document.getElementById('runBtn');
+                        if (btn) {
+                            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中... ${progress}%`;
+                            btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
+                        }
+                    }
+                };
+                worker.onerror = (err) => {
+                    worker.terminate();
+                    rejW(err);
+                };
+            });
+
+            worker.postMessage({ params, pathsCount, seedOffset: currentSeedOffset, dataLen });
+            workerPromises.push(p);
+
+            // 次のワーカーのためにオフセットを進める
+            currentSeedOffset += pathsCount;
         }
 
-        let bankruptCount = 0;
-        const CHUNK_SIZE = 100;
-        let pathIndex = 0;
-
-        function processChunk() {
-            const end = Math.min(pathIndex + CHUNK_SIZE, simPaths);
-            for (let p = pathIndex; p < end; p++) {
-                let rng = xoshiro128ss(seedNum + p);
-                let currentRiskAsset = initialRiskAsset;
-                let currentCash = activeInitialCashBuffer;
-                let highWaterMark = initialRiskAsset + currentCash;
-                let bankrupt = false;
-                let isReplenishMode = false;
-                let isGuardrailActive = false;
-
-                let currentUwMonths = 0;
-                let maxUwMonths = 0;
-                let maxDD = 0;
-
-                riskPaths[p][0] = currentRiskAsset;
-                cashPaths[p][0] = currentCash;
-                totalPaths[p][0] = currentRiskAsset + currentCash;
-                ddPaths[p][0] = 0; // 初期時点のドローダウンは0%
-
-                let currentInfRate = inflationRate / 100; // 初期インフレ率は期待値
-                let infMultiplier = 1.0;                  // 累積インフレ係数
-
-                for (let t = 1; t <= totalMonths; t++) {
-                    if (bankrupt) break;
-
-                    // 毎月のインフレ計算 (AR-1モデル / 固定モデル)
-                    if (useArInflation) {
-                        const annualInfVol = infVol / 100;
-                        const monthlyInfVol = annualInfVol / Math.sqrt(12);
-                        const InfZ = randomNormal(rng);
-                        const expectedLongTermInf = inflationRate / 100;
-                        const C = (1 - infAr) * expectedLongTermInf;
-
-                        // AR-1プロセス: 次月のインフレ率 = C + phi * 前月 + shock
-                        currentInfRate = C + (infAr * currentInfRate) + (monthlyInfVol * InfZ);
-                        // 今月のインフレ影響を乗算（対数空間で積算し固定モデルと対称性を持たせる）
-                        infMultiplier *= Math.exp(currentInfRate / 12);
-                    } else {
-                        // 従来の固定インフレ複利計算
-                        infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
-                    }
-
-                    let currentExpense = monthlyExpense * infMultiplier;
-                    const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
-
-                    let Z;
-                    if (useTDistribution) {
-                        const tRand = randomT(rng, simDf);
-                        Z = tRand / Math.sqrt(simDf / (simDf - 2));
-                    } else {
-                        Z = randomNormal(rng);
-                    }
-
-                    currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
-                    const currentTotalAsset = currentRiskAsset + currentCash;
-                    const safeHWM = Math.max(highWaterMark, 0.0001);
-                    const currentDD = (currentTotalAsset - safeHWM) / safeHWM;
-
-                    // ガードレール判定（発動閾値以下に悪化したら発動、終了閾値以上まで回復したら解除）
-                    if (guardrailToggle) {
-                        if (currentDD <= triggerGR) {
-                            isGuardrailActive = true;
-                        } else if (isGuardrailActive && currentDD >= releaseGR) {
-                            // ガードレール終了閾値（releaseGR）を上回った場合に解除
-                            isGuardrailActive = false;
-                        }
-
-                        if (isGuardrailActive) {
-                            // guardrailReductionはマイナス（例：-20.0 => 1 - 0.20 = 0.8倍）
-                            currentExpense *= (1 + guardrailReduction / 100);
-                        }
-                    }
-
-                    // isReplenishMode の更新は取崩し後の eomAsset ベースで後述
-
-                    if (cashBufferToggle && currentDD <= ddThreshold) {
-                        currentCash -= currentExpense;
-                    } else if (cashBufferToggle && isReplenishMode && currentCash < currentBufferLimit) {
-                        const shortage = currentBufferLimit - currentCash;
-                        const replenishAmount = Math.min(shortage, currentExpense * replenishPace);
-                        const actualReplenish = Math.min(replenishAmount, currentRiskAsset);
-                        currentRiskAsset -= actualReplenish;
-                        currentCash += actualReplenish;
-                        currentRiskAsset -= currentExpense;
-                    } else {
-                        currentRiskAsset -= currentExpense;
-                    }
-
-                    if (currentRiskAsset + currentCash <= 0.0001) {
-                        currentRiskAsset = 0;
-                        currentCash = 0;
-                        bankrupt = true;
-                        bankruptCount++;
-                        riskPaths[p][t] = 0;
-                        cashPaths[p][t] = 0;
-                        totalPaths[p][t] = 0;
-                        ddPaths[p][t] = -1.0;
-                        maxDD = -1.0;
-                        currentUwMonths += (totalMonths - t) + 1;
-                        if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
-                        break;
-                    }
-                    if (currentCash < 0) { currentRiskAsset += currentCash; currentCash = 0; }
-                    if (currentRiskAsset < 0) { currentCash += currentRiskAsset; currentRiskAsset = 0; }
-
-                    const eomAsset = currentRiskAsset + currentCash;
-                    if (eomAsset >= highWaterMark) {
-                        currentUwMonths = 0;
-                        highWaterMark = eomAsset;
-                        // 取崩し後に高値更新 → バッファ補充モードを開始（ドローダウン辺暌で補充終了邖値を下回ると終了）
-                        isReplenishMode = true;
-                    } else {
-                        currentUwMonths++;
-                        if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
-                        // ドローダウンが補充終了閾値を下回ったら補充モードを終了
-                        const replenishCheckDD = (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001);
-                        if (replenishCheckDD <= ddReplenishThreshold) {
-                            isReplenishMode = false;
-                        }
-                    }
-
-                    let eomDD = Math.min(0, (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001));
-                    if (eomDD < maxDD) maxDD = eomDD;
-
-                    riskPaths[p][t] = currentRiskAsset;
-                    cashPaths[p][t] = currentCash;
-                    totalPaths[p][t] = eomAsset;
-                    ddPaths[p][t] = eomDD; // ドローダウン率を蓄積
-                }
-                maxDdPerPath[p] = maxDD;
-                maxUwPerPath[p] = maxUwMonths;
-            }
-            pathIndex = end;
-            if (pathIndex < simPaths) {
-                const progress = Math.round((pathIndex / simPaths) * 100);
-                const btn = document.getElementById('runBtn');
-                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中... ${progress}%`;
-                btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
-
-                setTimeout(processChunk, 0);
-            } else {
-                const btn = document.getElementById('runBtn');
-                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>  結果を集計描画中...`;
+        // 全ワーカー完了後に結果を再構築して resolve
+        Promise.all(workerPromises).then(async (results) => {
+            // 全ワーカー完了後にUIを「結果を集計描画中...」へ変更
+            const btn = document.getElementById('runBtn');
+            if (btn) {
+                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>  結果を集計、描画中...`;
                 btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) 100%, rgba(30, 41, 59, 1) 100%)`;
-
-                setTimeout(() => {
-                    const result = aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, userPercentiles);
-                    result.usedSeed = seedNum;
-                    result.modelType = useTDistribution ? "log-t" : "log-normal";
-                    result.usedDf = Math.max(2.1, simDf);
-                    resolve(result);
-                }, 50);
             }
-        }
-        processChunk();
+
+            // rAF を2フレーム分待機して「結果を集計、描画中...」のテキストが
+            // 確実に画面に描画されてから集計処理を開始する
+            // （setTimeout(10ms)はブラウザの描画フレーム16.7msより短く描画保証ができないため rAF を使用）
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            // 各ワーカーの ArrayBuffer を既存の aggregateResults が解釈できる形式に再構築
+            const totalPaths = [];
+            const cashPaths = [];
+            const ddPaths = [];
+            const maxDdPerPath = new Float32Array(simPaths);
+            const maxUwPerPath = new Float32Array(simPaths);
+
+            let bankruptCount = 0;
+            let globalPathIndex = 0;
+
+            for (const res of results) {
+                // Float32 は 4 バイト。パス数を逆算
+                const pathsCountInWorker = res.totalsBuffer.byteLength / (dataLen * 4);
+
+                // maxDd / maxUw はコピーして結合（要素数がsimPathsのみなのでコスト極小）
+                const workerMaxDds = new Float32Array(res.maxDdsBuffer);
+                const workerMaxUws = new Float32Array(res.maxUwsBuffer);
+                maxDdPerPath.set(workerMaxDds, globalPathIndex);
+                maxUwPerPath.set(workerMaxUws, globalPathIndex);
+
+                // bankruptCount の集計
+                bankruptCount += res.bankruptCount;
+
+                // パスごとの時系列データは View として切り出し（コピーなし）
+                for (let p = 0; p < pathsCountInWorker; p++) {
+                    const offsetBytes = p * dataLen * 4;
+                    totalPaths.push(new Float32Array(res.totalsBuffer, offsetBytes, dataLen));
+                    cashPaths.push(new Float32Array(res.cashesBuffer, offsetBytes, dataLen));
+                    ddPaths.push(new Float32Array(res.ddsBuffer, offsetBytes, dataLen));
+                }
+
+                globalPathIndex += pathsCountInWorker;
+            }
+
+            // 既存の aggregateResults 関数へ渡す
+            const simDf = params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility);
+            const result = aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, userPercentiles);
+
+            // 既存ロジック通り、resolve前に UI表示用プロパティを必ず付与
+            result.usedSeed = params.seedNum;
+            result.modelType = params.useTDistribution ? 'log-t' : 'log-normal';
+            result.usedDf = Math.max(2.1, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
+
+            resolve(result);
+        }).catch(reject);
     });
 }
 
