@@ -9,6 +9,100 @@ let lastSimResult = null;
 let isRunning = false;
 
 // ====================================================================
+// 真の単一パス・マルチセレクト（スタックベース非再帰・バッファ再利用版）
+// ====================================================================
+function multiSelectTrue(workBuffer, ks, out) {
+    // ks は昇順ソート済み前提
+    const stack = [0, workBuffer.length - 1, 0, ks.length - 1];
+
+    while (stack.length > 0) {
+        const kRightIdx = stack.pop();
+        const kLeftIdx = stack.pop();
+        const right = stack.pop();
+        const left = stack.pop();
+
+        if (left > right || kLeftIdx > kRightIdx) continue;
+
+        const pivotIdx = (left + right) >> 1;
+        const pivot = workBuffer[pivotIdx];
+
+        let i = left;
+        let j = right;
+
+        while (i <= j) {
+            while (workBuffer[i] < pivot) i++;
+            while (workBuffer[j] > pivot) j--;
+            if (i <= j) {
+                const tmp = workBuffer[i];
+                workBuffer[i] = workBuffer[j];
+                workBuffer[j] = tmp;
+                i++;
+                j--;
+            }
+        }
+
+        let midLeftKIdx = kLeftIdx;
+        while (midLeftKIdx <= kRightIdx && ks[midLeftKIdx] <= j) midLeftKIdx++;
+
+        let midRightKIdx = kRightIdx;
+        while (midRightKIdx >= kLeftIdx && ks[midRightKIdx] >= i) midRightKIdx--;
+
+        if (kLeftIdx < midLeftKIdx) {
+            stack.push(left, j, kLeftIdx, midLeftKIdx - 1);
+        }
+        if (midRightKIdx < kRightIdx) {
+            stack.push(i, right, midRightKIdx + 1, kRightIdx);
+        }
+
+        for (let k = midLeftKIdx; k <= midRightKIdx; k++) {
+            out[k] = workBuffer[ks[k]];
+        }
+    }
+}
+
+// ====================================================================
+// 単一select（安全版：中央インデックスピボット）
+// ====================================================================
+function quickselectSafe(arr, k, left, right) {
+    while (left < right) {
+        const pivot = arr[(left + right) >> 1];
+        let i = left, j = right;
+        while (i <= j) {
+            while (arr[i] < pivot) i++;
+            while (arr[j] > pivot) j--;
+            if (i <= j) {
+                const tmp = arr[i];
+                arr[i++] = arr[j];
+                arr[j--] = tmp;
+            }
+        }
+        if (k <= j) right = j;
+        else if (k >= i) left = i;
+        else return arr[k];
+    }
+    return arr[k];
+}
+
+// ====================================================================
+// データ構造の転置 [パス][時間] -> [時間][パス]
+// Note: simPaths × dataLen が極端に大きい場合のメモリ使用量に注意
+// ====================================================================
+function transposeFlat(buffer, simPaths, dataLen) {
+    const result = new Array(dataLen);
+    const flatArray = new Float32Array(buffer);
+    for (let t = 0; t < dataLen; t++) {
+        result[t] = new Float32Array(simPaths);
+    }
+    for (let p = 0; p < simPaths; p++) {
+        const base = p * dataLen;
+        for (let t = 0; t < dataLen; t++) {
+            result[t][p] = flatArray[base + t];
+        }
+    }
+    return result;
+}
+
+// ====================================================================
 // コア数学関数（worker.js に移譲済み。このファイルからは削除）
 // ====================================================================
 
@@ -279,57 +373,52 @@ function runSimulation(params, userPercentiles) {
 
         // 全ワーカー完了後に結果を再構築して resolve
         Promise.all(workerPromises).then(async (results) => {
-            // 全ワーカー完了後にUIを「結果を集計描画中...」へ変更
             const btn = document.getElementById('runBtn');
             if (btn) {
                 btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>  結果を集計、描画中...`;
                 btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) 100%, rgba(30, 41, 59, 1) 100%)`;
             }
 
-            // rAF を2フレーム分待機して「結果を集計、描画中...」のテキストが
-            // 確実に画面に描画されてから集計処理を開始する
-            // （setTimeout(10ms)はブラウザの描画フレーム16.7msより短く描画保証ができないため rAF を使用）
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-            // 各ワーカーの ArrayBuffer を既存の aggregateResults が解釈できる形式に再構築
-            const totalPaths = [];
-            const cashPaths = [];
-            const ddPaths = [];
+            // ループ外でマージ済みフラットバッファを1回だけ確保（アロケーション最小化）
+            const mergedTotals = new Float32Array(simPaths * dataLen);
+            const mergedCashes = new Float32Array(simPaths * dataLen);
+            const mergedDds    = new Float32Array(simPaths * dataLen);
             const maxDdPerPath = new Float32Array(simPaths);
             const maxUwPerPath = new Float32Array(simPaths);
 
             let bankruptCount = 0;
             let globalPathIndex = 0;
 
+            // .set() でオフセット位置に各ワーカーのバッファをコピー（ループ内でのアロケーションなし）
             for (const res of results) {
-                // Float32 は 4 バイト。パス数を逆算
                 const pathsCountInWorker = res.totalsBuffer.byteLength / (dataLen * 4);
+                const offset = globalPathIndex * dataLen;
 
-                // maxDd / maxUw はコピーして結合（要素数がsimPathsのみなのでコスト極小）
-                const workerMaxDds = new Float32Array(res.maxDdsBuffer);
-                const workerMaxUws = new Float32Array(res.maxUwsBuffer);
-                maxDdPerPath.set(workerMaxDds, globalPathIndex);
-                maxUwPerPath.set(workerMaxUws, globalPathIndex);
+                mergedTotals.set(new Float32Array(res.totalsBuffer), offset);
+                mergedCashes.set(new Float32Array(res.cashesBuffer), offset);
+                mergedDds.set(new Float32Array(res.ddsBuffer), offset);
 
-                // bankruptCount の集計
+                maxDdPerPath.set(new Float32Array(res.maxDdsBuffer), globalPathIndex);
+                maxUwPerPath.set(new Float32Array(res.maxUwsBuffer), globalPathIndex);
+
                 bankruptCount += res.bankruptCount;
-
-                // パスごとの時系列データは View として切り出し（コピーなし）
-                for (let p = 0; p < pathsCountInWorker; p++) {
-                    const offsetBytes = p * dataLen * 4;
-                    totalPaths.push(new Float32Array(res.totalsBuffer, offsetBytes, dataLen));
-                    cashPaths.push(new Float32Array(res.cashesBuffer, offsetBytes, dataLen));
-                    ddPaths.push(new Float32Array(res.ddsBuffer, offsetBytes, dataLen));
-                }
-
                 globalPathIndex += pathsCountInWorker;
             }
 
-            // 既存の aggregateResults 関数へ渡す
-            const simDf = params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility);
-            const result = aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, userPercentiles);
+            const result = aggregateResultsProduction({
+                totalsBuffer: mergedTotals.buffer,
+                cashesBuffer: mergedCashes.buffer,
+                ddsBuffer: mergedDds.buffer,
+                maxDdPerPath: maxDdPerPath,
+                maxUwPerPath: maxUwPerPath,
+                simPaths: simPaths,
+                dataLen: dataLen,
+                percentiles: userPercentiles,
+                bankruptCount: bankruptCount
+            });
 
-            // 既存ロジック通り、resolve前に UI表示用プロパティを必ず付与
             result.usedSeed = params.seedNum;
             result.modelType = params.useTDistribution ? 'log-t' : 'log-normal';
             result.usedDf = Math.max(2.1, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
@@ -350,49 +439,65 @@ function parsePercentiles() {
     return [...new Set(parsed)].sort((a, b) => a - b);
 }
 
-function aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPerPath, simPaths, dataLen, bankruptCount, percentiles) {
-    const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
-    const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
-    const ddPercentileData = percentiles.map(() => new Float32Array(dataLen));
-    const sortBuffer = new Float32Array(simPaths);
+// ====================================================================
+// 結果集計（限界突破版：単一パス・マルチセレクト & GCゼロアロケーション）
+// ====================================================================
+function aggregateResultsProduction({
+    totalsBuffer, cashesBuffer, ddsBuffer,
+    maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount
+}) {
+    // データ構造を [パス][時間] -> [時間][パス] に転置（CPUキャッシュ局所性を最大化）
+    const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
+    const cashT  = transposeFlat(cashesBuffer, simPaths, dataLen);
+    const ddT    = transposeFlat(ddsBuffer, simPaths, dataLen);
 
-    for (let t = 0; t < dataLen; t++) {
-        for (let p = 0; p < simPaths; p++) sortBuffer[p] = totalPaths[p][t];
-        sortBuffer.sort();
-        for (let pi = 0; pi < percentiles.length; pi++) {
-            const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
-            totalPercentileData[pi][t] = sortBuffer[idx];
-        }
-        for (let p = 0; p < simPaths; p++) sortBuffer[p] = cashPaths[p][t];
-        sortBuffer.sort();
-        for (let pi = 0; pi < percentiles.length; pi++) {
-            const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
-            cashPercentileData[pi][t] = sortBuffer[idx];
-        }
-        // ドローダウンのパーセンタイル集計
-        for (let p = 0; p < simPaths; p++) sortBuffer[p] = ddPaths[p][t];
-        sortBuffer.sort();
-        for (let pi = 0; pi < percentiles.length; pi++) {
-            const idx = Math.floor((percentiles[pi] / 100) * (sortBuffer.length - 1));
-            ddPercentileData[pi][t] = sortBuffer[idx];
-        }
+    const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
+    const cashPercentileData  = percentiles.map(() => new Float32Array(dataLen));
+    const ddPercentileData    = percentiles.map(() => new Float32Array(dataLen));
+
+    // パーセンタイル → 配列インデックスに変換（ループ外で1回だけ計算）
+    const ks = new Int32Array(percentiles.length);
+    for (let i = 0; i < percentiles.length; i++) {
+        ks[i] = Math.floor((percentiles[i] / 100) * (simPaths - 1));
     }
 
-    // 50パーセンタイルのインデックスを探す（なければ中央に最も近い値）
-    let medianIdx = percentiles.indexOf(50);
-    if (medianIdx === -1) medianIdx = Math.floor(percentiles.length / 2);
+    // GC抑制のため、ループ外でワークバッファと結果バッファを1度だけ確保
+    const workBuffer = new Float32Array(simPaths);
+    const resultBuf = new Float32Array(percentiles.length);
 
-    const sortedMaxDd = Float32Array.from(maxDdPerPath).sort();
-    const worst10Idx = Math.floor(0.10 * (simPaths - 1));
-    const worst5Idx = Math.floor(0.05 * (simPaths - 1));
-    const worst10MaxDd = sortedMaxDd[worst10Idx];
-    const worst5MaxDd = sortedMaxDd[worst5Idx];
+    // 1タイムステップに対して3系列のマルチセレクトを実行（single-pass）
+    for (let t = 0; t < dataLen; t++) {
+        workBuffer.set(totalT[t]);
+        multiSelectTrue(workBuffer, ks, resultBuf);
+        for (let i = 0; i < ks.length; i++) totalPercentileData[i][t] = resultBuf[i];
 
-    const sortedMaxUw = Float32Array.from(maxUwPerPath).sort();
-    const medianUwIdx = Math.floor(0.50 * (simPaths - 1));
-    const medianMaxUw = sortedMaxUw[medianUwIdx];
-    const worst10IdxUw = Math.floor(0.90 * (simPaths - 1));
-    const worst10MaxUw = sortedMaxUw[worst10IdxUw];
+        workBuffer.set(cashT[t]);
+        multiSelectTrue(workBuffer, ks, resultBuf);
+        for (let i = 0; i < ks.length; i++) cashPercentileData[i][t] = resultBuf[i];
+
+        workBuffer.set(ddT[t]);
+        multiSelectTrue(workBuffer, ks, resultBuf);
+        for (let i = 0; i < ks.length; i++) ddPercentileData[i][t] = resultBuf[i];
+    }
+
+    // 最大ドローダウン・最大引出額の代表値を quickselectSafe で抽出
+    // （コピーして元データを保護）
+    const ddCopy = new Float32Array(maxDdPerPath);
+    const uwCopy = new Float32Array(maxUwPerPath);
+
+    const worst5Idx    = Math.floor(0.05 * (simPaths - 1));
+    const worst10Idx   = Math.floor(0.10 * (simPaths - 1));
+    const medianIdx    = Math.floor(0.50 * (simPaths - 1));
+    const worst10UwIdx = Math.floor(0.90 * (simPaths - 1));
+
+    const worst5MaxDd  = quickselectSafe(ddCopy, worst5Idx, 0, ddCopy.length - 1);
+    const worst10MaxDd = quickselectSafe(ddCopy, worst10Idx, 0, ddCopy.length - 1);
+    const medianMaxUw  = quickselectSafe(uwCopy, medianIdx, 0, uwCopy.length - 1);
+    const worst10MaxUw = quickselectSafe(uwCopy, worst10UwIdx, 0, uwCopy.length - 1);
+
+    // 中央値パーセンタイルのインデックスを探す（なければ中央値に最も近い位置）
+    let medianPIdx = percentiles.indexOf(50);
+    if (medianPIdx === -1) medianPIdx = Math.floor(percentiles.length / 2);
 
     return {
         percentiles,
@@ -400,15 +505,15 @@ function aggregateResults(totalPaths, cashPaths, ddPaths, maxDdPerPath, maxUwPer
         cashPercentileData,
         ddPercentileData,
         successRate: ((simPaths - bankruptCount) / simPaths * 100),
-        finalMedian: totalPercentileData[medianIdx][dataLen - 1],
-        worst10MaxDd: worst10MaxDd,
-        worst5MaxDd: worst5MaxDd,
-        medianMaxUw: medianMaxUw,
-        worst10MaxUw: worst10MaxUw,
+        finalMedian: totalPercentileData[medianPIdx][dataLen - 1],
+        worst10MaxDd,
+        worst5MaxDd,
+        medianMaxUw,
+        worst10MaxUw,
         maxDdPerPath: maxDdPerPath,
         maxUwPerPath: maxUwPerPath,
-        params: { simPaths: simPaths, totalMonths: dataLen - 1 },
-        dataLen,
+        params: { simPaths, totalMonths: dataLen - 1 },
+        dataLen
     };
 }
 // ====================================================================
