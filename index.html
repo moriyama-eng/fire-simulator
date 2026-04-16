@@ -818,6 +818,18 @@
             url.searchParams.set('seed', lastSimResult.usedSeed.toString());
             url.searchParams.set('fixSeed', '1');
             url.searchParams.set('auto', '1'); // Xから開いた人がすぐ実行できる
+            url.searchParams.set('model',   p.useTDistribution ? 'log-t' : 'log-normal');
+            url.searchParams.set('dfAuto',  p.simDfManual ? '0' : '1');
+            url.searchParams.set('dfNum',   p.simDfNum.toString());
+            url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
+            url.searchParams.set('infVol',  p.infVol.toString());
+            url.searchParams.set('infAr',   p.infAr.toString());
+            url.searchParams.set('ddTrig',  p.drawdownTrigger.toString());
+            url.searchParams.set('ddRepl',  p.drawdownReplenish.toString());
+            url.searchParams.set('replPace', p.replenishPace.toString());
+            url.searchParams.set('grTrig',  p.guardrailTrigger.toString());
+            url.searchParams.set('grRel',   p.guardrailRelease.toString());
+            url.searchParams.set('grRed',   p.guardrailReduction.toString());
 
             const text = '【FIREシミュレーション結果】\n' +
                 '💰 リスク資産: ' + (p.initialRiskAsset / 10000).toLocaleString() + '億円\n' +

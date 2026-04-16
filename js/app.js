@@ -1705,6 +1705,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ====================================================================
 // パーセンタイル入力の自動整形
+// 注意：applyQueryParams からも呼び出される
 // ====================================================================
 function formatPercentileInput() {
     const input = document.getElementById('percentileInput');
@@ -1768,6 +1769,7 @@ function applyQueryParams() {
         if (!el) return;
         el.value = params.get(key);
         el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('blur', { bubbles: true }));
     };
 
     const setBool = (id, key, invert) => {
@@ -1794,6 +1796,23 @@ function applyQueryParams() {
         document.getElementById('percentileInput').value = params.get('pct');
     }
 
+    // 分布モデル
+    if (params.has('model')) {
+        const modelSelect = document.getElementById('returnModelSelect');
+        modelSelect.value = params.get('model');
+        modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // 自由度 自動/固定
+    if (params.has('dfAuto')) {
+        const dfToggle = document.getElementById('simDfToggle');
+        dfToggle.checked = (params.get('dfAuto') === '1');
+        dfToggle.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // 自由度 手動値（固定モード時のみ意味を持つ）
+    setNum('simDfNum', 'dfNum');
+
     // seedToggle: fixSeed=1 → 固定(checked=false)、fixSeed=0 → ランダム(checked=true)
     setBool('seedToggle', 'fixSeed', true);
     setBool('cashBufferToggle', 'cb');
@@ -1802,6 +1821,27 @@ function applyQueryParams() {
     if (params.get('auto') === '1') {
         setTimeout(() => runMain(), 150);
     }
+
+    // インフレ変動モデル (AR-1)
+    if (params.has('infModel')) {
+        const infToggle = document.getElementById('inflationModelToggle');
+        infToggle.checked = (params.get('infModel') === '1');
+        infToggle.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    setNum('infVolNum', 'infVol');
+    setNum('infArNum', 'infAr');
+
+    // 現金バッファ詳細
+    setNum('drawdownTriggerNum', 'ddTrig');
+    setNum('drawdownReplenishNum', 'ddRepl');
+    setNum('replenishPaceNum', 'replPace');
+
+    // 支出ガードレール詳細
+    setNum('guardrailTriggerNum', 'grTrig');
+    setNum('guardrailReleaseNum', 'grRel');
+    setNum('guardrailReductionNum', 'grRed');
+
+    formatPercentileInput(); // パーセンタイル入力欄を整形
 }
 
 // ====================================================================
@@ -1827,6 +1867,18 @@ function openCompareTab() {
     url.searchParams.set('seed', lastSimResult.usedSeed.toString());
     url.searchParams.set('fixSeed', '1');
     url.searchParams.set('auto', '0');
+    url.searchParams.set('model', p.useTDistribution ? 'log-t' : 'log-normal');
+    url.searchParams.set('dfAuto', p.simDfManual ? '0' : '1');
+    url.searchParams.set('dfNum', p.simDfNum.toString());
+    url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
+    url.searchParams.set('infVol', p.infVol.toString());
+    url.searchParams.set('infAr', p.infAr.toString());
+    url.searchParams.set('ddTrig', p.drawdownTrigger.toString());
+    url.searchParams.set('ddRepl', p.drawdownReplenish.toString());
+    url.searchParams.set('replPace', p.replenishPace.toString());
+    url.searchParams.set('grTrig', p.guardrailTrigger.toString());
+    url.searchParams.set('grRel', p.guardrailRelease.toString());
+    url.searchParams.set('grRed', p.guardrailReduction.toString());
 
     window.open(url.toString(), '_blank');
 }
@@ -1858,6 +1910,18 @@ async function copySimUrl() {
     url.searchParams.set('seed', lastSimResult.usedSeed.toString());
     url.searchParams.set('fixSeed', '1');
     url.searchParams.set('auto', '1');
+    url.searchParams.set('model', p.useTDistribution ? 'log-t' : 'log-normal');
+    url.searchParams.set('dfAuto', p.simDfManual ? '0' : '1');
+    url.searchParams.set('dfNum', p.simDfNum.toString());
+    url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
+    url.searchParams.set('infVol', p.infVol.toString());
+    url.searchParams.set('infAr', p.infAr.toString());
+    url.searchParams.set('ddTrig', p.drawdownTrigger.toString());
+    url.searchParams.set('ddRepl', p.drawdownReplenish.toString());
+    url.searchParams.set('replPace', p.replenishPace.toString());
+    url.searchParams.set('grTrig', p.guardrailTrigger.toString());
+    url.searchParams.set('grRel', p.guardrailRelease.toString());
+    url.searchParams.set('grRed', p.guardrailReduction.toString());
 
     try {
         await navigator.clipboard.writeText(url.toString());
