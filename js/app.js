@@ -103,10 +103,6 @@ function transposeFlat(buffer, simPaths, dataLen) {
 }
 
 // ====================================================================
-// コア数学関数（worker.js に移譲済み。このファイルからは削除）
-// ====================================================================
-
-// ====================================================================
 // 入力パラメータのDOM取得とバリデーション
 // ====================================================================
 const DEFAULTS = {
@@ -384,7 +380,7 @@ function runSimulation(params, userPercentiles) {
             // ループ外でマージ済みフラットバッファを1回だけ確保（アロケーション最小化）
             const mergedTotals = new Float32Array(simPaths * dataLen);
             const mergedCashes = new Float32Array(simPaths * dataLen);
-            const mergedDds    = new Float32Array(simPaths * dataLen);
+            const mergedDds = new Float32Array(simPaths * dataLen);
             const maxDdPerPath = new Float32Array(simPaths);
             const maxUwPerPath = new Float32Array(simPaths);
 
@@ -448,12 +444,12 @@ function aggregateResultsProduction({
 }) {
     // データ構造を [パス][時間] -> [時間][パス] に転置（CPUキャッシュ局所性を最大化）
     const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
-    const cashT  = transposeFlat(cashesBuffer, simPaths, dataLen);
-    const ddT    = transposeFlat(ddsBuffer, simPaths, dataLen);
+    const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
+    const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
 
     const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
-    const cashPercentileData  = percentiles.map(() => new Float32Array(dataLen));
-    const ddPercentileData    = percentiles.map(() => new Float32Array(dataLen));
+    const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
+    const ddPercentileData = percentiles.map(() => new Float32Array(dataLen));
 
     // パーセンタイル → 配列インデックスに変換（ループ外で1回だけ計算）
     const ks = new Int32Array(percentiles.length);
@@ -485,14 +481,14 @@ function aggregateResultsProduction({
     const ddCopy = new Float32Array(maxDdPerPath);
     const uwCopy = new Float32Array(maxUwPerPath);
 
-    const worst5Idx    = Math.floor(0.05 * (simPaths - 1));
-    const worst10Idx   = Math.floor(0.10 * (simPaths - 1));
-    const medianIdx    = Math.floor(0.50 * (simPaths - 1));
+    const worst5Idx = Math.floor(0.05 * (simPaths - 1));
+    const worst10Idx = Math.floor(0.10 * (simPaths - 1));
+    const medianIdx = Math.floor(0.50 * (simPaths - 1));
     const worst10UwIdx = Math.floor(0.90 * (simPaths - 1));
 
-    const worst5MaxDd  = quickselectSafe(ddCopy, worst5Idx, 0, ddCopy.length - 1);
+    const worst5MaxDd = quickselectSafe(ddCopy, worst5Idx, 0, ddCopy.length - 1);
     const worst10MaxDd = quickselectSafe(ddCopy, worst10Idx, 0, ddCopy.length - 1);
-    const medianMaxUw  = quickselectSafe(uwCopy, medianIdx, 0, uwCopy.length - 1);
+    const medianMaxUw = quickselectSafe(uwCopy, medianIdx, 0, uwCopy.length - 1);
     const worst10MaxUw = quickselectSafe(uwCopy, worst10UwIdx, 0, uwCopy.length - 1);
 
     // 中央値パーセンタイルのインデックスを探す（なければ中央値に最も近い位置）
@@ -519,19 +515,23 @@ function aggregateResultsProduction({
 // ====================================================================
 // Chart.js 描画
 // ====================================================================
-// パーセンタイル値に応じた色を動的生成
-const PERCENTILE_COLOR_MAP = {
-    5: '#b71c1c', 10: '#e74c3c', 15: '#e57373', 20: '#ef6c00',
-    25: '#f39c12', 30: '#ffa726', 35: '#ffca28', 40: '#66bb6a',
-    45: '#42a5f5', 50: '#3498db', 55: '#29b6f6', 60: '#26c6da',
-    65: '#26a69a', 70: '#66bb6a', 75: '#8dd36b', 80: '#43a047',
-    85: '#388e3c', 90: '#2ecc71', 95: '#1b5e20'
+// パーセンタイル色グラデーション（本数・昇順インデックスで決定）
+// 赤→橙→黄→黄緑→緑 のグラデーション
+const GRADIENT_COLORS_BY_COUNT = {
+    1: ['#f1c40f'],
+    2: ['#e74c3c', '#27ae60'],
+    3: ['#e74c3c', '#f1c40f', '#27ae60'],
+    4: ['#e74c3c', '#f39c12', '#2ecc71', '#27ae60'],
+    5: ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#27ae60'],
 };
-function getPercentileColor(pct) {
-    if (PERCENTILE_COLOR_MAP[pct]) return PERCENTILE_COLOR_MAP[pct];
-    // フォールバック: 低赤(0)、高緑(120)のHSLグラデーション
-    const hue = (pct / 100) * 120;
-    return `hsl(${hue}, 70%, 50%)`;
+
+/**
+ * 昇順インデックス(index)と総本数(total)から色を返す
+ * index=0 が最小パーセンタイル（赤寄り）
+ */
+function getPercentileColorByIndex(index, total) {
+    const palette = GRADIENT_COLORS_BY_COUNT[Math.min(total, 5)] || GRADIENT_COLORS_BY_COUNT[5];
+    return palette[Math.min(index, palette.length - 1)];
 }
 
 // X軸ラベル生成（インデックスのみ、tick callbackで年表示）
@@ -570,10 +570,12 @@ function renderAssetChart(result, isLogScale) {
     if (assetChart) { assetChart.destroy(); assetChart = null; }
 
     // データセットを降順（高パーセンタイル低）で作成
+    // 色は昇順インデックス(origIdx)と総本数で決定する
     const orderedPercentiles = [...percentiles].reverse();
+    const total = percentiles.length;
     const datasets = orderedPercentiles.map((pct, idx) => {
-        const origIdx = percentiles.indexOf(pct);
-        const color = getPercentileColor(pct);
+        const origIdx = percentiles.indexOf(pct); // 昇順での位置
+        const color = getPercentileColorByIndex(origIdx, total);
         let data;
         if (isLogScale) {
             data = Array.from(totalPercentileData[origIdx]).map(v => (v > 0 ? v : null));
@@ -698,6 +700,12 @@ function renderAssetChart(result, isLogScale) {
             },
         },
     });
+
+    // ダウンサイドフォーカス初期適用
+    const dfToggleAsset = document.getElementById('downsideFocusAsset');
+    if (dfToggleAsset && dfToggleAsset.checked) {
+        applyDownsideFocus(assetChart, true);
+    }
 }
 
 function renderCashChart(result) {
@@ -708,10 +716,12 @@ function renderCashChart(result) {
     if (cashChart) { cashChart.destroy(); cashChart = null; }
 
     // データセットを降順（高パーセンタイル低）で作成
+    // 色は昇順インデックス(origIdx)と総本数で決定する
     const orderedPercentiles = [...percentiles].reverse();
+    const total = percentiles.length;
     const datasets = orderedPercentiles.map((pct, idx) => {
         const origIdx = percentiles.indexOf(pct);
-        const color = getPercentileColor(pct);
+        const color = getPercentileColorByIndex(origIdx, total);
         const fillMode = (idx === 0) ? false : '-1';
 
         return {
@@ -797,26 +807,12 @@ function renderCashChart(result) {
             },
         },
     });
-}
 
-// ====================================================================
-// 近似曲線（PDF）描画用ヘルパー関数
-// ====================================================================
-function smoothArray(data, windowSize) {
-    const result = new Array(data.length).fill(0);
-    const half = Math.floor(windowSize / 2);
-    for (let i = 0; i < data.length; i++) {
-        let sum = 0;
-        let count = 0;
-        for (let j = -half; j <= half; j++) {
-            if (i + j >= 0 && i + j < data.length) {
-                sum += data[i + j];
-                count++;
-            }
-        }
-        result[i] = sum / count;
+    // ダウンサイドフォーカス初期適用
+    const dfToggleCash = document.getElementById('downsideFocusCash');
+    if (dfToggleCash && dfToggleCash.checked) {
+        applyDownsideFocus(cashChart, true);
     }
-    return result;
 }
 
 function renderDdCdfChart(result) {
@@ -1292,6 +1288,8 @@ async function runMain() {
             const releaseInput = document.getElementById('guardrailReleaseNum');
             if (releaseInput) releaseInput.value = params.guardrailTrigger.toFixed(1);
         }
+        // パーセンタイル入力を自動整形してから parsePercentiles を呼ぶ
+        formatPercentileInput();
         const percentiles = parsePercentiles();
         const result = await runSimulation(params, percentiles);
         lastSimResult = result;
@@ -1309,13 +1307,23 @@ async function runMain() {
         // 共有ボタンの有効化
         const shareXBtn = document.getElementById('shareXBtn');
         const saveImageBtn = document.getElementById('saveImageBtn');
+        const compareTabBtn = document.getElementById('openCompareTabBtn');
+        const copySimUrlBtn = document.getElementById('copySimUrlBtn');
         if (shareXBtn && shareXBtn.disabled) {
             shareXBtn.disabled = false;
-            shareXBtn.removeAttribute('title');
+            shareXBtn.title = '入力条件・結果・シード値を含むURLをXにポストします。URLから同じ条件を再現できます。';
         }
         if (saveImageBtn && saveImageBtn.disabled) {
             saveImageBtn.disabled = false;
             saveImageBtn.removeAttribute('title');
+        }
+        if (compareTabBtn && compareTabBtn.disabled) {
+            compareTabBtn.disabled = false;
+            compareTabBtn.removeAttribute('title');
+        }
+        if (copySimUrlBtn && copySimUrlBtn.disabled) {
+            copySimUrlBtn.disabled = false;
+            copySimUrlBtn.removeAttribute('title');
         }
     } finally {
         runBtn.disabled = false;
@@ -1660,4 +1668,229 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ダウンサイドフォーカス トグル連動
+    const dfAsset = document.getElementById('downsideFocusAsset');
+    const dfCash = document.getElementById('downsideFocusCash');
+    if (dfAsset) {
+        dfAsset.addEventListener('change', function () {
+            if (assetChart && lastSimResult) {
+                applyDownsideFocus(assetChart, this.checked);
+            }
+        });
+    }
+    if (dfCash) {
+        dfCash.addEventListener('change', function () {
+            if (cashChart && lastSimResult) {
+                applyDownsideFocus(cashChart, this.checked);
+            }
+        });
+    }
+
+    // 比較タブボタン
+    const compareTabBtn = document.getElementById('openCompareTabBtn');
+    if (compareTabBtn) {
+        compareTabBtn.addEventListener('click', openCompareTab);
+    }
+
+    // URLコピーボタン
+    const copySimUrlBtn = document.getElementById('copySimUrlBtn');
+    if (copySimUrlBtn) {
+        copySimUrlBtn.addEventListener('click', copySimUrl);
+    }
+
+    // URLクエリパラメータの自動設定
+    applyQueryParams();
 });
+
+// ====================================================================
+// パーセンタイル入力の自動整形
+// ====================================================================
+function formatPercentileInput() {
+    const input = document.getElementById('percentileInput');
+    const raw = input.value;
+    const parsed = raw
+        .split(',')
+        .map(s => Number(s.trim()))
+        .filter(n => Number.isInteger(n) && n >= 1 && n <= 99);
+    const unique = [...new Set(parsed)].sort((a, b) => a - b).slice(0, 5);
+    const result = unique.length > 0 ? unique : [10, 30, 50, 70, 90];
+    input.value = result.join(', ');
+}
+
+// ====================================================================
+// ダウンサイドフォーカス適用
+// ====================================================================
+// enabled=true のとき 50% 超のパーセンタイル系列を非表示にする
+// Chart.js の setDatasetVisibility を使い、再生成なしで切替
+// ファンチャートの fill 参照が非表示 dataset を指す場合は fill=false に補正する
+function applyDownsideFocus(chart, enabled) {
+    // まず全 dataset の表示・非表示を確定する
+    chart.data.datasets.forEach((ds, i) => {
+        const pct = parseInt(ds.label, 10);
+        const visible = !enabled || pct <= 50;
+        chart.setDatasetVisibility(i, visible);
+    });
+
+    // ファンチャートの fill 補正:
+    // 表示中 dataset のうち最上位（最初に visible=true になる dataset）は
+    // 一つ上の dataset が非表示になっているため fill=false にする
+    // それ以外の表示 dataset は fill='-1' を維持（隣接する visible な dataset が存在するため）
+    let firstVisible = true;
+    chart.data.datasets.forEach((ds) => {
+        const pct = parseInt(ds.label, 10);
+        const visible = !enabled || pct <= 50;
+        if (visible) {
+            if (firstVisible) {
+                // 表示中で最上位の線: 上に visible な dataset がないので fill なし
+                ds.fill = false;
+                firstVisible = false;
+            } else {
+                // 2番目以降: 一つ上が visible なので fill='-1' を維持
+                ds.fill = '-1';
+            }
+        }
+    });
+
+    chart.update('none');
+}
+
+// ====================================================================
+// URLクエリパラメータ読み込み・自動設定
+// ====================================================================
+function applyQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.toString() === '') return; // params.size は一部環境で未サポートのため toString で代替
+
+    const setNum = (id, key) => {
+        if (!params.has(key)) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = params.get(key);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    const setBool = (id, key, invert) => {
+        if (!params.has(key)) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        const val = params.get(key) === '1';
+        el.checked = invert ? !val : val;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    setNum('initialRiskAssetNum', 'asset');
+    setNum('initialCashBufferNum', 'cash');
+    setNum('monthlyExpenseNum', 'expense');
+    setNum('expectedReturnNum', 'ret');
+    setNum('volatilityNum', 'vol');
+    setNum('inflationRateNum', 'inf');
+    setNum('simYearsNum', 'years');
+    setNum('simPathsNum', 'paths');
+    setNum('seedNum', 'seed');
+
+    if (params.has('pct')) {
+        // openCompareTab/shareToX が "10,30,50" 形式（カンマ区切り）で送出する
+        document.getElementById('percentileInput').value = params.get('pct');
+    }
+
+    // seedToggle: fixSeed=1 → 固定(checked=false)、fixSeed=0 → ランダム(checked=true)
+    setBool('seedToggle', 'fixSeed', true);
+    setBool('cashBufferToggle', 'cb');
+    setBool('guardrailToggle', 'gr');
+
+    if (params.get('auto') === '1') {
+        setTimeout(() => runMain(), 150);
+    }
+}
+
+// ====================================================================
+// 同条件の別タブを開く（比較用）
+// ====================================================================
+function openCompareTab() {
+    if (!lastSimResult) return;
+    const p = getParams();
+    const base = window.location.href.split('?')[0];
+    const url = new URL(base);
+
+    url.searchParams.set('asset', (p.initialRiskAsset / 10000).toString());
+    url.searchParams.set('cash', p.initialCashBuffer.toString());
+    url.searchParams.set('expense', p.monthlyExpense.toString());
+    url.searchParams.set('ret', p.expectedReturn.toString());
+    url.searchParams.set('vol', p.volatility.toString());
+    url.searchParams.set('inf', p.inflationRate.toString());
+    url.searchParams.set('years', p.simYears.toString());
+    url.searchParams.set('paths', p.simPaths.toString());
+    url.searchParams.set('pct', document.getElementById('percentileInput').value.replace(/\s/g, ''));
+    url.searchParams.set('cb', p.cashBufferToggle ? '1' : '0');
+    url.searchParams.set('gr', p.guardrailToggle ? '1' : '0');
+    url.searchParams.set('seed', lastSimResult.usedSeed.toString());
+    url.searchParams.set('fixSeed', '1');
+    url.searchParams.set('auto', '0');
+
+    window.open(url.toString(), '_blank');
+}
+
+// ====================================================================
+// 解析結果URLリンクをクリップボードにコピー
+// ====================================================================
+async function copySimUrl() {
+    if (!lastSimResult) return;
+    const btn = document.getElementById('copySimUrlBtn');
+    if (btn.disabled) return;
+    const originalHtml = btn.innerHTML;
+
+    // shareToX と同じ URL 生成ロジック（auto=1・固定シード）
+    const p = getParams();
+    const base = 'https://moriyama-eng.github.io/fire-simulator/';
+    const url = new URL(base);
+    url.searchParams.set('asset', (p.initialRiskAsset / 10000).toString());
+    url.searchParams.set('cash', p.initialCashBuffer.toString());
+    url.searchParams.set('expense', p.monthlyExpense.toString());
+    url.searchParams.set('ret', p.expectedReturn.toString());
+    url.searchParams.set('vol', p.volatility.toString());
+    url.searchParams.set('inf', p.inflationRate.toString());
+    url.searchParams.set('years', p.simYears.toString());
+    url.searchParams.set('paths', p.simPaths.toString());
+    url.searchParams.set('pct', document.getElementById('percentileInput').value.replace(/\s/g, ''));
+    url.searchParams.set('cb', p.cashBufferToggle ? '1' : '0');
+    url.searchParams.set('gr', p.guardrailToggle ? '1' : '0');
+    url.searchParams.set('seed', lastSimResult.usedSeed.toString());
+    url.searchParams.set('fixSeed', '1');
+    url.searchParams.set('auto', '1');
+
+    try {
+        await navigator.clipboard.writeText(url.toString());
+        // コピー完了フィードバック（一時的にボタン表示を変える）
+        btn.disabled = true;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current flex-shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
+        btn.classList.add('text-emerald-400');
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('text-emerald-400');
+            btn.disabled = false;
+        }, 2000);
+    } catch (err) {
+        // クリップボードAPIが使えない環境向けフォールバック
+        const ta = document.createElement('textarea');
+        ta.value = url.toString();
+        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+            document.execCommand('copy');
+            btn.disabled = true;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current flex-shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
+            btn.classList.add('text-emerald-400');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('text-emerald-400');
+                btn.disabled = false;
+            }, 2000);
+        } catch (e) {
+            alert('URLのコピーに失敗しました。\n' + url.toString());
+        }
+        document.body.removeChild(ta);
+    }
+}

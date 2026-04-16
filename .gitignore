@@ -171,3 +171,4 @@ GEMINI.md
 .agent/
 .archive/
 .gemini/
+repomix-output*
