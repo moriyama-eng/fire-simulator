@@ -356,6 +356,7 @@ function runSimulation(params, userPercentiles) {
                 };
                 worker.onerror = (err) => {
                     worker.terminate();
+                    alert("シミュレーション中にエラーが発生しました。入力値を確認してください。");
                     rejW(err);
                 };
             });
@@ -1390,9 +1391,12 @@ async function saveImage() {
         const chartCard = chartContainer.parentElement;
 
         const origCardOverflow = chartCard.style.overflow;
+        const origCardHeight = chartCard.style.height;
         const origWidth = chartContainer.style.width;
         const origHeight = chartContainer.style.height;
 
+        // 画面のレイアウトシフトを防ぐため親要素(カード)の高さを現在値に一時固定
+        chartCard.style.height = chartCard.offsetHeight + 'px';
         chartCard.style.overflow = 'hidden';
         chartContainer.style.width = '1000px';
         chartContainer.style.height = '600px';
@@ -1427,6 +1431,7 @@ async function saveImage() {
             chartContainer.style.width = origWidth;
             chartContainer.style.height = origHeight;
             chartCard.style.overflow = origCardOverflow;
+            chartCard.style.height = origCardHeight;
 
             assetChart.resize();
             assetChart.update('none');
@@ -1443,10 +1448,7 @@ async function saveImage() {
         if (!container) throw new Error("書き出し用のテンプレートが見つかりませんでした (captureContainer not found)");
 
         // スマホ等のビューポートによる影響を最小化するため、一時的にスクロール位置をリセット（念のため）
-        const origScrollX = window.scrollX;
-        const origScrollY = window.scrollY;
-        window.scrollTo(0, 0);
-
+        // ※ユーザーの要望によりスクロール処理を削除
         const canvas = await html2canvas(container, {
             scale: 2, // 高解像度化のために2倍に設定
             useCORS: true,
@@ -1463,7 +1465,7 @@ async function saveImage() {
             scrollY: 0,
         });
 
-        window.scrollTo(origScrollX, origScrollY); // 元に戻す
+        // window.scrollTo(origScrollX, origScrollY); // 元に戻す (スクロール処理削除に伴いコメントアウトまたは削除)
 
         // 4. ダウンロード実行
         const url = canvas.toDataURL('image/png', 1.0);
@@ -1475,11 +1477,19 @@ async function saveImage() {
         a.click();
         document.body.removeChild(a);
 
+        // 成功時のフィードバック表示
+        btn.innerHTML = `<svg class="w-5 h-5 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>保存しました！`;
+        btn.classList.add('text-emerald-400');
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('text-emerald-400');
+            btn.disabled = false;
+        }, 2000);
+
     } catch (err) {
         console.error("画像保存エラーの詳細:", err);
         alert("画像の生成に失敗しました。シミュレーション完了後に実行してください。\n\n詳細: " + err.message);
-    } finally {
-        // ボタン状態の復元
+        // エラー時は即座に復元
         btn.innerHTML = originalHtml;
         btn.disabled = false;
     }
