@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.8.0</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.8.1</title>
     <meta name="description" content="リスク資産と現金バッファを用いたモンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -672,7 +672,7 @@
 
 
                 <div class="glass-card glow-border rounded-2xl p-5">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <div class="flex flex-col gap-2 mb-4">
                         <div class="flex items-center gap-2">
                             <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">総資産推移（パーセンタイル）
                             </h2>
@@ -683,7 +683,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-4 flex-wrap">
+                        <div class="flex items-center gap-4">
                             <!-- ダウンサイドフォーカス トグル -->
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-slate-300 font-medium">全表示</span>
@@ -697,7 +697,7 @@
                                     </div>
                                 </label>
                                 <span class="text-xs text-slate-300 font-medium">50%以下のみ</span>
-                                <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                <div class="tooltip-container tooltip-center-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>資産が下振れするリスクに焦点を当てて確認したい場合に便利です。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。
@@ -718,7 +718,7 @@
                 </div>
 
                 <div class="glass-card glow-border rounded-2xl p-5">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <div class="flex flex-col gap-2 mb-4">
                         <div class="flex items-center gap-2">
                             <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">現金バッファ推移（パーセンタイル）
                             </h2>
@@ -742,7 +742,7 @@
                                 </div>
                             </label>
                             <span class="text-xs text-slate-300 font-medium">50%以下のみ</span>
-                            <div class="tooltip-container tooltip-right-align" tabindex="0">
+                            <div class="tooltip-container tooltip-center-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                 <div class="tooltip-text">
                                     ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>現金バッファが尽きやすい悪い状況に絞って確認できます。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。
@@ -848,7 +848,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v1.8.0</span>
+                <span>v1.8.1</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -995,7 +995,7 @@
             class="h-[100px] px-10 border-t border-slate-800/50 flex flex-row items-center justify-between text-slate-400 gap-3">
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
-                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.0</span>
+                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.1</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">

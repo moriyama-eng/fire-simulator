@@ -125,6 +125,7 @@ self.onmessage = function (e) {
     } = params;
 
     const totalMonths = simYears * 12;
+    const EPSILON = 0.0001; // ゼロ除算防止および破産判定用の微小値
 
     const arithmeticReturn = expectedReturn / 100;
     const annualVol = volatility / 100;
@@ -213,7 +214,7 @@ self.onmessage = function (e) {
 
             currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
             const currentTotalAsset = currentRiskAsset + currentCash;
-            const safeHWM = Math.max(highWaterMark, 0.0001);
+            const safeHWM = Math.max(highWaterMark, EPSILON);
             const currentDD = (currentTotalAsset - safeHWM) / safeHWM;
 
             // ガードレール判定（発動閾値以下に悪化したら発動、終了閾値以上まで回復したら解除）
@@ -248,7 +249,7 @@ self.onmessage = function (e) {
 
             const idx = baseIdx + t;
 
-            if (currentRiskAsset + currentCash <= 0.0001) {
+            if (currentRiskAsset + currentCash <= EPSILON) {
                 currentRiskAsset = 0;
                 currentCash = 0;
                 bankrupt = true;
@@ -274,13 +275,13 @@ self.onmessage = function (e) {
                 currentUwMonths++;
                 if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
                 // ドローダウンが補充終了閾値を下回ったら補充モードを終了
-                const replenishCheckDD = (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001);
+                const replenishCheckDD = (eomAsset - Math.max(highWaterMark, EPSILON)) / Math.max(highWaterMark, EPSILON);
                 if (replenishCheckDD <= ddReplenishThreshold) {
                     isReplenishMode = false;
                 }
             }
 
-            let eomDD = Math.min(0, (eomAsset - Math.max(highWaterMark, 0.0001)) / Math.max(highWaterMark, 0.0001));
+            let eomDD = Math.min(0, (eomAsset - Math.max(highWaterMark, EPSILON)) / Math.max(highWaterMark, EPSILON));
             if (eomDD < maxDD) maxDD = eomDD;
 
             // 1次元インデックス idx = p * dataLen + t に書き込む
