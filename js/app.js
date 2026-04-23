@@ -7,6 +7,7 @@ let ddHistChart = null;
 let uwHistChart = null;
 let lastSimResult = null;
 let isRunning = false;
+let isResultDirty = false;  // 入力変更後未実行状態フラグ
 
 // ====================================================================
 // 真の単一パス・マルチセレクト（スタックベース非再帰・バッファ再利用版）
@@ -106,7 +107,9 @@ function transposeFlat(buffer, simPaths, dataLen) {
 // 入力パラメータのDOM取得とバリデーション
 // ====================================================================
 const DEFAULTS = {
-    initialRiskAsset: 10000, initialCashBuffer: 1000, monthlyExpense: 30,
+    initialRiskAsset: 1.0,  // UI表示単位（億円）と統一
+    initialCashBuffer: 1000,
+    monthlyExpense: 30,
     expectedReturn: 10.0, volatility: 18.0, inflationRate: 2.0,
     simYears: 30, simPaths: 10000, drawdownTrigger: -20.0, drawdownReplenish: -5.0, replenishPace: 5.0,
     guardrailTrigger: -20.0, guardrailReduction: -20.0, guardrailRelease: -15.0
@@ -135,7 +138,7 @@ function getParams() {
         volatility: safeNumber(document.getElementById('volatilityNum').value, DEFAULTS.volatility),
         inflationRate: safeNumber(document.getElementById('inflationRateNum').value, DEFAULTS.inflationRate),
         simYears: safeNumber(document.getElementById('simYearsNum').value, DEFAULTS.simYears),
-        simPaths: Math.max(1000, Math.min(100000, Math.round(safeNumber(document.getElementById('simPathsNum').value, DEFAULTS.simPaths)))),
+        simPaths: Math.max(1000, Math.min(50000, Math.round(safeNumber(document.getElementById('simPathsNum').value, DEFAULTS.simPaths)))),
         cashBufferToggle: document.getElementById('cashBufferToggle').checked,
         drawdownTrigger: Math.min(0, safeNumber(document.getElementById('drawdownTriggerNum').value, DEFAULTS.drawdownTrigger)),
         drawdownReplenish: Math.min(0, safeNumber(document.getElementById('drawdownReplenishNum').value, DEFAULTS.drawdownReplenish)),
@@ -153,6 +156,39 @@ function getParams() {
         useFixedSeed: !document.getElementById('seedToggle').checked,
         seedNum: safeNumber(document.getElementById('seedNum').value, 123456),
     };
+}
+
+// ====================================================================
+// 共有系ボタンの有効/無効 一括制御
+// ====================================================================
+function setButtonsEnabledForResult(enabled) {
+    const buttons = [
+        document.getElementById('shareXBtn'),
+        document.getElementById('saveImageBtn'),
+        document.getElementById('openCompareTabBtn'),
+        document.getElementById('copySimUrlBtn')
+    ];
+    buttons.forEach(btn => {
+        if (!btn) return;
+        btn.disabled = !enabled;
+        if (!enabled) {
+            btn.title = '入力条件が変更されました。再度シミュレーションを実行してください。';
+        } else {
+            btn.removeAttribute('title');
+        }
+    });
+}
+
+// 入力変更時に呼び出し、stale 状態をセット
+function markInputChanged() {
+    if (!lastSimResult) return;
+    isResultDirty = true;
+    setButtonsEnabledForResult(false);
+    // サマリーカードに警告表示を反映するため再描画
+    if (lastSimResult) {
+        const params = getParams();
+        updateSummaryCard(lastSimResult, params);
+    }
 }
 
 // ====================================================================
@@ -180,8 +216,10 @@ function setupHybridInputs() {
     buttons.forEach(btn => {
         let intervalId;
         let timeoutId;
+        let isLongPress = false; // 長押し中フラグ（clickとの重複防止）
 
         const startIncrement = () => {
+            isLongPress = true;
             updateValue();
             // 最初の遅延後に連続更新開始
             timeoutId = setTimeout(() => {
@@ -192,6 +230,10 @@ function setupHybridInputs() {
         const stopIncrement = () => {
             clearTimeout(timeoutId);
             clearInterval(intervalId);
+            // clickイベントとの競合（二重発火）を防ぐため、フラグクリアを遅延させる
+            setTimeout(() => {
+                isLongPress = false;
+            }, 50);
         };
 
         const updateValue = () => {
@@ -244,6 +286,7 @@ function setupHybridInputs() {
 
             // 値が変更されたらイベントを発火（フォーカス時に実行ボタン等と連携する場合に備え）
             input.dispatchEvent(new Event('input', { bubbles: true }));
+            markInputChanged();
         };
 
         // マウスタッチイベントの登録
@@ -262,6 +305,14 @@ function setupHybridInputs() {
         btn.addEventListener('mouseleave', stopIncrement);
         btn.addEventListener('touchend', stopIncrement);
         btn.addEventListener('touchcancel', stopIncrement);
+
+        // キーボード操作 (Enter / Space) による単発増減
+        btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                updateValue();
+            }
+        });
     });
 
     // 各インプットフィールドにフォーカスが外れた時のバリデーション（範囲内にクランプ）を追加
@@ -303,6 +354,7 @@ function setupHybridInputs() {
             } else {
                 input.value = formatted;
             }
+            markInputChanged();
         });
     });
 }
@@ -325,14 +377,17 @@ function runSimulation(params, userPercentiles) {
 
         let currentSeedOffset = 0;
         const workerPromises = [];
+        const workers = [];  // 全ワーカーインスタンス保持（エラー時全停止用）
         // 各ワーカーの進捗を個別に管理
         const workerProgress = new Array(numWorkers).fill(0);
+        let hasFailed = false;  // 二重 reject/alert 防止フラグ
 
         for (let i = 0; i < numWorkers; i++) {
             const pathsCount = basePaths + (i < remainder ? 1 : 0);
             if (pathsCount === 0) break;
 
             const worker = new Worker('js/worker.js');
+            workers.push(worker);
 
             const p = new Promise((resW, rejW) => {
                 worker.onmessage = (e) => {
@@ -355,6 +410,10 @@ function runSimulation(params, userPercentiles) {
                     }
                 };
                 worker.onerror = (err) => {
+                    if (hasFailed) return;
+                    hasFailed = true;
+                    // 全ワーカーを停止
+                    workers.forEach(w => w.terminate());
                     worker.terminate();
                     alert("シミュレーション中にエラーが発生しました。入力値を確認してください。");
                     rejW(err);
@@ -370,6 +429,7 @@ function runSimulation(params, userPercentiles) {
 
         // 全ワーカー完了後に結果を再構築して resolve
         Promise.all(workerPromises).then(async (results) => {
+            if (hasFailed) return; // すでにエラー処理済み
             const btn = document.getElementById('runBtn');
             if (btn) {
                 btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>  結果を集計、描画中...`;
@@ -421,7 +481,12 @@ function runSimulation(params, userPercentiles) {
             result.usedDf = Math.max(2.1, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
 
             resolve(result);
-        }).catch(reject);
+        }).catch(err => {
+            if (hasFailed) return;
+            hasFailed = true;
+            workers.forEach(w => w.terminate());
+            reject(err);
+        });
     });
 }
 
@@ -1058,7 +1123,10 @@ function updateSummaryCard(result, params) {
             <div class="absolute inset-0 bg-gradient-to-br ${statusGrad} opacity-30"></div>
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
-                    <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
+                        ${isResultDirty ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">⚠️ 条件変更あり</span>' : ''}
+                    </div>
                     <span id="uiExecTime" class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 
@@ -1294,6 +1362,7 @@ async function runMain() {
         const percentiles = parsePercentiles();
         const result = await runSimulation(params, percentiles);
         lastSimResult = result;
+        isResultDirty = false;
 
         const isLogScale = document.getElementById('logScaleToggle').checked;
         renderAssetChart(result, isLogScale);
@@ -1669,12 +1738,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初期状態の（未実行）サマリカードを描画
     renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
 
-    // パラメータが変更されたら未実行サマリを更新するリスナーを各inputに追加
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('change', () => {
+    // パラメータが変更されたら未実行サマリを更新または警告バッジを表示するリスナーを各input/selectに追加
+    const inputsAndSelects = document.querySelectorAll('input, select');
+    inputsAndSelects.forEach(el => {
+        el.addEventListener('change', () => {
             if (!lastSimResult) {
                 renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
+            } else {
+                markInputChanged();
             }
         });
     });
