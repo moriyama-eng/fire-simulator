@@ -144,7 +144,7 @@ self.onmessage = function (e) {
     // フラットな1次元 Float32Array を確保（pathsCount * dataLen）
     const totals = new Float32Array(pathsCount * dataLen);
     const cashes = new Float32Array(pathsCount * dataLen);
-    const dds    = new Float32Array(pathsCount * dataLen);
+    const dds = new Float32Array(pathsCount * dataLen);
     // パスごとの最大値（長さ pathsCount）
     const maxDds = new Float32Array(pathsCount);
     const maxUws = new Float32Array(pathsCount);
@@ -166,6 +166,8 @@ self.onmessage = function (e) {
         let highWaterMark = initialRiskAsset + currentCash;
         let bankrupt = false;
         let isReplenishMode = false;
+        // 翌月反映フラグ（初期値はfalse、初月はデフォルト動作）
+        let useCashNextMonth = false;
         let isGuardrailActive = false;
 
         let currentUwMonths = 0;
@@ -176,7 +178,7 @@ self.onmessage = function (e) {
         const baseIdx = p * dataLen;
         totals[baseIdx] = currentRiskAsset + currentCash;
         cashes[baseIdx] = currentCash;
-        dds[baseIdx]    = 0; // 初期時点のドローダウンは0%
+        dds[baseIdx] = 0; // 初期時点のドローダウンは0%
 
         let currentInfRate = inflationRate / 100; // 初期インフレ率は期待値
         let infMultiplier = 1.0;                  // 累積インフレ係数
@@ -201,9 +203,7 @@ self.onmessage = function (e) {
                 infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
             }
 
-            let currentExpense = monthlyExpense * infMultiplier;
-            const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
-
+            // ----- 1. 市場リターン適用 -----
             let Z;
             if (useTDistribution) {
                 const tRand = randomT(rng, simDf);
@@ -211,52 +211,46 @@ self.onmessage = function (e) {
             } else {
                 Z = randomNormal(rng);
             }
-
             currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
-            const currentTotalAsset = currentRiskAsset + currentCash;
-            const safeHWM = Math.max(highWaterMark, EPSILON);
-            const currentDD = (currentTotalAsset - safeHWM) / safeHWM;
 
-            // ガードレール判定（発動閾値以下に悪化したら発動、終了閾値以上まで回復したら解除）
-            if (guardrailToggle) {
-                if (currentDD <= triggerGR) {
-                    isGuardrailActive = true;
-                } else if (isGuardrailActive && currentDD >= releaseGR) {
-                    // ガードレール終了閾値（releaseGR）を上回った場合に解除
-                    isGuardrailActive = false;
-                }
+            // ----- 2. インフレ反映後の支出額を計算 -----
+            let currentExpense = monthlyExpense * infMultiplier;
+            const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
 
-                if (isGuardrailActive) {
-                    // guardrailReductionはマイナス（例：-20.0 => 1 - 0.20 = 0.8倍）
-                    currentExpense *= (1 + guardrailReduction / 100);
-                }
+            // 前月の支出後判定で決定したガードレール状態を適用（当月の支出に反映）
+            if (isGuardrailActive) {
+                // guardrailReductionはマイナス（例：-20.0 => 1 - 0.20 = 0.8倍）
+                currentExpense *= (1 + guardrailReduction / 100);
             }
 
-            // isReplenishMode の更新は取崩し後の eomAsset ベースで後述
-
-            if (cashBufferToggle && currentDD <= ddThreshold) {
+            // ----- 3. 支出の実行（前月の支出後判定で決定した useCashNextMonth を使用）-----
+            if (cashBufferToggle && useCashNextMonth) {
+                // 現金バッファから支出
                 currentCash -= currentExpense;
             } else if (cashBufferToggle && isReplenishMode && currentCash < currentBufferLimit) {
+                // 補充モード中で現金が不足していれば補充
                 const shortage = currentBufferLimit - currentCash;
                 const replenishAmount = Math.min(shortage, currentExpense * replenishPace);
                 const actualReplenish = Math.min(replenishAmount, currentRiskAsset);
                 currentRiskAsset -= actualReplenish;
                 currentCash += actualReplenish;
+                // 支出はリスク資産から
                 currentRiskAsset -= currentExpense;
             } else {
+                // 通常はリスク資産から支出
                 currentRiskAsset -= currentExpense;
             }
 
-            const idx = baseIdx + t;
-
+            // 資産が負になった場合の補正（破綻処理）
             if (currentRiskAsset + currentCash <= EPSILON) {
                 currentRiskAsset = 0;
                 currentCash = 0;
                 bankrupt = true;
                 bankruptCount++;
+                const idx = baseIdx + t;
                 totals[idx] = 0;
                 cashes[idx] = 0;
-                dds[idx]    = -1.0;
+                dds[idx] = -1.0;
                 maxDD = -1.0;
                 currentUwMonths += (totalMonths - t) + 1;
                 if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
@@ -265,29 +259,47 @@ self.onmessage = function (e) {
             if (currentCash < 0) { currentRiskAsset += currentCash; currentCash = 0; }
             if (currentRiskAsset < 0) { currentCash += currentRiskAsset; currentRiskAsset = 0; }
 
+            // ----- 4. 支出後総資産 (EOM Asset) の確定 -----
             const eomAsset = currentRiskAsset + currentCash;
+            const safeHWM = Math.max(highWaterMark, EPSILON);
+            const eomDD = Math.min(0, (eomAsset - safeHWM) / safeHWM);
+
+            // ----- 5. 支出後総資産を基準にすべての判定を実施（翌月用フラグ更新）-----
+            // 5-1. 現金バッファ使用判定（翌月の支出元を決定）
+            useCashNextMonth = cashBufferToggle && (eomDD <= ddThreshold);
+
+            // 5-2. ガードレール発動/解除判定（翌月の支出額に反映）
+            if (guardrailToggle) {
+                if (eomDD <= triggerGR) {
+                    isGuardrailActive = true;
+                } else if (isGuardrailActive && eomDD >= releaseGR) {
+                    // ガードレール終了閾値（releaseGR）を上回った場合に解除
+                    isGuardrailActive = false;
+                }
+            }
+
+            // 5-3. 高値更新・停滞期間・補充モード開始判定
             if (eomAsset >= highWaterMark) {
                 currentUwMonths = 0;
                 highWaterMark = eomAsset;
-                // 取崩し後に高値更新 → バッファ補充モードを開始（ドローダウン辺暌で補充終了邖値を下回ると終了）
-                isReplenishMode = true;
+                isReplenishMode = true;  // 高値更新で補充モード開始
             } else {
                 currentUwMonths++;
                 if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
-                // ドローダウンが補充終了閾値を下回ったら補充モードを終了
-                const replenishCheckDD = (eomAsset - Math.max(highWaterMark, EPSILON)) / Math.max(highWaterMark, EPSILON);
-                if (replenishCheckDD <= ddReplenishThreshold) {
+                // 補充モード終了判定：支出後DDが補充終了閾値を下回ったら終了
+                if (eomDD <= ddReplenishThreshold) {
                     isReplenishMode = false;
                 }
             }
 
-            let eomDD = Math.min(0, (eomAsset - Math.max(highWaterMark, EPSILON)) / Math.max(highWaterMark, EPSILON));
+            // 5-4. 最大ドローダウン更新
             if (eomDD < maxDD) maxDD = eomDD;
 
-            // 1次元インデックス idx = p * dataLen + t に書き込む
+            // ----- 6. 記録 -----
+            const idx = baseIdx + t;
             totals[idx] = eomAsset;
             cashes[idx] = currentCash;
-            dds[idx]    = eomDD; // ドローダウン率を蓄積
+            dds[idx] = eomDD; // ドローダウン率を蓄積
         }
         maxDds[p] = maxDD;
         maxUws[p] = maxUwMonths;
@@ -304,7 +316,7 @@ self.onmessage = function (e) {
             type: "complete",
             totalsBuffer: totals.buffer,
             cashesBuffer: cashes.buffer,
-            ddsBuffer:    dds.buffer,
+            ddsBuffer: dds.buffer,
             maxDdsBuffer: maxDds.buffer,
             maxUwsBuffer: maxUws.buffer,
             bankruptCount: bankruptCount

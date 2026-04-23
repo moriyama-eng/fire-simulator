@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.8.1</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.8.2</title>
     <meta name="description" content="リスク資産と現金バッファを用いたモンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -82,7 +82,8 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合は、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。
+                                        シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合には、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。<br><span
+                                            class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>
                                     </div>
                                 </div>
                             </div>
@@ -361,7 +362,7 @@
                                 <button type="button" class="stepper-btn decrement" data-target="simPathsNum">−</button>
                                 <div class="stepper-value-container">
                                     <input type="text" inputmode="numeric" id="simPathsNum" min="5000" max="50000"
-                                        step="5000" value="10,000" class="stepper-input formatted-number">
+                                        step="5000" value="10,000" class="stepper-input formatted-number" max="50000">
                                 </div>
                                 <button type="button" class="stepper-btn increment" data-target="simPathsNum">＋</button>
                             </div>
@@ -408,7 +409,9 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br></div>
+                                        総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br><span
+                                            class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
@@ -429,7 +432,9 @@
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
-                                        ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。
+                                        ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。<br><span
+                                            class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われます。</span><br><span
+                                            class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われます。</span>
                                     </div>
                                 </div>
                             </div>
@@ -498,7 +503,8 @@
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% =
-                                        資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。
+                                        資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。<br><span
+                                            class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>
                                     </div>
                                 </div>
                             </div>
@@ -522,7 +528,8 @@
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
                                     <div class="tooltip-text">
                                         ガードレール発動中、ドローダウンが改善しこの割合を上回るとガードレールが自動解除され、元の取崩し額に戻ります。<br>例：-15% =
-                                        ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。
+                                        ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。<br><span
+                                            class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>
                                     </div>
                                 </div>
                             </div>
@@ -818,18 +825,18 @@
             url.searchParams.set('seed', lastSimResult.usedSeed.toString());
             url.searchParams.set('fixSeed', '1');
             url.searchParams.set('auto', '1'); // Xから開いた人がすぐ実行できる
-            url.searchParams.set('model',   p.useTDistribution ? 'log-t' : 'log-normal');
-            url.searchParams.set('dfAuto',  p.simDfManual ? '0' : '1');
-            url.searchParams.set('dfNum',   p.simDfNum.toString());
+            url.searchParams.set('model', p.useTDistribution ? 'log-t' : 'log-normal');
+            url.searchParams.set('dfAuto', p.simDfManual ? '0' : '1');
+            url.searchParams.set('dfNum', p.simDfNum.toString());
             url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
-            url.searchParams.set('infVol',  p.infVol.toString());
-            url.searchParams.set('infAr',   p.infAr.toString());
-            url.searchParams.set('ddTrig',  p.drawdownTrigger.toString());
-            url.searchParams.set('ddRepl',  p.drawdownReplenish.toString());
+            url.searchParams.set('infVol', p.infVol.toString());
+            url.searchParams.set('infAr', p.infAr.toString());
+            url.searchParams.set('ddTrig', p.drawdownTrigger.toString());
+            url.searchParams.set('ddRepl', p.drawdownReplenish.toString());
             url.searchParams.set('replPace', p.replenishPace.toString());
-            url.searchParams.set('grTrig',  p.guardrailTrigger.toString());
-            url.searchParams.set('grRel',   p.guardrailRelease.toString());
-            url.searchParams.set('grRed',   p.guardrailReduction.toString());
+            url.searchParams.set('grTrig', p.guardrailTrigger.toString());
+            url.searchParams.set('grRel', p.guardrailRelease.toString());
+            url.searchParams.set('grRed', p.guardrailReduction.toString());
 
             const text = '【FIREシミュレーション結果】\n' +
                 '💰 リスク資産: ' + (p.initialRiskAsset / 10000).toLocaleString() + '億円\n' +
@@ -848,7 +855,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v1.8.1</span>
+                <span>v1.8.2</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -995,7 +1002,7 @@
             class="h-[100px] px-10 border-t border-slate-800/50 flex flex-row items-center justify-between text-slate-400 gap-3">
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
-                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.1</span>
+                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.2</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">
