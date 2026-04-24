@@ -1,0 +1,19 @@
+{
+  "_comment": "v1.8.3 参照データ。seed=123456, paths=1000, 他デフォルト値",
+  "successRate": 93.10000000000001,
+  "finalMedian": 535045024,
+  "worst10MaxDd": -0.8075803518295288,
+  "worst5MaxDd": -1,
+  "medianMaxUw": 102,
+  "worst10MaxUw": 310,
+  "percentileFinalValues": {
+    "10": 32844626,
+    "30": 276818720,
+    "50": 535045024,
+    "70": 963367040,
+    "90": 2386328320
+  },
+  "seed": 123456,
+  "modelType": "log-t",
+  "usedDf": 4.2
+}

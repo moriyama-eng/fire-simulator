@@ -171,5 +171,9 @@ GEMINI.md
 .agent/
 .archive/
 .gemini/
+.temp/
+# Repomix
 repomix-output*
-temp/
+repomix.config.json
+# Node modules
+node_modules/

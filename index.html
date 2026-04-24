@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.8.3</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.9.0</title>
     <meta name="description" content="リスク資産と現金バッファを用いたモンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -51,6 +51,7 @@
             <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
                 <!-- 資産設定 -->
                 <div class="glass-card glow-border rounded-2xl p-5">
+                    <!-- i18n:section.assetSettings -->
                     <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">資産設定</h2>
                     <div class="space-y-5">
                         <div>
@@ -125,6 +126,7 @@
 
                 <!-- マーケット設定 -->
                 <div class="glass-card glow-border rounded-2xl p-5">
+                    <!-- i18n:section.marketSettings -->
                     <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">マーケット設定</h2>
                     <div class="space-y-5">
                         <div>
@@ -327,6 +329,7 @@
 
                 <!-- シミュレーション設定 -->
                 <div class="glass-card glow-border rounded-2xl p-5">
+                    <!-- i18n:section.simSettings -->
                     <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">シミュレーション設定</h2>
                     <div class="space-y-5">
                         <div>
@@ -386,6 +389,7 @@
                 <!-- 現金バッファ設定 -->
                 <div class="glass-card glow-border rounded-2xl p-5">
                     <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+                        <!-- i18n:section.cashBuffer -->
                         <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">現金バッファ設定</h2>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-slate-300 font-medium">OFF</span>
@@ -477,6 +481,7 @@
                 <!-- 支出ガードレール設定 -->
                 <div class="glass-card glow-border rounded-2xl p-5">
                     <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+                        <!-- i18n:section.guardrail -->
                         <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">支出ガードレール設定</h2>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-slate-300 font-medium">OFF</span>
@@ -601,6 +606,7 @@
                     </div>
                 </div>
 
+                <!-- i18n:button.run -->
                 <button type="button" id="runBtn" class="btn-pulse w-full py-3.5 rounded-xl font-bold text-sm tracking-wide
                                bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto]
                                hover:bg-right transition-all duration-500
@@ -799,63 +805,13 @@
     </main>
 
     <!-- 外部JS読み込み -->
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 
-    <!-- X共有機能（絵文字を確実に反映させるためインラインで定義） -->
-    <script>
-        function shareToX() {
-            if (!lastSimResult) return;
-            const p = getParams();
-            const s = lastSimResult.successRate.toFixed(1);
-
-            // クエリパラメータ付きURLを組み立て（auto=1 で開いた人がすぐ再現できる）
-            const base = 'https://moriyama-eng.github.io/fire-simulator/';
-            const url = new URL(base);
-            url.searchParams.set('asset', (p.initialRiskAsset / 100000000).toString());
-            url.searchParams.set('cash', (p.initialCashBuffer / 10000).toString());
-            url.searchParams.set('expense', (p.monthlyExpense / 10000).toString());
-            url.searchParams.set('ret', p.expectedReturn.toString());
-            url.searchParams.set('vol', p.volatility.toString());
-            url.searchParams.set('inf', p.inflationRate.toString());
-            url.searchParams.set('years', p.simYears.toString());
-            url.searchParams.set('paths', p.simPaths.toString());
-            url.searchParams.set('pct', document.getElementById('percentileInput').value.replace(/\s/g, ''));
-            url.searchParams.set('cb', p.cashBufferToggle ? '1' : '0');
-            url.searchParams.set('gr', p.guardrailToggle ? '1' : '0');
-            url.searchParams.set('seed', lastSimResult.usedSeed.toString());
-            url.searchParams.set('fixSeed', '1');
-            url.searchParams.set('auto', '1'); // Xから開いた人がすぐ実行できる
-            url.searchParams.set('model', p.useTDistribution ? 'log-t' : 'log-normal');
-            url.searchParams.set('dfAuto', p.simDfManual ? '0' : '1');
-            url.searchParams.set('dfNum', p.simDfNum.toString());
-            url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
-            url.searchParams.set('infVol', p.infVol.toString());
-            url.searchParams.set('infAr', p.infAr.toString());
-            url.searchParams.set('ddTrig', p.drawdownTrigger.toString());
-            url.searchParams.set('ddRepl', p.drawdownReplenish.toString());
-            url.searchParams.set('replPace', p.replenishPace.toString());
-            url.searchParams.set('grTrig', p.guardrailTrigger.toString());
-            url.searchParams.set('grRel', p.guardrailRelease.toString());
-            url.searchParams.set('grRed', p.guardrailReduction.toString());
-
-            const text = '【FIREシミュレーション結果】\n' +
-                '💰 リスク資産: ' + (p.initialRiskAsset / 100000000).toLocaleString() + '億円\n' +
-                '💴 現金バッファ: ' + (p.initialCashBuffer / 10000).toLocaleString() + '万円\n' +
-                '💸 月間取崩し額: ' + (p.monthlyExpense / 10000).toLocaleString() + '万円\n' +
-                '📈 リターン/ボラ: ' + p.expectedReturn + '% / ' + p.volatility + '%\n' +
-                '📉 インフレ率: ' + p.inflationRate + '%\n' +
-                '⏳ 期間: ' + p.simYears + '年\n' +
-                '🔥 成功確率: ' + s + '%\n\n' +
-                '同じ条件で試す👇\n' +
-                url.toString();
-            window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text), '_blank');
-        }
-    </script>
     <footer class="py-10 text-center border-t border-slate-800/50 mt-12 bg-slate-900/30">
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v1.8.3</span>
+                <span>v1.9.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -1002,7 +958,7 @@
             class="h-[100px] px-10 border-t border-slate-800/50 flex flex-row items-center justify-between text-slate-400 gap-3">
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
-                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.3</span>
+                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.9.0</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">

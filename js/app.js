@@ -1,3 +1,10 @@
+import { getParamsFromInputs, calcAutoDf, DEFAULTS, safeNumber } from './core/params.js';
+import { formatPercentileInput, parsePercentiles } from './core/format.js';
+import { buildSimulationUrl, applyQueryParams } from './core/url.js';
+import { getIsResultDirty, markInputChanged as coreMarkInputChanged, markResultClean } from './core/state.js';
+import { transposeFlat, aggregateResultsProduction } from './core/aggregation.js';
+import { runSimulation, setProgressCallback } from './simulation-engine.js';
+
 // ====================================================================
 // グローバル状態管理
 // ====================================================================
@@ -12,187 +19,59 @@ let isResultDirty = false;  // 入力変更後未実行状態フラグ
 // ====================================================================
 // 真の単一パス・マルチセレクト（スタックベース非再帰・バッファ再利用版）
 // ====================================================================
-function multiSelectTrue(workBuffer, ks, out) {
-    // ks は昇順ソート済み前提
-    const stack = [0, workBuffer.length - 1, 0, ks.length - 1];
-
-    while (stack.length > 0) {
-        const kRightIdx = stack.pop();
-        const kLeftIdx = stack.pop();
-        const right = stack.pop();
-        const left = stack.pop();
-
-        if (left > right || kLeftIdx > kRightIdx) continue;
-
-        const pivotIdx = (left + right) >> 1;
-        const pivot = workBuffer[pivotIdx];
-
-        let i = left;
-        let j = right;
-
-        while (i <= j) {
-            while (workBuffer[i] < pivot) i++;
-            while (workBuffer[j] > pivot) j--;
-            if (i <= j) {
-                const tmp = workBuffer[i];
-                workBuffer[i] = workBuffer[j];
-                workBuffer[j] = tmp;
-                i++;
-                j--;
-            }
-        }
-
-        let midLeftKIdx = kLeftIdx;
-        while (midLeftKIdx <= kRightIdx && ks[midLeftKIdx] <= j) midLeftKIdx++;
-
-        let midRightKIdx = kRightIdx;
-        while (midRightKIdx >= kLeftIdx && ks[midRightKIdx] >= i) midRightKIdx--;
-
-        if (kLeftIdx < midLeftKIdx) {
-            stack.push(left, j, kLeftIdx, midLeftKIdx - 1);
-        }
-        if (midRightKIdx < kRightIdx) {
-            stack.push(i, right, midRightKIdx + 1, kRightIdx);
-        }
-
-        for (let k = midLeftKIdx; k <= midRightKIdx; k++) {
-            out[k] = workBuffer[ks[k]];
-        }
-    }
-}
 
 // ====================================================================
 // 単一select（安全版：中央インデックスピボット）
 // ====================================================================
-function quickselectSafe(arr, k, left, right) {
-    while (left < right) {
-        const pivot = arr[(left + right) >> 1];
-        let i = left, j = right;
-        while (i <= j) {
-            while (arr[i] < pivot) i++;
-            while (arr[j] > pivot) j--;
-            if (i <= j) {
-                const tmp = arr[i];
-                arr[i++] = arr[j];
-                arr[j--] = tmp;
-            }
-        }
-        if (k <= j) right = j;
-        else if (k >= i) left = i;
-        else return arr[k];
-    }
-    return arr[k];
-}
 
 // ====================================================================
 // データ構造の転置 [パス][時間] -> [時間][パス]
 // Note: simPaths × dataLen が極端に大きい場合のメモリ使用量に注意
 // ====================================================================
-function transposeFlat(buffer, simPaths, dataLen) {
-    const result = new Array(dataLen);
-    const flatArray = new Float32Array(buffer);
-    for (let t = 0; t < dataLen; t++) {
-        result[t] = new Float32Array(simPaths);
-    }
-    for (let p = 0; p < simPaths; p++) {
-        const base = p * dataLen;
-        for (let t = 0; t < dataLen; t++) {
-            result[t][p] = flatArray[base + t];
-        }
-    }
-    return result;
-}
 
 // ====================================================================
 // 入力パラメータのDOM取得とバリデーション
 // ====================================================================
-const DEFAULTS = {
-    initialRiskAsset: 1.0,  // UI表示単位（億円）と統一
-    initialCashBuffer: 1000,
-    monthlyExpense: 30,
-    expectedReturn: 10.0, volatility: 18.0, inflationRate: 2.0,
-    simYears: 30, simPaths: 10000, drawdownTrigger: -20.0, drawdownReplenish: -5.0, replenishPace: 5.0,
-    guardrailTrigger: -20.0, guardrailReduction: -20.0, guardrailRelease: -15.0
-};
-
-function safeNumber(val, fallback) {
-    if (typeof val === 'string') val = val.replace(/,/g, '');
-    const n = Number(val);
-    return Number.isFinite(n) ? n : fallback;
-}
-
-function calcAutoDf(volatility) {
-    if (volatility <= 0) return 30.0;
-    let df = 5.0 - 0.1 * (volatility - 10.0);
-    if (volatility < 10) df = 5.0;
-    if (volatility > 30) df = 3.0;
-    return Math.max(2.5, Math.min(30.0, df));
-}
-
-function getParams() {
-    return {
-        initialRiskAsset: safeNumber(document.getElementById('initialRiskAssetNum').value, DEFAULTS.initialRiskAsset) * 100000000, // UIは億円単位、内部計算は円 (A1)
-        initialCashBuffer: safeNumber(document.getElementById('initialCashBufferNum').value, DEFAULTS.initialCashBuffer) * 10000, // UIは万円単位、内部計算は円 (A2)
-        monthlyExpense: safeNumber(document.getElementById('monthlyExpenseNum').value, DEFAULTS.monthlyExpense) * 10000, // UIは万円単位、内部計算は円 (A3)
-        expectedReturn: safeNumber(document.getElementById('expectedReturnNum').value, DEFAULTS.expectedReturn),
-        volatility: safeNumber(document.getElementById('volatilityNum').value, DEFAULTS.volatility),
-        inflationRate: safeNumber(document.getElementById('inflationRateNum').value, DEFAULTS.inflationRate),
-        simYears: safeNumber(document.getElementById('simYearsNum').value, DEFAULTS.simYears),
-        simPaths: Math.max(1000, Math.min(50000, Math.round(safeNumber(document.getElementById('simPathsNum').value, DEFAULTS.simPaths)))),
-        cashBufferToggle: document.getElementById('cashBufferToggle').checked,
-        drawdownTrigger: Math.min(0, safeNumber(document.getElementById('drawdownTriggerNum').value, DEFAULTS.drawdownTrigger)),
-        drawdownReplenish: Math.min(0, safeNumber(document.getElementById('drawdownReplenishNum').value, DEFAULTS.drawdownReplenish)),
-        replenishPace: Math.max(0, safeNumber(document.getElementById('replenishPaceNum').value, DEFAULTS.replenishPace)),
-        guardrailToggle: document.getElementById('guardrailToggle').checked,
-        guardrailTrigger: Math.min(0, safeNumber(document.getElementById('guardrailTriggerNum').value, DEFAULTS.guardrailTrigger)),
-        guardrailReduction: Math.min(0, safeNumber(document.getElementById('guardrailReductionNum').value, DEFAULTS.guardrailReduction)),
-        guardrailRelease: Math.min(0, safeNumber(document.getElementById('guardrailReleaseNum').value, DEFAULTS.guardrailRelease)),
-        useArInflation: document.getElementById('inflationModelToggle').checked,
-        infVol: safeNumber(document.getElementById('infVolNum').value, 2.0),
-        infAr: safeNumber(document.getElementById('infArNum').value, 0.5),
-        useTDistribution: document.getElementById('returnModelSelect').value === 'log-t',
-        simDfManual: !document.getElementById('simDfToggle').checked,
-        simDfNum: Math.max(2.5, safeNumber(document.getElementById('simDfNum').value, 5.0)),
-        useFixedSeed: !document.getElementById('seedToggle').checked,
-        seedNum: safeNumber(document.getElementById('seedNum').value, 123456),
-    };
-}
-
-// ====================================================================
-// 共有系ボタンの有効/無効 一括制御
-// ====================================================================
-function setButtonsEnabledForResult(enabled) {
-    const buttons = [
-        document.getElementById('shareXBtn'),
-        document.getElementById('saveImageBtn'),
-        document.getElementById('openCompareTabBtn'),
-        document.getElementById('copySimUrlBtn')
-    ];
-    buttons.forEach(btn => {
-        if (!btn) return;
-        btn.disabled = !enabled;
-        if (!enabled) {
-            btn.title = '入力条件が変更されました。再度シミュレーションを実行してください。';
-        } else {
-            btn.removeAttribute('title');
-        }
-    });
-}
-
-// 入力変更時に呼び出し、stale 状態をセット
 function markInputChanged() {
-    if (!lastSimResult) return;
-    isResultDirty = true;
-    setButtonsEnabledForResult(false);
-    // サマリーカードに警告表示を反映するため再描画
+    coreMarkInputChanged(); // 内部で setDirty(true) とボタン無効化を実行
     if (lastSimResult) {
         const params = getParams();
         updateSummaryCard(lastSimResult, params);
     }
 }
 
-// ====================================================================
-// ステッパーUI (長押し対応) ロジック
+function getParams() {
+    return getParamsFromInputs({
+        initialRiskAssetNum: document.getElementById('initialRiskAssetNum').value,
+        initialCashBufferNum: document.getElementById('initialCashBufferNum').value,
+        monthlyExpenseNum: document.getElementById('monthlyExpenseNum').value,
+        expectedReturnNum: document.getElementById('expectedReturnNum').value,
+        volatilityNum: document.getElementById('volatilityNum').value,
+        inflationRateNum: document.getElementById('inflationRateNum').value,
+        simYearsNum: document.getElementById('simYearsNum').value,
+        simPathsNum: document.getElementById('simPathsNum').value,
+        cashBufferToggle: document.getElementById('cashBufferToggle').checked,
+        drawdownTriggerNum: document.getElementById('drawdownTriggerNum').value,
+        drawdownReplenishNum: document.getElementById('drawdownReplenishNum').value,
+        replenishPaceNum: document.getElementById('replenishPaceNum').value,
+        guardrailToggle: document.getElementById('guardrailToggle').checked,
+        guardrailTriggerNum: document.getElementById('guardrailTriggerNum').value,
+        guardrailReleaseNum: document.getElementById('guardrailReleaseNum').value,
+        guardrailReductionNum: document.getElementById('guardrailReductionNum').value,
+        inflationModelToggle: document.getElementById('inflationModelToggle').checked,
+        infVolNum: document.getElementById('infVolNum').value,
+        infArNum: document.getElementById('infArNum').value,
+        returnModelSelect: document.getElementById('returnModelSelect').value,
+        simDfToggle: document.getElementById('simDfToggle').checked,
+        simDfNum: document.getElementById('simDfNum').value,
+        seedToggle: document.getElementById('seedToggle').checked,
+        seedNum: document.getElementById('seedNum').value
+    });
+}
+
+
+
+
 // ====================================================================
 function setupHybridInputs() {
     const buttons = document.querySelectorAll('.stepper-btn');
@@ -360,224 +239,13 @@ function setupHybridInputs() {
 }
 
 // ====================================================================
-// シミュレーションエンジン（Web Workers マルチコア並列処理）
-// ====================================================================
-function runSimulation(params, userPercentiles) {
-    if (!userPercentiles) userPercentiles = [10, 25, 50, 75, 90];
-    return new Promise((resolve, reject) => {
-        const { simYears, simPaths, useTDistribution, simDfManual, simDfNum, volatility, seedNum } = params;
-
-        // CPU コア数に基づいてワーカー数を決定（上限8）
-        const numWorkers = Math.min(navigator.hardwareConcurrency || 4, 8);
-        const basePaths = Math.floor(simPaths / numWorkers);
-        const remainder = simPaths % numWorkers;
-
-        const totalMonths = simYears * 12;
-        const dataLen = totalMonths + 1;
-
-        let currentSeedOffset = 0;
-        const workerPromises = [];
-        const workers = [];  // 全ワーカーインスタンス保持（エラー時全停止用）
-        // 各ワーカーの進捗を個別に管理
-        const workerProgress = new Array(numWorkers).fill(0);
-        let hasFailed = false;  // 二重 reject/alert 防止フラグ
-
-        for (let i = 0; i < numWorkers; i++) {
-            const pathsCount = basePaths + (i < remainder ? 1 : 0);
-            if (pathsCount === 0) break;
-
-            const worker = new Worker('js/worker.js');
-            workers.push(worker);
-
-            const p = new Promise((resW, rejW) => {
-                worker.onmessage = (e) => {
-                    if (e.data.type === 'complete') {
-                        // 完了時に進捗を 100% へ補正してからワーカーを破棄
-                        workerProgress[i] = pathsCount;
-                        worker.terminate();
-                        resW(e.data);
-                    } else if (e.data.type === 'progress') {
-                        workerProgress[i] = e.data.completed;
-                        const totalCompleted = workerProgress.reduce((a, b) => a + b, 0);
-                        const progress = Math.round((totalCompleted / simPaths) * 100);
-
-                        // 既存のUIプログレス更新ロジックを忠実に維持
-                        const btn = document.getElementById('runBtn');
-                        if (btn) {
-                            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中... ${progress}%`;
-                            btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
-                        }
-                    }
-                };
-                worker.onerror = (err) => {
-                    if (hasFailed) return;
-                    hasFailed = true;
-                    // 全ワーカーを停止
-                    workers.forEach(w => w.terminate());
-                    worker.terminate();
-                    alert("シミュレーション中にエラーが発生しました。入力値を確認してください。");
-                    rejW(err);
-                };
-            });
-
-            worker.postMessage({ params, pathsCount, seedOffset: currentSeedOffset, dataLen });
-            workerPromises.push(p);
-
-            // 次のワーカーのためにオフセットを進める
-            currentSeedOffset += pathsCount;
-        }
-
-        // 全ワーカー完了後に結果を再構築して resolve
-        Promise.all(workerPromises).then(async (results) => {
-            if (hasFailed) return; // すでにエラー処理済み
-            const btn = document.getElementById('runBtn');
-            if (btn) {
-                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>  結果を集計、描画中...`;
-                btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) 100%, rgba(30, 41, 59, 1) 100%)`;
-            }
-
-            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-            // ループ外でマージ済みフラットバッファを1回だけ確保（アロケーション最小化）
-            const mergedTotals = new Float32Array(simPaths * dataLen);
-            const mergedCashes = new Float32Array(simPaths * dataLen);
-            const mergedDds = new Float32Array(simPaths * dataLen);
-            const maxDdPerPath = new Float32Array(simPaths);
-            const maxUwPerPath = new Float32Array(simPaths);
-
-            let bankruptCount = 0;
-            let globalPathIndex = 0;
-
-            // .set() でオフセット位置に各ワーカーのバッファをコピー（ループ内でのアロケーションなし）
-            for (const res of results) {
-                const pathsCountInWorker = res.totalsBuffer.byteLength / (dataLen * 4);
-                const offset = globalPathIndex * dataLen;
-
-                mergedTotals.set(new Float32Array(res.totalsBuffer), offset);
-                mergedCashes.set(new Float32Array(res.cashesBuffer), offset);
-                mergedDds.set(new Float32Array(res.ddsBuffer), offset);
-
-                maxDdPerPath.set(new Float32Array(res.maxDdsBuffer), globalPathIndex);
-                maxUwPerPath.set(new Float32Array(res.maxUwsBuffer), globalPathIndex);
-
-                bankruptCount += res.bankruptCount;
-                globalPathIndex += pathsCountInWorker;
-            }
-
-            const result = aggregateResultsProduction({
-                totalsBuffer: mergedTotals.buffer,
-                cashesBuffer: mergedCashes.buffer,
-                ddsBuffer: mergedDds.buffer,
-                maxDdPerPath: maxDdPerPath,
-                maxUwPerPath: maxUwPerPath,
-                simPaths: simPaths,
-                dataLen: dataLen,
-                percentiles: userPercentiles,
-                bankruptCount: bankruptCount
-            });
-
-            result.usedSeed = params.seedNum;
-            result.modelType = params.useTDistribution ? 'log-t' : 'log-normal';
-            result.usedDf = Math.max(2.1, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
-
-            resolve(result);
-        }).catch(err => {
-            if (hasFailed) return;
-            hasFailed = true;
-            workers.forEach(w => w.terminate());
-            reject(err);
-        });
-    });
-}
-
-// ====================================================================
 // 結果集計（断面パーセンタイル計算）
 // ====================================================================
 // パーセンタイル入力のパース
-function parsePercentiles() {
-    const raw = document.getElementById('percentileInput').value;
-    const parsed = raw.split(',').map(s => Number(s.trim())).filter(n => Number.isFinite(n) && n > 0 && n < 100);
-    if (parsed.length === 0) return [10, 30, 50, 70, 90];
-    return [...new Set(parsed)].sort((a, b) => a - b);
-}
 
 // ====================================================================
 // 結果集計（限界突破版：単一パス・マルチセレクト & GCゼロアロケーション）
 // ====================================================================
-function aggregateResultsProduction({
-    totalsBuffer, cashesBuffer, ddsBuffer,
-    maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount
-}) {
-    // データ構造を [パス][時間] -> [時間][パス] に転置（CPUキャッシュ局所性を最大化）
-    const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
-    const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
-    const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
-
-    const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
-    const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
-    const ddPercentileData = percentiles.map(() => new Float32Array(dataLen));
-
-    // パーセンタイル → 配列インデックスに変換（ループ外で1回だけ計算）
-    const ks = new Int32Array(percentiles.length);
-    for (let i = 0; i < percentiles.length; i++) {
-        ks[i] = Math.floor((percentiles[i] / 100) * (simPaths - 1));
-    }
-
-    // GC抑制のため、ループ外でワークバッファと結果バッファを1度だけ確保
-    const workBuffer = new Float32Array(simPaths);
-    const resultBuf = new Float32Array(percentiles.length);
-
-    // 1タイムステップに対して3系列のマルチセレクトを実行（single-pass）
-    for (let t = 0; t < dataLen; t++) {
-        workBuffer.set(totalT[t]);
-        multiSelectTrue(workBuffer, ks, resultBuf);
-        for (let i = 0; i < ks.length; i++) totalPercentileData[i][t] = resultBuf[i];
-
-        workBuffer.set(cashT[t]);
-        multiSelectTrue(workBuffer, ks, resultBuf);
-        for (let i = 0; i < ks.length; i++) cashPercentileData[i][t] = resultBuf[i];
-
-        workBuffer.set(ddT[t]);
-        multiSelectTrue(workBuffer, ks, resultBuf);
-        for (let i = 0; i < ks.length; i++) ddPercentileData[i][t] = resultBuf[i];
-    }
-
-    // 最大ドローダウン・最大引出額の代表値を quickselectSafe で抽出
-    // （コピーして元データを保護）
-    const ddCopy = new Float32Array(maxDdPerPath);
-    const uwCopy = new Float32Array(maxUwPerPath);
-
-    const worst5Idx = Math.floor(0.05 * (simPaths - 1));
-    const worst10Idx = Math.floor(0.10 * (simPaths - 1));
-    const medianIdx = Math.floor(0.50 * (simPaths - 1));
-    const worst10UwIdx = Math.floor(0.90 * (simPaths - 1));
-
-    const worst5MaxDd = quickselectSafe(ddCopy, worst5Idx, 0, ddCopy.length - 1);
-    const worst10MaxDd = quickselectSafe(ddCopy, worst10Idx, 0, ddCopy.length - 1);
-    const medianMaxUw = quickselectSafe(uwCopy, medianIdx, 0, uwCopy.length - 1);
-    const worst10MaxUw = quickselectSafe(uwCopy, worst10UwIdx, 0, uwCopy.length - 1);
-
-    // 中央値パーセンタイルのインデックスを探す（なければ中央値に最も近い位置）
-    let medianPIdx = percentiles.indexOf(50);
-    if (medianPIdx === -1) medianPIdx = Math.floor(percentiles.length / 2);
-
-    return {
-        percentiles,
-        totalPercentileData,
-        cashPercentileData,
-        ddPercentileData,
-        successRate: ((simPaths - bankruptCount) / simPaths * 100),
-        finalMedian: totalPercentileData[medianPIdx][dataLen - 1],
-        worst10MaxDd,
-        worst5MaxDd,
-        medianMaxUw,
-        worst10MaxUw,
-        maxDdPerPath: maxDdPerPath,
-        maxUwPerPath: maxUwPerPath,
-        params: { simPaths, totalMonths: dataLen - 1 },
-        dataLen
-    };
-}
 // ====================================================================
 // Chart.js 描画
 // ====================================================================
@@ -1125,7 +793,7 @@ function updateSummaryCard(result, params) {
                 <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
                     <div class="flex items-center space-x-2">
                         <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
-                        ${isResultDirty ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">⚠️ 条件変更あり</span>' : ''}
+                        ${getIsResultDirty() ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">⚠️ 条件変更あり</span>' : ''}
                     </div>
                     <span id="uiExecTime" class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
@@ -1358,8 +1026,9 @@ async function runMain() {
             if (releaseInput) releaseInput.value = params.guardrailTrigger.toFixed(1);
         }
         // パーセンタイル入力を自動整形してから parsePercentiles を呼ぶ
-        formatPercentileInput();
-        const percentiles = parsePercentiles();
+        const pctInput = document.getElementById('percentileInput');
+        pctInput.value = formatPercentileInput(pctInput.value);
+        const percentiles = parsePercentiles(pctInput.value);
         const result = await runSimulation(params, percentiles);
         lastSimResult = result;
         isResultDirty = false;
@@ -1369,32 +1038,12 @@ async function runMain() {
         renderCashChart(result);
         renderDdCdfChart(result);
         renderUwCdfChart(result);
+        markResultClean(); // 共有ボタンの有効化
         updateSummaryCard(result, params);
         setTimeout(() => {
             document.getElementById('summaryCardContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
 
-        // 共有ボタンの有効化
-        const shareXBtn = document.getElementById('shareXBtn');
-        const saveImageBtn = document.getElementById('saveImageBtn');
-        const compareTabBtn = document.getElementById('openCompareTabBtn');
-        const copySimUrlBtn = document.getElementById('copySimUrlBtn');
-        if (shareXBtn && shareXBtn.disabled) {
-            shareXBtn.disabled = false;
-            shareXBtn.title = '入力条件・結果・シード値を含むURLをXにポストします。URLから同じ条件を再現できます。';
-        }
-        if (saveImageBtn && saveImageBtn.disabled) {
-            saveImageBtn.disabled = false;
-            saveImageBtn.removeAttribute('title');
-        }
-        if (compareTabBtn && compareTabBtn.disabled) {
-            compareTabBtn.disabled = false;
-            compareTabBtn.removeAttribute('title');
-        }
-        if (copySimUrlBtn && copySimUrlBtn.disabled) {
-            copySimUrlBtn.disabled = false;
-            copySimUrlBtn.removeAttribute('title');
-        }
     } finally {
         runBtn.disabled = false;
         runBtn.innerHTML = 'シミュレーション実行';
@@ -1568,6 +1217,12 @@ async function saveImage() {
 // イベント登録
 // ====================================================================
 document.addEventListener('DOMContentLoaded', () => {
+    setProgressCallback((progress) => {
+        const btn = document.getElementById('runBtn');
+        if (!btn) return;
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中... ${progress}%`;
+        btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
+    });
     setupHybridInputs();
     document.getElementById('runBtn').addEventListener('click', runMain);
     document.getElementById('logScaleToggle').addEventListener('change', onScaleToggle);
@@ -1782,24 +1437,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // URLクエリパラメータの自動設定
-    applyQueryParams();
+    applyQueryParams(runMain);
 });
-
-// ====================================================================
-// パーセンタイル入力の自動整形
-// 注意：applyQueryParams からも呼び出される
-// ====================================================================
-function formatPercentileInput() {
-    const input = document.getElementById('percentileInput');
-    const raw = input.value;
-    const parsed = raw
-        .split(',')
-        .map(s => Number(s.trim()))
-        .filter(n => Number.isInteger(n) && n >= 1 && n <= 99);
-    const unique = [...new Set(parsed)].sort((a, b) => a - b).slice(0, 5);
-    const result = unique.length > 0 ? unique : [10, 30, 50, 70, 90];
-    input.value = result.join(', ');
-}
 
 // ====================================================================
 // ダウンサイドフォーカス適用
@@ -1838,205 +1477,76 @@ function applyDownsideFocus(chart, enabled) {
     chart.update('none');
 }
 
-// ====================================================================
-// URLクエリパラメータ読み込み・自動設定
-// ====================================================================
-function applyQueryParams() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.toString() === '') return; // params.size は一部環境で未サポートのため toString で代替
-
-    const setNum = (id, key) => {
-        if (!params.has(key)) return;
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.value = params.get(key);
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('blur', { bubbles: true }));
-    };
-
-    const setBool = (id, key, invert) => {
-        if (!params.has(key)) return;
-        const el = document.getElementById(id);
-        if (!el) return;
-        const val = params.get(key) === '1';
-        el.checked = invert ? !val : val;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-
-    setNum('initialRiskAssetNum', 'asset');
-    setNum('initialCashBufferNum', 'cash');
-    setNum('monthlyExpenseNum', 'expense');
-    setNum('expectedReturnNum', 'ret');
-    setNum('volatilityNum', 'vol');
-    setNum('inflationRateNum', 'inf');
-    setNum('simYearsNum', 'years');
-    setNum('simPathsNum', 'paths');
-    setNum('seedNum', 'seed');
-
-    if (params.has('pct')) {
-        // openCompareTab/shareToX が "10,30,50" 形式（カンマ区切り）で送出する
-        document.getElementById('percentileInput').value = params.get('pct');
-    }
-
-    // 分布モデル
-    if (params.has('model')) {
-        const modelSelect = document.getElementById('returnModelSelect');
-        modelSelect.value = params.get('model');
-        modelSelect.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    // 自由度 自動/固定
-    if (params.has('dfAuto')) {
-        const dfToggle = document.getElementById('simDfToggle');
-        dfToggle.checked = (params.get('dfAuto') === '1');
-        dfToggle.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    // 自由度 手動値（固定モード時のみ意味を持つ）
-    setNum('simDfNum', 'dfNum');
-
-    // seedToggle: fixSeed=1 → 固定(checked=false)、fixSeed=0 → ランダム(checked=true)
-    setBool('seedToggle', 'fixSeed', true);
-    setBool('cashBufferToggle', 'cb');
-    setBool('guardrailToggle', 'gr');
-
-    if (params.get('auto') === '1') {
-        setTimeout(() => runMain(), 150);
-    }
-
-    // インフレ変動モデル (AR-1)
-    if (params.has('infModel')) {
-        const infToggle = document.getElementById('inflationModelToggle');
-        infToggle.checked = (params.get('infModel') === '1');
-        infToggle.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    setNum('infVolNum', 'infVol');
-    setNum('infArNum', 'infAr');
-
-    // 現金バッファ詳細
-    setNum('drawdownTriggerNum', 'ddTrig');
-    setNum('drawdownReplenishNum', 'ddRepl');
-    setNum('replenishPaceNum', 'replPace');
-
-    // 支出ガードレール詳細
-    setNum('guardrailTriggerNum', 'grTrig');
-    setNum('guardrailReleaseNum', 'grRel');
-    setNum('guardrailReductionNum', 'grRed');
-
-    formatPercentileInput(); // パーセンタイル入力欄を整形
-}
 
 // ====================================================================
 // 同条件の別タブを開く（比較用）
 // ====================================================================
-function openCompareTab() {
-    if (!lastSimResult) return;
-    const p = getParams();
-    const base = window.location.href.split('?')[0];
-    const url = new URL(base);
 
-    url.searchParams.set('asset', (p.initialRiskAsset / 100000000).toString()); // 円→億円 (A11)
-    url.searchParams.set('cash', (p.initialCashBuffer / 10000).toString()); // 円→万円 (A11)
-    url.searchParams.set('expense', (p.monthlyExpense / 10000).toString()); // 円→万円 (A11)
-    url.searchParams.set('ret', p.expectedReturn.toString());
-    url.searchParams.set('vol', p.volatility.toString());
-    url.searchParams.set('inf', p.inflationRate.toString());
-    url.searchParams.set('years', p.simYears.toString());
-    url.searchParams.set('paths', p.simPaths.toString());
-    url.searchParams.set('pct', document.getElementById('percentileInput').value.replace(/\s/g, ''));
-    url.searchParams.set('cb', p.cashBufferToggle ? '1' : '0');
-    url.searchParams.set('gr', p.guardrailToggle ? '1' : '0');
-    url.searchParams.set('seed', lastSimResult.usedSeed.toString());
-    url.searchParams.set('fixSeed', '1');
-    url.searchParams.set('auto', '0');
-    url.searchParams.set('model', p.useTDistribution ? 'log-t' : 'log-normal');
-    url.searchParams.set('dfAuto', p.simDfManual ? '0' : '1');
-    url.searchParams.set('dfNum', p.simDfNum.toString());
-    url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
-    url.searchParams.set('infVol', p.infVol.toString());
-    url.searchParams.set('infAr', p.infAr.toString());
-    url.searchParams.set('ddTrig', p.drawdownTrigger.toString());
-    url.searchParams.set('ddRepl', p.drawdownReplenish.toString());
-    url.searchParams.set('replPace', p.replenishPace.toString());
-    url.searchParams.set('grTrig', p.guardrailTrigger.toString());
-    url.searchParams.set('grRel', p.guardrailRelease.toString());
-    url.searchParams.set('grRed', p.guardrailReduction.toString());
-
-    window.open(url.toString(), '_blank');
-}
 
 // ====================================================================
 // 解析結果URLリンクをクリップボードにコピー
 // ====================================================================
+
+function shareToX() {
+    if (!lastSimResult || getIsResultDirty()) return;
+    const p = getParams();
+    const s = lastSimResult.successRate.toFixed(1);
+    const url = buildSimulationUrl(p, {
+        autoRun: true, fixedSeed: true,
+        seed: lastSimResult.usedSeed,
+        percentileRaw: document.getElementById('percentileInput').value,
+        baseUrl: 'https://moriyama-eng.github.io/fire-simulator/'
+    });
+    const text = `【FIREシミュレーション結果】\n` +
+        `💰 リスク資産: ${(p.initialRiskAsset / 100_000_000).toLocaleString()}億円\n` +
+        `💴 現金バッファ: ${(p.initialCashBuffer / 10_000).toLocaleString()}万円\n` +
+        `💸 月間取崩し額: ${(p.monthlyExpense / 10_000).toLocaleString()}万円\n` +
+        `📈 リターン/ボラ: ${p.expectedReturn}% / ${p.volatility}%\n` +
+        `📉 インフレ率: ${p.inflationRate}%\n` +
+        `⏳ 期間: ${p.simYears}年\n` +
+        `🔥 成功確率: ${s}%\n\n` +
+        `同じ条件で試す👇\n${url.toString()}`;
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function openCompareTab() {
+    if (!lastSimResult || getIsResultDirty()) return;
+    const p = getParams();
+    const url = buildSimulationUrl(p, {
+        autoRun: false, fixedSeed: true,
+        seed: lastSimResult.usedSeed,
+        percentileRaw: document.getElementById('percentileInput').value
+    });
+    window.open(url.toString(), '_blank');
+}
+
 async function copySimUrl() {
-    if (!lastSimResult) return;
+    if (!lastSimResult || getIsResultDirty()) return;
     const btn = document.getElementById('copySimUrlBtn');
     if (btn.disabled) return;
     const originalHtml = btn.innerHTML;
-
-    // shareToX と同じ URL 生成ロジック（auto=1・固定シード）
     const p = getParams();
-    const base = 'https://moriyama-eng.github.io/fire-simulator/';
-    const url = new URL(base);
-    url.searchParams.set('asset', (p.initialRiskAsset / 100000000).toString()); // 円→億円 (A12)
-    url.searchParams.set('cash', (p.initialCashBuffer / 10000).toString()); // 円→万円 (A12)
-    url.searchParams.set('expense', (p.monthlyExpense / 10000).toString()); // 円→万円 (A12)
-    url.searchParams.set('ret', p.expectedReturn.toString());
-    url.searchParams.set('vol', p.volatility.toString());
-    url.searchParams.set('inf', p.inflationRate.toString());
-    url.searchParams.set('years', p.simYears.toString());
-    url.searchParams.set('paths', p.simPaths.toString());
-    url.searchParams.set('pct', document.getElementById('percentileInput').value.replace(/\s/g, ''));
-    url.searchParams.set('cb', p.cashBufferToggle ? '1' : '0');
-    url.searchParams.set('gr', p.guardrailToggle ? '1' : '0');
-    url.searchParams.set('seed', lastSimResult.usedSeed.toString());
-    url.searchParams.set('fixSeed', '1');
-    url.searchParams.set('auto', '1');
-    url.searchParams.set('model', p.useTDistribution ? 'log-t' : 'log-normal');
-    url.searchParams.set('dfAuto', p.simDfManual ? '0' : '1');
-    url.searchParams.set('dfNum', p.simDfNum.toString());
-    url.searchParams.set('infModel', p.useArInflation ? '1' : '0');
-    url.searchParams.set('infVol', p.infVol.toString());
-    url.searchParams.set('infAr', p.infAr.toString());
-    url.searchParams.set('ddTrig', p.drawdownTrigger.toString());
-    url.searchParams.set('ddRepl', p.drawdownReplenish.toString());
-    url.searchParams.set('replPace', p.replenishPace.toString());
-    url.searchParams.set('grTrig', p.guardrailTrigger.toString());
-    url.searchParams.set('grRel', p.guardrailRelease.toString());
-    url.searchParams.set('grRed', p.guardrailReduction.toString());
-
+    const url = buildSimulationUrl(p, {
+        autoRun: true, fixedSeed: true,
+        seed: lastSimResult.usedSeed,
+        percentileRaw: document.getElementById('percentileInput').value
+    });
     try {
         await navigator.clipboard.writeText(url.toString());
-        // コピー完了フィードバック（一時的にボタン表示を変える）
         btn.disabled = true;
-        btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current flex-shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
         btn.classList.add('text-emerald-400');
-        setTimeout(() => {
-            btn.innerHTML = originalHtml;
-            btn.classList.remove('text-emerald-400');
-            btn.disabled = false;
-        }, 2000);
-    } catch (err) {
-        // クリップボードAPIが使えない環境向けフォールバック
+        setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
+    } catch {
         const ta = document.createElement('textarea');
         ta.value = url.toString();
-        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
         document.body.appendChild(ta);
-        ta.focus();
         ta.select();
-        try {
-            document.execCommand('copy');
-            btn.disabled = true;
-            btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current flex-shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
-            btn.classList.add('text-emerald-400');
-            setTimeout(() => {
-                btn.innerHTML = originalHtml;
-                btn.classList.remove('text-emerald-400');
-                btn.disabled = false;
-            }, 2000);
-        } catch (e) {
-            alert('URLのコピーに失敗しました。\n' + url.toString());
-        }
+        document.execCommand('copy');
         document.body.removeChild(ta);
+        btn.disabled = true;
+        btn.innerHTML = `コピーしました！`;
+        btn.classList.add('text-emerald-400');
+        setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
     }
 }
