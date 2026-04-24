@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v1.8.2</title>
+    <title>FIRE モンテカルロ・シミュレータ v1.8.3</title>
     <meta name="description" content="リスク資産と現金バッファを用いたモンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -811,9 +811,9 @@
             // クエリパラメータ付きURLを組み立て（auto=1 で開いた人がすぐ再現できる）
             const base = 'https://moriyama-eng.github.io/fire-simulator/';
             const url = new URL(base);
-            url.searchParams.set('asset', (p.initialRiskAsset / 10000).toString());
-            url.searchParams.set('cash', p.initialCashBuffer.toString());
-            url.searchParams.set('expense', p.monthlyExpense.toString());
+            url.searchParams.set('asset', (p.initialRiskAsset / 100000000).toString());
+            url.searchParams.set('cash', (p.initialCashBuffer / 10000).toString());
+            url.searchParams.set('expense', (p.monthlyExpense / 10000).toString());
             url.searchParams.set('ret', p.expectedReturn.toString());
             url.searchParams.set('vol', p.volatility.toString());
             url.searchParams.set('inf', p.inflationRate.toString());
@@ -839,9 +839,9 @@
             url.searchParams.set('grRed', p.guardrailReduction.toString());
 
             const text = '【FIREシミュレーション結果】\n' +
-                '💰 リスク資産: ' + (p.initialRiskAsset / 10000).toLocaleString() + '億円\n' +
-                '💴 現金バッファ: ' + p.initialCashBuffer.toLocaleString() + '万円\n' +
-                '💸 月間取崩し額: ' + p.monthlyExpense.toLocaleString() + '万円\n' +
+                '💰 リスク資産: ' + (p.initialRiskAsset / 100000000).toLocaleString() + '億円\n' +
+                '💴 現金バッファ: ' + (p.initialCashBuffer / 10000).toLocaleString() + '万円\n' +
+                '💸 月間取崩し額: ' + (p.monthlyExpense / 10000).toLocaleString() + '万円\n' +
                 '📈 リターン/ボラ: ' + p.expectedReturn + '% / ' + p.volatility + '%\n' +
                 '📉 インフレ率: ' + p.inflationRate + '%\n' +
                 '⏳ 期間: ' + p.simYears + '年\n' +
@@ -855,7 +855,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v1.8.2</span>
+                <span>v1.8.3</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -1002,7 +1002,7 @@
             class="h-[100px] px-10 border-t border-slate-800/50 flex flex-row items-center justify-between text-slate-400 gap-3">
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
-                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.2</span>
+                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v1.8.3</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">

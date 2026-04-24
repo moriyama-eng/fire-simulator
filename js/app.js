@@ -131,9 +131,9 @@ function calcAutoDf(volatility) {
 
 function getParams() {
     return {
-        initialRiskAsset: safeNumber(document.getElementById('initialRiskAssetNum').value, DEFAULTS.initialRiskAsset) * 10000, // UIは億円単位、内部計算は万円
-        initialCashBuffer: safeNumber(document.getElementById('initialCashBufferNum').value, DEFAULTS.initialCashBuffer),
-        monthlyExpense: safeNumber(document.getElementById('monthlyExpenseNum').value, DEFAULTS.monthlyExpense),
+        initialRiskAsset: safeNumber(document.getElementById('initialRiskAssetNum').value, DEFAULTS.initialRiskAsset) * 100000000, // UIは億円単位、内部計算は円 (A1)
+        initialCashBuffer: safeNumber(document.getElementById('initialCashBufferNum').value, DEFAULTS.initialCashBuffer) * 10000, // UIは万円単位、内部計算は円 (A2)
+        monthlyExpense: safeNumber(document.getElementById('monthlyExpenseNum').value, DEFAULTS.monthlyExpense) * 10000, // UIは万円単位、内部計算は円 (A3)
         expectedReturn: safeNumber(document.getElementById('expectedReturnNum').value, DEFAULTS.expectedReturn),
         volatility: safeNumber(document.getElementById('volatilityNum').value, DEFAULTS.volatility),
         inflationRate: safeNumber(document.getElementById('inflationRateNum').value, DEFAULTS.inflationRate),
@@ -690,11 +690,11 @@ function renderAssetChart(result, isLogScale) {
                             const lbl = context.dataset.label.padStart(maxLblLen);
                             if (val === null || val === undefined) return `${lbl}:  億円`;
                             // 億円換算（小数第2位）
-                            const oku = (val / 10000).toFixed(2);
+                            const oku = (val / 100000000).toFixed(2); // 円→億円 (A6)
                             // 数値部分の動的桁揃え
                             const maxLen = Math.max(...allItems.map(item => {
                                 const v = item.parsed.y;
-                                return (v !== null && v !== undefined) ? (v / 10000).toFixed(2).length : 1;
+                                return (v !== null && v !== undefined) ? (v / 100000000).toFixed(2).length : 1;
                             }));
                             return `${lbl}:${oku.padStart(maxLen + 1)} 億円`;
                         },
@@ -727,7 +727,7 @@ function renderAssetChart(result, isLogScale) {
                         font: { size: 13 },
                         callback: function (value) {
                             // 億円換算
-                            const oku = value / 10000;
+                            const oku = value / 100000000; // 円→億円 (A7-5)
                             if (oku <= 0) return null;
 
                             // 対数スケール時: Y軸の表示桁幅（オーダー）による動的間引きアルゴリズム
@@ -735,10 +735,10 @@ function renderAssetChart(result, isLogScale) {
                             const isLog = chart.options.scales.y.type === 'logarithmic';
                             if (isLog) {
                                 // 現在のY軸の最小値最大値から表示桁幅を算出
-                                const yMin = chart.scales.y.min || 1000;
-                                const yMax = chart.scales.y.max || 100000;
-                                const minOrder = Math.floor(Math.log10(yMin / 10000));
-                                const maxOrder = Math.floor(Math.log10(yMax / 10000));
+                                const yMin = chart.scales.y.min || 10_000_000; // 1000万円 (A7-1)
+                                const yMax = chart.scales.y.max || 1_000_000_000; // 10億円 (A7-2)
+                                const minOrder = Math.floor(Math.log10(yMin / 100000000)); // (A7-3)
+                                const maxOrder = Math.floor(Math.log10(yMax / 100000000)); // (A7-4)
                                 const orderRange = Math.max(1, maxOrder - minOrder + 1);
 
                                 const exponent = Math.floor(Math.log10(oku));
@@ -757,7 +757,7 @@ function renderAssetChart(result, isLogScale) {
 
                             if (oku >= 100) return `${Math.round(oku).toLocaleString('ja-JP')} 億円`;
                             if (oku >= 1) return `${oku.toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`;
-                            return `${(value).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円`;
+                            return `${(value / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円`; // 円→万円 (A7-6)
                         },
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -827,10 +827,10 @@ function renderCashChart(result) {
                             const lbl = context.dataset.label.padStart(maxLblLen);
                             if (val === null || val === undefined) return `${lbl}:  万円`;
 
-                            const formattedVal = Math.round(val).toLocaleString('ja-JP');
+                            const formattedVal = Math.round(val / 10000).toLocaleString('ja-JP'); // 円→万円 (A8)
                             const maxLen = Math.max(...allItems.map(item => {
                                 const v = item.parsed.y;
-                                return (v !== null && v !== undefined) ? Math.round(v).toLocaleString('ja-JP').length : 1;
+                                return (v !== null && v !== undefined) ? Math.round(v / 10000).toLocaleString('ja-JP').length : 1;
                             }));
                             return `${lbl}:${formattedVal.padStart(maxLen + 1)} 万円`;
                         },
@@ -863,8 +863,8 @@ function renderCashChart(result) {
                         color: '#94a3b8',
                         font: { size: 13 },
                         callback: function (value) {
-                            if (value >= 10000) return `${(value / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`;
-                            return `${value.toLocaleString('ja-JP')} 万円`;
+                            if (value >= 100_000_000) return `${(value / 100_000_000).toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`; // 円→億円 (A9)
+                            return `${(value / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円`; // 円→万円 (A9)
                         },
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -1096,10 +1096,10 @@ function updateSummaryCard(result, params) {
     const container = document.getElementById('summaryCardContainer');
 
     // パラメータのパース (UI表示用)
-    const initialAssetOku = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
-    const monthlyExpenseMan = params.monthlyExpense.toLocaleString('ja-JP');
+    const initialAssetOku = (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
+    const monthlyExpenseMan = (params.monthlyExpense / 10000).toLocaleString('ja-JP');
     const successRate = result.successRate.toFixed(1);
-    const medianOku = (result.finalMedian / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+    const medianOku = (result.finalMedian / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1, minimumFractionDigits: 1 }); // 円→億円 (A4)
 
     // インフレモデルの表記を決定
     const infModelText = params.useArInflation ? `AR-1変動 (${params.inflationRate}%, Vol:${params.infVol}%)` : `固定 (${params.inflationRate}%)`;
@@ -1153,15 +1153,15 @@ function updateSummaryCard(result, params) {
                     <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 text-sm content-center">
                         <div class="space-y-1">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">初期リスク資産</p>
-                            <p class="font-bold text-white text-base">${(params.initialRiskAsset / 10000).toLocaleString('ja-JP')} 億円</p>
+                            <p class="font-bold text-white text-base">${(params.initialRiskAsset / 100000000).toLocaleString('ja-JP')} 億円</p>
                         </div>
                         <div class="space-y-1">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">初期現金バッファ</p>
-                            <p class="font-bold text-white text-base">${params.cashBufferToggle ? params.initialCashBuffer.toLocaleString('ja-JP') + ' 万円' : '<span class="text-slate-500">0 万円</span>'}</p>
+                            <p class="font-bold text-white text-base">${params.cashBufferToggle ? (params.initialCashBuffer / 10000).toLocaleString('ja-JP') + ' 万円' : '<span class="text-slate-500">0 万円</span>'}</p>
                         </div>
                         <div class="space-y-1">
                             <p class="text-xs text-slate-300 font-medium tracking-wide">初期月間取崩し額</p>
-                            <p class="font-bold text-white text-base">${params.monthlyExpense.toLocaleString('ja-JP')} 万円</p>
+                            <p class="font-bold text-white text-base">${(params.monthlyExpense / 10000).toLocaleString('ja-JP')} 万円</p>
                         </div>
 
                         <div class="space-y-1">
@@ -1434,9 +1434,9 @@ async function saveImage() {
         if (uiExecTime) {
             document.getElementById('capExecTime').textContent = "実行日時: " + uiExecTime.textContent;
         }
-        document.getElementById('capRiskAsset').textContent = (params.initialRiskAsset / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円';
-        document.getElementById('capCash').textContent = params.initialCashBuffer.toLocaleString('ja-JP') + '万円';
-        document.getElementById('capExpense').textContent = params.monthlyExpense.toLocaleString('ja-JP') + '万円';
+        document.getElementById('capRiskAsset').textContent = (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'; // 円→億円 (A10)
+        document.getElementById('capCash').textContent = (params.initialCashBuffer / 10000).toLocaleString('ja-JP') + '万円'; // 円→万円 (A10)
+        document.getElementById('capExpense').textContent = (params.monthlyExpense / 10000).toLocaleString('ja-JP') + '万円'; // 円→万円 (A10)
 
         const modelText = lastSimResult.modelType === 'log-t' ? '対数t分布' : '対数正規分布';
         document.getElementById('capModel').textContent = modelText;
@@ -1450,7 +1450,7 @@ async function saveImage() {
 
         // キャプチャ用DOM（シミュレーション結果）にデータを反映
         document.getElementById('capSuccess').textContent = lastSimResult.successRate.toFixed(1) + '%';
-        document.getElementById('capMedian').textContent = (lastSimResult.finalMedian / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円';
+        document.getElementById('capMedian').textContent = (lastSimResult.finalMedian / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'; // 円→億円 (A10)
 
         // 2. グラフ画像を転写（スマホでもPC表示のアスペクト比を維持するため一時的に固定サイズへ変更）
         const chartCanvas = document.getElementById('assetChartCanvas');
@@ -1739,7 +1739,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
 
     // パラメータが変更されたら未実行サマリを更新または警告バッジを表示するリスナーを各input/selectに追加
-    const inputsAndSelects = document.querySelectorAll('input, select');
+    // 表示制御用のトグル（downsideFocusAsset, downsideFocusCash, logScaleToggle）は除外する (v1.8.3修正)
+    const inputsAndSelects = document.querySelectorAll('input:not(#downsideFocusAsset):not(#downsideFocusCash):not(#logScaleToggle), select');
     inputsAndSelects.forEach(el => {
         el.addEventListener('change', () => {
             if (!lastSimResult) {
@@ -1934,9 +1935,9 @@ function openCompareTab() {
     const base = window.location.href.split('?')[0];
     const url = new URL(base);
 
-    url.searchParams.set('asset', (p.initialRiskAsset / 10000).toString());
-    url.searchParams.set('cash', p.initialCashBuffer.toString());
-    url.searchParams.set('expense', p.monthlyExpense.toString());
+    url.searchParams.set('asset', (p.initialRiskAsset / 100000000).toString()); // 円→億円 (A11)
+    url.searchParams.set('cash', (p.initialCashBuffer / 10000).toString()); // 円→万円 (A11)
+    url.searchParams.set('expense', (p.monthlyExpense / 10000).toString()); // 円→万円 (A11)
     url.searchParams.set('ret', p.expectedReturn.toString());
     url.searchParams.set('vol', p.volatility.toString());
     url.searchParams.set('inf', p.inflationRate.toString());
@@ -1977,9 +1978,9 @@ async function copySimUrl() {
     const p = getParams();
     const base = 'https://moriyama-eng.github.io/fire-simulator/';
     const url = new URL(base);
-    url.searchParams.set('asset', (p.initialRiskAsset / 10000).toString());
-    url.searchParams.set('cash', p.initialCashBuffer.toString());
-    url.searchParams.set('expense', p.monthlyExpense.toString());
+    url.searchParams.set('asset', (p.initialRiskAsset / 100000000).toString()); // 円→億円 (A12)
+    url.searchParams.set('cash', (p.initialCashBuffer / 10000).toString()); // 円→万円 (A12)
+    url.searchParams.set('expense', (p.monthlyExpense / 10000).toString()); // 円→万円 (A12)
     url.searchParams.set('ret', p.expectedReturn.toString());
     url.searchParams.set('vol', p.volatility.toString());
     url.searchParams.set('inf', p.inflationRate.toString());
