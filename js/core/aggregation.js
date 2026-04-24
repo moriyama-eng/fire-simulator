@@ -19,10 +19,6 @@ export function aggregateResultsProduction({
     totalsBuffer, cashesBuffer, ddsBuffer,
     maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount
 }) {
-    const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
-    const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
-    const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
-
     const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
     const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
     const ddPercentileData = percentiles.map(() => new Float32Array(dataLen));
@@ -33,18 +29,35 @@ export function aggregateResultsProduction({
     const workBuffer = new Float32Array(simPaths);
     const resultBuf = new Float32Array(percentiles.length);
 
-    for (let t = 0; t < dataLen; t++) {
-        workBuffer.set(totalT[t]);
-        multiSelectTrue(workBuffer, ks, resultBuf);
-        for (let i = 0; i < ks.length; i++) totalPercentileData[i][t] = resultBuf[i];
+    // 総資産(totals)のパーセンタイル計算
+    {
+        const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
+        for (let t = 0; t < dataLen; t++) {
+            workBuffer.set(totalT[t]);
+            multiSelectTrue(workBuffer, ks, resultBuf);
+            for (let i = 0; i < ks.length; i++) totalPercentileData[i][t] = resultBuf[i];
+        }
+        // totalT はこのスコープを抜けると解放される
+    }
 
-        workBuffer.set(cashT[t]);
-        multiSelectTrue(workBuffer, ks, resultBuf);
-        for (let i = 0; i < ks.length; i++) cashPercentileData[i][t] = resultBuf[i];
+    // 現金バッファ(cashes)のパーセンタイル計算
+    {
+        const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
+        for (let t = 0; t < dataLen; t++) {
+            workBuffer.set(cashT[t]);
+            multiSelectTrue(workBuffer, ks, resultBuf);
+            for (let i = 0; i < ks.length; i++) cashPercentileData[i][t] = resultBuf[i];
+        }
+    }
 
-        workBuffer.set(ddT[t]);
-        multiSelectTrue(workBuffer, ks, resultBuf);
-        for (let i = 0; i < ks.length; i++) ddPercentileData[i][t] = resultBuf[i];
+    // ドローダウン(dds)のパーセンタイル計算
+    {
+        const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
+        for (let t = 0; t < dataLen; t++) {
+            workBuffer.set(ddT[t]);
+            multiSelectTrue(workBuffer, ks, resultBuf);
+            for (let i = 0; i < ks.length; i++) ddPercentileData[i][t] = resultBuf[i];
+        }
     }
 
     const ddCopy = new Float32Array(maxDdPerPath);
