@@ -125,7 +125,7 @@ self.onmessage = function (e) {
     } = params;
 
     const totalMonths = simYears * 12;
-    const EPSILON = 0.0001; // ゼロ除算防止および破産判定用の微小値
+    const EPSILON = 1.0; // ゼロ除算防止および破産判定用の微小値（円単位, W1）
 
     const arithmeticReturn = expectedReturn / 100;
     const annualVol = volatility / 100;
