@@ -15,6 +15,8 @@ export function transposeFlat(buffer, simPaths, dataLen) {
     return result;
 }
 
+// v1.10.0でメモリ効率化のため逐次転置方式に変更。v2.0.0でも同様の実装を維持。
+// 総資産・現金・ドローダウンを1種類ずつ計算し、不要になった転置結果はGCに解放させる。
 export function aggregateResultsProduction({
     totalsBuffer, cashesBuffer, ddsBuffer,
     maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount
@@ -60,8 +62,9 @@ export function aggregateResultsProduction({
         }
     }
 
-    const ddCopy = new Float32Array(maxDdPerPath);
-    const uwCopy = new Float32Array(maxUwPerPath);
+    // 破壊的操作(quickselect)から保護するためコピーを作成
+    const ddCopy = Float32Array.from(maxDdPerPath);
+    const uwCopy = Float32Array.from(maxUwPerPath);
     const worst5Idx = Math.floor(0.05 * (simPaths - 1));
     const worst10Idx = Math.floor(0.10 * (simPaths - 1));
     const medianIdx = Math.floor(0.50 * (simPaths - 1));

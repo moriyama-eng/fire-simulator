@@ -1,6 +1,7 @@
 body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    background-attachment: fixed;
     min-height: 100vh;
 }
 
@@ -146,6 +147,7 @@ input[type="number"]::-webkit-inner-spin-button {
     position: relative;
     display: inline-flex;
     align-items: center;
+    z-index: 110;
 }
 
 .tooltip-text {
@@ -158,9 +160,9 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: left;
     border-radius: 6px;
     padding: 8px 12px;
-    position: absolute;
-    z-index: 50;
-    bottom: 125%;
+    position: fixed;
+    z-index: 110;
+    transform: translateX(-50%);
     /* right: -8px; 削除: 個別クラスで制御 */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     transition: opacity 0.2s, visibility 0.2s;
@@ -200,12 +202,6 @@ input[type="number"]::-webkit-inner-spin-button {
     border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
 }
 
-/* ホバーまたはフォーカス（タップ）で表示 */
-.tooltip-container:hover .tooltip-text,
-.tooltip-container:focus-within .tooltip-text {
-    visibility: visible;
-    opacity: 1;
-}
 
 /* 中央配置 */
 .tooltip-center-align .tooltip-text {
@@ -291,4 +287,332 @@ input[type="number"]::-webkit-inner-spin-button {
     flex-direction: column;
     overflow: hidden;
     z-index: -9999;
+}
+
+/* ==================================================================== */
+/* 分析タブ用スタイル */
+/* ==================================================================== */
+
+/* タブ選択行のスティッキー化 */
+.tab-nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0);
+    /* body の背景色を参考に半透明 */
+    backdrop-filter: blur(12px);
+    /* 既存の border-b は維持 */
+}
+
+.tab-btn {
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8;
+    background: transparent;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    color: #a5b4fc;
+    border-bottom-color: #818cf8;
+}
+
+.tab-btn:hover:not(.active) {
+    color: #cbd5e1;
+    border-bottom-color: rgba(129, 140, 248, 0.3);
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+/* ==================================================================== */
+/* 分析タブ用スタイル (v2.0.0) */
+/* ==================================================================== */
+
+/* 因子セレクターカード */
+.factor-select-card {
+    transition: all 0.2s;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    overflow: hidden;
+}
+
+.factor-select-card:hover {
+    border-top-color: rgba(129, 140, 248, 0.4);
+    border-right-color: rgba(129, 140, 248, 0.4);
+    border-bottom-color: rgba(129, 140, 248, 0.4);
+}
+
+.factor-select-card.selected {
+    border-right-color: rgba(129, 140, 248, 0.6);
+    border-bottom-color: rgba(129, 140, 248, 0.6);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+/* カテゴリ色分け */
+.factor-select-card.cat-asset {
+    border-left-color: #f59e0b;
+    border-left-width: 4px !important;
+}
+
+.factor-select-card.cat-market {
+    border-left-color: #6366f1;
+    border-left-width: 4px !important;
+}
+
+.factor-select-card.cat-buffer {
+    border-left-color: #10b981;
+    border-left-width: 4px !important;
+}
+
+.factor-select-card.cat-guardrail {
+    border-left-color: #f43f5e;
+    border-left-width: 4px !important;
+}
+
+/* ツールチップ */
+
+/* 因子別比較表カードグリッド */
+.compare-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .compare-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.compare-card {
+    padding: 0.65rem;
+}
+
+/* 比較表の行構造（ヘッダーとデータ行共通） */
+.compare-header-row,
+.compare-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 1fr 1fr;
+    gap: 5px;
+    align-items: center;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+}
+
+.compare-header-row {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* バー表示 */
+.bar-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.bar-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.bar-fill.positive,
+.dd-bar-fill.positive {
+    background: #10b981;
+}
+
+.bar-fill.negative,
+.dd-bar-fill.negative {
+    background: #f43f5e;
+}
+
+.bar-fill.base,
+.dd-bar-fill.base {
+    background: #6366f1;
+}
+
+.bar-value {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* 設定値セル（中央揃え） */
+.setting-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.setting-value {
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.base-badge {
+    font-size: 0.6rem;
+    color: #a5b4fc;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* 最大DDバー（右端起点） */
+.dd-bar-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dd-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+/* ターゲットテーブル */
+.target-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+    /* セル間の隙間をなくす */
+}
+
+/* 列幅を明示（%指定） */
+.target-table col.col-factor {
+    width: 30%;
+}
+
+.target-table col.col-curr {
+    width: 22%;
+}
+
+.target-table col.col-need {
+    width: 24%;
+}
+
+.target-table col.col-after {
+    width: 24%;
+}
+
+.target-table col.col-dummy {
+    width: 0%;
+}
+
+/* 数値が入る列（現在値、必要な変更量、変更後の値）は改行禁止 */
+.target-table th,
+.target-table td:nth-child(2),
+.target-table td:nth-child(3),
+.target-table td:nth-child(4) {
+    white-space: nowrap;
+}
+
+/* colspan で結合された「届きません」メッセージだけは折り返しを許可 */
+.target-table td[colspan="2"] {
+    white-space: normal;
+    word-break: break-word;
+    text-align: left;
+}
+
+
+.target-table th:first-child {
+    text-align: center;
+}
+
+.target-table td:first-child {
+    text-align: left;
+    padding-left: 0.25rem;
+    word-break: break-word;
+}
+
+/* スマホ対応 */
+@media (max-width: 480px) {
+
+    .compare-header-row,
+    .compare-row {
+        grid-template-columns: 70px 1fr 1fr 1fr;
+        gap: 5px;
+    }
+
+    .setting-value {
+        font-size: 0.7rem;
+    }
+
+    .bar-value {
+        font-size: 0.62rem;
+    }
+
+    .compare-header-row {
+        font-size: 0.5rem;
+    }
+
+    .target-table td,
+    .target-table th {
+        font-size: 0.65rem;
+    }
+}
+
+/* 比較表 凡例 */
+.compare-legend {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+
+.compare-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-swatch.positive {
+    background: #10b981;
+}
+
+.legend-swatch.negative {
+    background: #f43f5e;
+}
+
+.legend-swatch.base {
+    background: #6366f1;
+}
+
+/* 自動スクロール時の固定タブバーとの重なりを防ぐ */
+#summaryCardContainer,
+#cardTarget {
+    scroll-margin-top: 30px;
+    /* PC：カード2列表示 */
+}
+
+/* スマホ：カード1列表示 */
+@media (max-width: 1023px) {
+
+    #summaryCardContainer,
+    #cardTarget {
+        scroll-margin-top: 64px;
+    }
 }

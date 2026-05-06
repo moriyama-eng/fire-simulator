@@ -1,0 +1,35 @@
+<div id="analysisTab">
+  <div id="card1Summary"></div>
+  <div id="card1Detail" class="hidden"></div>
+  <button id="card1EditBtn" data-action="edit-base">シミュレーションタブで条件を編集</button>
+  <span id="selectedFactorCount">選択中: 0因子</span>
+  <div id="factorSelector"></div>
+  <span id="scenarioCount">1</span>
+  <span id="estTime">-</span>
+  <div id="analysisError" class="hidden"></div>
+  <button id="runAnalysisBtn" disabled>分析を実行</button>
+  <button id="exportZipBtn" disabled>ZIP出力 (ベータ)</button>
+  <div id="cardTarget" class="hidden">
+    <select id="targetMetric" data-action="change-target-metric">
+      <option value="success_rate_pct" id="targetMetricOptionSuccess">FIRE成功率 改善 +X%pt</option>
+      <option value="final_p10_jpy">最終総資産 10%タイル +2,000万円</option>
+      <option value="worst10_max_dd">最大DD 10%タイル 改善 5%pt</option>
+    </select>
+    <span id="targetMetricLabel">FIRE成功率</span>
+    <strong id="currentMetricValue">-</strong>
+    <div id="targetTableWrapper"></div>
+  </div>
+  <div id="cardCompare" class="hidden">
+    <div id="compareCardsContainer" class="compare-cards-grid"></div>
+    <div class="compare-legend">
+      <span><span class="legend-swatch positive"></span>改善方向</span>
+      <span><span class="legend-swatch base"></span>基準</span>
+      <span><span class="legend-swatch negative"></span>悪化方向</span>
+    </div>
+  </div>
+</div>
+<!-- 分析タブ外のタブ切替用ボタン（edit-base のクリック先）。
+     本フィクスチャで body 全体を置き換えるため、実際の index.html の simTabBtn と競合しない。
+     また analysisTabBtn も将来の依存に備えて配置する（現在のテストでは直接使用しない）。 -->
+<button id="simTabBtn">シミュレーション</button>
+<button id="analysisTabBtn">分析</button>

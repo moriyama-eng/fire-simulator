@@ -1,0 +1,246 @@
+# テストドキュメント
+
+## 用語
+
+- **CB (現金バッファ, Cash Buffer)**：暴落時に取崩す無リスク資産。
+- **GR (ガードレール, Guardrail)**：資産下落時に支出を自動削減する機能。
+- **因子 (Factor)**：感度分析の対象となるパラメータ（期待リターン、ボラティリティ等）。現在10因子。
+- **水準 (Level)**：因子の変化段階。-2, -1, 0, +1, +2 の5段階。
+- **基準シナリオ**：因子を一切変更しない基準のシミュレーション結果（UIでは「基準シナリオ」、コードでは `baseScenario`）。
+
+## 1. テストの全体像
+
+本プロジェクトでは、Vitest + jsdom による2層の自動テストを採用しています。
+
+| 層 | ディレクトリ | 実行環境 | 主な検証対象 | 件数 |
+|----|-------------|----------|-------------|------|
+| ユニットテスト | `tests/unit/` | Vitest + jsdom | 純粋関数、コアロジック、状態管理 | 10（約50テストケース） |
+| インテグレーションテスト | `tests/integration/` | Vitest + jsdom | DOM操作、UI状態遷移、イベント委譲 | 4（約43テストケース） |
+
+### 1.1 テスト対象モジュールマップ
+
+```
+js/core/
+├── aggregation.js       → tests/unit/aggregation.test.js
+├── format.js            → tests/unit/format.test.js
+├── params.js            → tests/unit/params.test.js
+├── percentile.js        → tests/unit/percentile.test.js
+├── random.js            → tests/unit/random.test.js
+├── simulation.js        → tests/unit/simulation.test.js
+├── state.js             → tests/integration/ui-state.test.js （※DOMのIDに依存するボタン制御ロジックのためインテグレーションテストに分類。）
+├── url.js               → tests/unit/url.test.js, tests/integration/query-params.test.js
+
+js/
+├── simulation-engine.js → (インテグレーションテストで間接的にカバー)
+├── analysis-state.js    → tests/unit/analysis-state.test.js
+├── analysis-runner.js   → tests/unit/analysis-runner.test.js
+├── analysis-output.js   → tests/unit/analysis-output.test.js
+├── analysis-ui.js       → tests/integration/analysis-ui.test.js
+├── app.js               → (インテグレーションテストで間接的にカバー)
+```
+
+### 1.2 カバレッジ対象
+
+`vitest.config.js` で `js/core/**/*.js` をカバレッジ対象としています。
+UI層（`analysis-ui.js`, `app.js`）はDOMに強く依存するため、カバレッジ測定からは除外していますが、
+インテグレーションテストによって動作は検証されています。
+
+分析タブの状態管理 (`analysis-state.js`) と実行ロジック (`analysis-runner.js`) は
+単体テストが存在するため、カバレッジ対象に含めています（v2.0.0 以降）。
+
+## 2. テストの実行方法
+
+### 2.1 全テスト実行
+
+```bash
+npm install   # 初回のみ
+npm test      # Vitestによる全テスト実行（カバレッジ付き）
+```
+
+### 2.2 特定のテストのみ実行
+
+```bash
+# ファイル名パターンでフィルタ
+npx vitest run -t "transposeFlat"
+
+# 特定のファイルのみ
+npx vitest run tests/unit/format.test.js
+```
+
+### 2.3 カバレッジレポートの確認
+
+```bash
+npx vitest run --coverage
+# coverage/index.html をブラウザで開く
+```
+
+### 2.4 CIでの自動実行
+
+GitHub Actions（`.github/workflows/test.yml`）により、`main` ブランチへの push および
+pull request 時に自動実行されます。実行環境は `ubuntu-latest` / `node 24` です。
+
+## 3. テスト設計哲学
+
+### 3.1 ロジック検証への特化（実出力非依存の原則）
+
+テストは「計算ロジックが正しいこと」の検証に特化しており、
+実出力の再現が目的ではありません。これは以下の理由によります：
+
+- 実際のシミュレーション結果に依存すると、乱数生成アルゴリズムや
+  パラメータ調整（バグ修正を含む）によってテストが頻繁に破壊される
+- 値そのものよりも、補間計算や因子スケール変換などの
+  **ロジックの正しさを検証する設計**を採用
+
+### 3.2 テストフィクスチャ設計指針
+
+テストで使用する数値は、**ロジック検証用の任意の値**です。
+実際のシミュレーション結果（デフォルトパラメータでの実行出力）とは異なります。
+
+| 指標 | テスト値（例） | 実際のデフォルト実行結果（参考） |
+|------|---------------|--------------------------------|
+| 成功率 | 93.23% | 97.19% |
+| 最終総資産 中央値 | 538,074,816 円 | 599,804,672 円 |
+| final_p10_jpy | 39,342,408 円 | 98,098,648 円 |
+| worst10_max_dd | -0.8055 | -0.6936 |
+
+**指針**:
+- `makeBaseMetrics()` や `makeDummySimResult()` は **現実の分布に基づかない近似値**を含むため、
+  統計的妥当性を検証する目的で使用してはならない
+- テスト値の変更が必要な場合は、テスト対象のロジックに影響がないか慎重に確認すること
+
+> **⚠️ 重要**: `makeDummySimResult()` の非50/10パーセンタイル値（30, 70, 90）は、
+> 単純比例 `Math.round(finalMedian * (pct / 50))` で生成された便宜的なダミー値であり、
+> 統計的に正しい分布を表しません。これらの値を用いた統計的検証は一切行わないでください。
+
+### 3.3 モック戦略
+
+- **`runSimulation` (simulation-engine.js)**: 全テストでモック化。
+  実際のWeb Workerを起動せず、`makeDummySimResult()` の戻り値で代用。
+- **`generateAndDownloadZip` (analysis-output.js)**: ZIP出力テストでモック化。
+  ファイルシステムへの副作用を防ぐ。
+- **`vi.resetAllMocks()`**: 各テストの `beforeEach` で実行し、
+  `mockRejectedValueOnce` の残存カウンタを完全に除去。
+
+### 3.4 非同期テストの取り扱い
+
+Vitest 1.6 には `vi.waitFor` が存在しないため、
+`tests/helpers/async-utils.js` の `waitFor` 関数を代わりに使用しています。
+```javascript
+await waitFor(() => {
+  expect(element.classList.contains('hidden')).toBe(false);
+}, { timeout: 5000 });
+```
+CI環境ではローカルより遅い可能性があるため、必要に応じて `timeout` を延長してください。
+
+## 4. テストの種類と規約
+
+### 4.1 ユニットテスト (`tests/unit/`)
+
+- 対象: `js/core/` 以下の純粋関数、状態管理モジュール
+- 特徴: DOMに依存しない、高速（<1秒）
+- 命名: `{モジュール名}.test.js`
+- 例: パラメータ変換の正しさ、乱数シードの再現性、パーセンタイル計算
+
+### 4.2 インテグレーションテスト (`tests/integration/`)
+
+- 対象: DOM操作、UI状態遷移、イベント委譲
+- 特徴: `jsdom` 環境で `document.body.innerHTML` にフィクスチャHTMLを注入して実行
+- 命名: `{機能名}.test.js`
+- 例: 因子選択UIのトグル動作、分析実行フローの状態遷移、ZIP出力ボタンの有効/無効制御
+
+### 4.3 再現性テスト (`tests/unit/simulation.test.js`)
+
+- 特殊なユニットテスト: `tests/fixtures/reference-results.json` に保存された
+  v1.8.3の固定シード実行結果と現在の実装の出力を比較
+- **目的**: コア計算ロジックのリファクタリング時に、結果が変化していないことを保証
+- **参照データの生成方法**: `tests/fixtures/generate-reference.js` をブラウザDevToolsで実行
+
+### 4.4 E2Eテストについて（非採用の理由）
+
+本プロジェクトでは、Puppeteer/Playwrightを用いたEnd-to-Endテストは**意図的に採用していません**。
+
+**非採用の理由**:
+1. **テストピラミッドの原則**: ユニットテスト（計算ロジック）と
+   インテグレーションテスト（UI状態遷移）で十分なカバレッジが得られている
+2. **SPAとしての特性**: 全ロジックがクライアントサイドで完結しており、
+   実ブラウザ自動化による追加の検証価値が限定的
+3. **メンテナンスコスト**: DOM構造やセレクタの変更のたびにテストが破壊され、
+   修正コストが得られる信頼性向上を上回る
+4. **CI実行時間**: ブラウザバイナリのダウンロードと実行に時間がかかり、
+   プッシュごとのフィードバック速度を低下させる
+
+**代替手段**:
+- ユニットテスト + インテグレーションテストでロジックとUIの正しさを担保
+- リリース前には「スモークテストマニュアル」（下記）を使用した手動確認を実施
+
+**将来的な再導入条件**:
+- バックエンドAPIとの統合が発生した場合
+- Service Workerなどブラウザ固有APIに依存する機能が追加された場合
+- 月間アクティブユーザー数が1,000を超え、手動テストの限界を感じた場合
+
+リリース前の手動テスト手順は [docs/release-checklist.md](../docs/release-checklist.md) を参照してください。
+
+## 6. テスト追加ガイド
+
+### 6.1 どの層に書くべきか
+
+| 検証したいこと | 書くべき層 | 理由 |
+|---------------|-----------|------|
+| 計算式の正しさ | ユニットテスト | 純粋関数はDOM不要 |
+| パラメータ変換 | ユニットテスト | 入出力の組み合わせ検証 |
+| ボタンの有効/無効 | インテグレーションテスト | DOM状態の確認が必要 |
+| クリック後のUI変化 | インテグレーションテスト | イベント委譲の確認 |
+| 非同期処理の状態遷移 | インテグレーションテスト | waitFor + モックで検証 |
+| 実ブラウザ表示 | 手動スモークテスト | コスト対効果が低い |
+
+### 6.2 フィクスチャの作成方法
+
+```javascript
+import { makeBaseMetrics, makeScenarioPoint, makeDummySimResult } from '../helpers/analysis-fixtures.js';
+
+// 基本メトリクス（デフォルト値）
+const metrics = makeBaseMetrics();
+
+// 特定の値を上書き
+const customMetrics = makeBaseMetrics({ success_rate_pct: 85.0 });
+
+// シナリオポイント（水準と結果のペア）
+const point = makeScenarioPoint(-2, { final_p10_jpy: 20000000 });
+
+// ダミーのシミュレーション結果
+const simResult = makeDummySimResult({ finalMedian: 500_000_000 });
+```
+
+### 6.3 DOMテストのパターン
+
+```javascript
+import { readFileSync } from 'fs';
+
+// フィクスチャHTMLを読み込み
+const fixtureHtml = readFileSync('tests/fixtures/analysis-dom-snippet.html', 'utf-8');
+
+beforeEach(() => {
+  document.body.innerHTML = fixtureHtml;
+  // モックの設定
+  vi.resetAllMocks();
+  runSimulation.mockResolvedValue(makeDummySimResult());
+});
+
+it('クリックで状態がトグルする', () => {
+  renderAnalysisTab();
+  document.querySelector('[data-action="toggle-factor"]').click();
+  renderAnalysisTab();
+  expect(document.querySelectorAll('.factor-select-card.selected').length).toBe(1);
+});
+```
+
+### 6.4 既知の制約と注意点
+
+- **`vi.mocked()` は使用禁止**: Vitest 1.6では安定していないため、
+  モック関数のプロパティ（`.mock.calls`など）に直接アクセスすること
+- **`afterEach`でのクリーンアップ**: `vi.resetAllMocks()` を `beforeEach` で実行しているため、
+  テスト関数内でのモック状態の後始末は不要（次のテスト開始時に完全リセットされる）
+- **`window.alert` の未定義対策**: テスト環境では `window.alert` が存在しない場合があるため、
+  スパイ作成前に存在確認と一時的な定義が必要
+- **非同期アサーション**: `waitFor` ヘルパーを使用し、タイムアウトは適切に設定すること
+  （CI環境ではローカルより遅いことを考慮）

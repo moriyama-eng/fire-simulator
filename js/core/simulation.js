@@ -1,5 +1,7 @@
 // ====================================================================
-// js/core/simulation.js
+// js/core/simulation.js - v2.0.0
+// 単一パスのシミュレーションロジック。Workerから呼び出される。
+// 分析タブからの利用でも変更はない。
 // ====================================================================
 
 import { calcAutoDf } from './params.js';
@@ -169,6 +171,7 @@ export function runSinglePath(rngs, params) {
 
         // 支出後総資産
         const eomAsset = currentRiskAsset + currentCash;
+        // 支出後総資産（月末資産）を算出
         const safeHWM = Math.max(highWaterMark, EPSILON);
         const eomDD = Math.min(0, (eomAsset - safeHWM) / safeHWM);
 

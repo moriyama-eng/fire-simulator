@@ -15,19 +15,9 @@ let uwHistChart = null;
 let lastSimResult = null;
 let isRunning = false;
 let isResultDirty = false;  // 入力変更後未実行状態フラグ
-
-// ====================================================================
-// 真の単一パス・マルチセレクト（スタックベース非再帰・バッファ再利用版）
-// ====================================================================
-
-// ====================================================================
-// 単一select（安全版：中央インデックスピボット）
-// ====================================================================
-
-// ====================================================================
-// データ構造の転置 [パス][時間] -> [時間][パス]
-// Note: simPaths × dataLen が極端に大きい場合のメモリ使用量に注意
-// ====================================================================
+let lastExecutedParams = null;      // 最後に成功した実行パラメータ
+let lastMainExecutionMs = null;     // 実行時間ミリ秒
+window.lastMainExecutionMs = null;
 
 // ====================================================================
 // 入力パラメータのDOM取得とバリデーション
@@ -790,10 +780,10 @@ function updateSummaryCard(result, params) {
         <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
             <div class="absolute inset-0 bg-gradient-to-br ${statusGrad} opacity-30"></div>
             <div class="relative z-10">
-                <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
+                <div class="flex items-center justify-between gap-4 mb-5 border-b border-white/10 pb-3">
                     <div class="flex items-center space-x-2">
                         <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
-                        ${getIsResultDirty() ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">⚠️ 条件変更あり</span>' : ''}
+                        ${getIsResultDirty() ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">条件変更あり</span>' : ''}
                     </div>
                     <span id="uiExecTime" class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
@@ -1003,6 +993,7 @@ function renderEmptySummaryCard(cbChecked = false) {
 // ====================================================================
 async function runMain() {
     if (isRunning) return;
+    const _analysisStartTime = performance.now();
     isRunning = true;
 
     const runBtn = document.getElementById('runBtn');
@@ -1029,26 +1020,44 @@ async function runMain() {
         const pctInput = document.getElementById('percentileInput');
         pctInput.value = formatPercentileInput(pctInput.value);
         const percentiles = parsePercentiles(pctInput.value);
+        const simStartTime = performance.now();
         const result = await runSimulation(params, percentiles);
+        window.lastSimOnlyMs = performance.now() - simStartTime;
         lastSimResult = result;
         isResultDirty = false;
 
         const isLogScale = document.getElementById('logScaleToggle').checked;
         renderAssetChart(result, isLogScale);
-        renderCashChart(result);
+        const cashChartCard = document.getElementById('cashChartCanvas')?.closest('.glass-card');
+        if (cashChartCard) {
+            cashChartCard.style.display = params.cashBufferToggle ? '' : 'none';
+        }
+        if (params.cashBufferToggle) renderCashChart(result);
         renderDdCdfChart(result);
         renderUwCdfChart(result);
         markResultClean(); // 共有ボタンの有効化
         updateSummaryCard(result, params);
         setTimeout(() => {
-            document.getElementById('summaryCardContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const target = document.getElementById('summaryCardContainer');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }, 100);
 
     } finally {
-        runBtn.disabled = false;
-        runBtn.innerHTML = 'シミュレーション実行';
-        runBtn.style.background = '';
+        // Bug #21: 確実にデフォルト状態にリセット
+        if (runBtn) {
+            runBtn.disabled = false;
+            runBtn.innerHTML = 'シミュレーション実行';
+            runBtn.style.background = '';
+        }
         isRunning = false;
+        if (lastSimResult) {
+            lastExecutedParams = getParams();
+            lastMainExecutionMs = performance.now() - _analysisStartTime;
+            window.lastMainExecutionMs = lastMainExecutionMs;
+            syncBaseToAnalysisIfOpen();
+        }
     }
 }
 
@@ -1124,6 +1133,10 @@ async function saveImage() {
             // ツールチップを強制的に非表示にする
             assetChart.tooltip.setActiveElements([], { x: 0, y: 0 });
 
+            // アニメーションを無効化（チラつき防止）
+            const origAnimation = assetChart.options.animation;
+            assetChart.options.animation = false;
+
             const origLegendSize = assetChart.options.plugins.legend.labels.font.size;
             const origXTickSize = assetChart.options.scales.x.ticks.font.size;
             const origYTickSize = assetChart.options.scales.y.ticks.font.size;
@@ -1151,6 +1164,8 @@ async function saveImage() {
             chartCard.style.overflow = origCardOverflow;
             chartCard.style.height = origCardHeight;
 
+            // アニメーション設定を復元
+            assetChart.options.animation = origAnimation;
             assetChart.resize();
             assetChart.update('none');
 
@@ -1395,7 +1410,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // パラメータが変更されたら未実行サマリを更新または警告バッジを表示するリスナーを各input/selectに追加
     // 表示制御用のトグル（downsideFocusAsset, downsideFocusCash, logScaleToggle）は除外する (v1.8.3修正)
-    const inputsAndSelects = document.querySelectorAll('input:not(#downsideFocusAsset):not(#downsideFocusCash):not(#logScaleToggle), select');
+    const simulationTabEl = document.getElementById('simulationTab');
+    const inputsAndSelects = simulationTabEl
+        ? simulationTabEl.querySelectorAll('input:not(#downsideFocusAsset):not(#downsideFocusCash):not(#logScaleToggle), select')
+        : [];
     inputsAndSelects.forEach(el => {
         el.addEventListener('change', () => {
             if (!lastSimResult) {
@@ -1438,115 +1456,294 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // URLクエリパラメータの自動設定
     applyQueryParams(runMain);
-});
 
-// ====================================================================
-// ダウンサイドフォーカス適用
-// ====================================================================
-// enabled=true のとき 50% 超のパーセンタイル系列を非表示にする
-// Chart.js の setDatasetVisibility を使い、再生成なしで切替
-// ファンチャートの fill 参照が非表示 dataset を指す場合は fill=false に補正する
-function applyDownsideFocus(chart, enabled) {
-    // まず全 dataset の表示・非表示を確定する
-    chart.data.datasets.forEach((ds, i) => {
-        const pct = parseInt(ds.label, 10);
-        const visible = !enabled || pct <= 50;
-        chart.setDatasetVisibility(i, visible);
-    });
+    // ========== 分析タブ切替 (v2.0.0) ==========
+    const simTabBtn = document.getElementById('simTabBtn');
+    const analysisTabBtn = document.getElementById('analysisTabBtn');
+    const simulationTab = document.getElementById('simulationTab');
+    const analysisTabContent = document.getElementById('analysisTab');
+    if (simTabBtn && analysisTabBtn) {
+        simTabBtn.addEventListener('click', () => {
+            simTabBtn.classList.add('active');
+            simTabBtn.setAttribute('aria-selected', 'true');
+            // Bug #44: アクティブ時のテキスト色を設定
+            simTabBtn.classList.add('text-indigo-300');
+            simTabBtn.classList.remove('text-slate-400');
 
-    // ファンチャートの fill 補正:
-    // 表示中 dataset のうち最上位（最初に visible=true になる dataset）は
-    // 一つ上の dataset が非表示になっているため fill=false にする
-    // それ以外の表示 dataset は fill='-1' を維持（隣接する visible な dataset が存在するため）
-    let firstVisible = true;
-    chart.data.datasets.forEach((ds) => {
-        const pct = parseInt(ds.label, 10);
-        const visible = !enabled || pct <= 50;
-        if (visible) {
-            if (firstVisible) {
-                // 表示中で最上位の線: 上に visible な dataset がないので fill なし
-                ds.fill = false;
-                firstVisible = false;
-            } else {
-                // 2番目以降: 一つ上が visible なので fill='-1' を維持
-                ds.fill = '-1';
-            }
-        }
-    });
+            analysisTabBtn.classList.remove('active');
+            analysisTabBtn.setAttribute('aria-selected', 'false');
+            analysisTabBtn.classList.add('text-slate-400');
+            analysisTabBtn.classList.remove('text-indigo-300');
 
-    chart.update('none');
-}
+            simulationTab.classList.remove('hidden');
+            analysisTabContent.classList.add('hidden');
+        });
+        analysisTabBtn.addEventListener('click', () => {
+            analysisTabBtn.classList.add('active');
+            analysisTabBtn.setAttribute('aria-selected', 'true');
+            // Bug #44: アクティブ時のテキスト色を設定
+            analysisTabBtn.classList.add('text-indigo-300');
+            analysisTabBtn.classList.remove('text-slate-400');
 
+            simTabBtn.classList.remove('active');
+            simTabBtn.setAttribute('aria-selected', 'false');
+            simTabBtn.classList.add('text-slate-400');
+            simTabBtn.classList.remove('text-indigo-300');
 
-// ====================================================================
-// 同条件の別タブを開く（比較用）
-// ====================================================================
-
-
-// ====================================================================
-// 解析結果URLリンクをクリップボードにコピー
-// ====================================================================
-
-function shareToX() {
-    if (!lastSimResult || getIsResultDirty()) return;
-    const p = getParams();
-    const s = lastSimResult.successRate.toFixed(1);
-    const url = buildSimulationUrl(p, {
-        autoRun: true, fixedSeed: true,
-        seed: lastSimResult.usedSeed,
-        percentileRaw: document.getElementById('percentileInput').value,
-        baseUrl: 'https://moriyama-eng.github.io/fire-simulator/'
-    });
-    const text = `【FIREシミュレーション結果】\n` +
-        `💰 リスク資産: ${(p.initialRiskAsset / 100_000_000).toLocaleString()}億円\n` +
-        `💴 現金バッファ: ${(p.initialCashBuffer / 10_000).toLocaleString()}万円\n` +
-        `💸 月間取崩し額: ${(p.monthlyExpense / 10_000).toLocaleString()}万円\n` +
-        `📈 リターン/ボラ: ${p.expectedReturn}% / ${p.volatility}%\n` +
-        `📉 インフレ率: ${p.inflationRate}%\n` +
-        `⏳ 期間: ${p.simYears}年\n` +
-        `🔥 成功確率: ${s}%\n\n` +
-        `同じ条件で試す👇\n${url.toString()}`;
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-}
-
-function openCompareTab() {
-    if (!lastSimResult || getIsResultDirty()) return;
-    const p = getParams();
-    const url = buildSimulationUrl(p, {
-        autoRun: false, fixedSeed: true,
-        seed: lastSimResult.usedSeed,
-        percentileRaw: document.getElementById('percentileInput').value
-    });
-    window.open(url.toString(), '_blank');
-}
-
-async function copySimUrl() {
-    if (!lastSimResult || getIsResultDirty()) return;
-    const btn = document.getElementById('copySimUrlBtn');
-    if (btn.disabled) return;
-    const originalHtml = btn.innerHTML;
-    const p = getParams();
-    const url = buildSimulationUrl(p, {
-        autoRun: true, fixedSeed: true,
-        seed: lastSimResult.usedSeed,
-        percentileRaw: document.getElementById('percentileInput').value
-    });
-    try {
-        await navigator.clipboard.writeText(url.toString());
-        btn.disabled = true;
-        btn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
-        btn.classList.add('text-emerald-400');
-        setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
-    } catch {
-        const ta = document.createElement('textarea');
-        ta.value = url.toString();
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        btn.disabled = true;
-        btn.innerHTML = `コピーしました！`;
-        btn.classList.add('text-emerald-400');
-        setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
+            simulationTab.classList.add('hidden');
+            analysisTabContent.classList.remove('hidden');
+            syncBaseToAnalysis();
+        });
     }
-}
+    import('./analysis-ui.js').then(AUI => { AUI.setupAnalysisEventDelegation(); })
+        .catch(e => console.error('analysis-ui load error', e));
+
+    // タブバー固定（CSS sticky が効かない環境へのフォールバック）
+    const tabNavBar = document.querySelector('.tab-nav-bar');
+    if (tabNavBar) {
+        const sentinel = document.createElement('div');
+        tabNavBar.parentNode.insertBefore(sentinel, tabNavBar);
+
+        const observer = new IntersectionObserver(([entry]) => {
+            const isSticky = entry.intersectionRatio < 1;
+            if (isSticky) {
+                // 固定時の幅を確定させるために、元のサイズを取得
+                const originalWidth = tabNavBar.offsetWidth;
+                tabNavBar.style.position = 'fixed';
+                tabNavBar.style.top = '0';
+                tabNavBar.style.zIndex = '100';
+                tabNavBar.style.width = originalWidth + 'px';
+                // 左右中央揃えを維持
+                tabNavBar.style.left = '50%';
+                tabNavBar.style.transform = 'translateX(-50%)';
+            } else {
+                tabNavBar.style.position = '';
+                tabNavBar.style.top = '';
+                tabNavBar.style.zIndex = '';
+                tabNavBar.style.width = '';
+                tabNavBar.style.left = '';
+                tabNavBar.style.transform = '';
+            }
+        }, { threshold: [1] });
+
+        observer.observe(sentinel);
+    }
+
+    // ツールチップをガラスカードの外に脱出させる
+    const tooltipContainer = document.getElementById('tooltip-container');
+    document.querySelectorAll('.tooltip-container').forEach(trigger => {
+        const tooltip = trigger.querySelector('.tooltip-text');
+        if (!tooltip || !tooltipContainer) return;
+        // ツールチップ本体を body 直下の専用領域に移動
+        tooltipContainer.appendChild(tooltip);
+        // 位置計算用の共通関数
+        const positionTooltip = () => {
+            const triggerRect = trigger.getBoundingClientRect();
+            const tooltipHeight = tooltip.offsetHeight;
+            const tooltipWidth = tooltip.offsetWidth;
+            const viewportWidth = window.innerWidth;
+
+            // 中央揃えの基本位置を算出
+            let left = triggerRect.left + triggerRect.width / 2;
+
+            // ツールチップの右端が画面に収まるように補正
+            const tooltipMargin = 16;
+            const tooltipRight = left + tooltipWidth / 2;
+            if (tooltipRight > viewportWidth - tooltipMargin) {
+                left = viewportWidth - tooltipWidth / 2 - tooltipMargin;
+            }
+
+            // ツールチップの左端が画面に収まるように補正
+            const tooltipLeft = left - tooltipWidth / 2;
+            if (tooltipLeft < tooltipMargin) {
+                left = tooltipWidth / 2 + tooltipMargin;
+            }
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${triggerRect.top - tooltipHeight - tooltipMargin}px`;
+            tooltip.style.transform = 'translateX(-50%)';
+        };
+        // ホバー時／フォーカス時に位置を計算して表示
+        trigger.addEventListener('mouseenter', () => {
+            positionTooltip();
+            tooltip.style.visibility = 'visible';
+            tooltip.style.opacity = '1';
+            window.addEventListener('scroll', positionTooltip);
+        });
+        trigger.addEventListener('mouseleave', () => {
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.opacity = '0';
+            window.removeEventListener('scroll', positionTooltip);
+        });
+        // タブアクセス用
+        trigger.addEventListener('focusin', () => {
+            positionTooltip();
+            tooltip.style.visibility = 'visible';
+            tooltip.style.opacity = '1';
+            window.addEventListener('scroll', positionTooltip);
+        });
+        trigger.addEventListener('focusout', () => {
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.opacity = '0';
+            window.removeEventListener('scroll', positionTooltip);
+        });
+    });
+
+    // ====================================================================
+    // ダウンサイドフォーカス適用
+    // ====================================================================
+    // enabled=true のとき 50% 超のパーセンタイル系列を非表示にする
+    // Chart.js の setDatasetVisibility を使い、再生成なしで切替
+    // ファンチャートの fill 参照が非表示 dataset を指す場合は fill=false に補正する
+    function applyDownsideFocus(chart, enabled) {
+        // まず全 dataset の表示・非表示を確定する
+        chart.data.datasets.forEach((ds, i) => {
+            const pct = parseInt(ds.label, 10);
+            const visible = !enabled || pct <= 50;
+            chart.setDatasetVisibility(i, visible);
+        });
+
+        // ファンチャートの fill 補正:
+        // 表示中 dataset のうち最上位（最初に visible=true になる dataset）は
+        // 一つ上の dataset が非表示になっているため fill=false にする
+        // それ以外の表示 dataset は fill='-1' を維持（隣接する visible な dataset が存在するため）
+        let firstVisible = true;
+        chart.data.datasets.forEach((ds) => {
+            const pct = parseInt(ds.label, 10);
+            const visible = !enabled || pct <= 50;
+            if (visible) {
+                if (firstVisible) {
+                    // 表示中で最上位の線: 上に visible な dataset がないので fill なし
+                    ds.fill = false;
+                    firstVisible = false;
+                } else {
+                    // 2番目以降: 一つ上が visible なので fill='-1' を維持
+                    ds.fill = '-1';
+                }
+            }
+        });
+
+        chart.update('none');
+    }
+
+
+    // ====================================================================
+    // 同条件の別タブを開く（比較用）
+    // ====================================================================
+
+
+    // ====================================================================
+    // 解析結果URLリンクをクリップボードにコピー
+    // ====================================================================
+
+    function shareToX() {
+        if (!lastSimResult || getIsResultDirty()) return;
+        const p = getParams();
+        const s = lastSimResult.successRate.toFixed(1);
+        const url = buildSimulationUrl(p, {
+            autoRun: true, fixedSeed: true,
+            seed: lastSimResult.usedSeed,
+            percentileRaw: document.getElementById('percentileInput').value,
+            baseUrl: 'https://moriyama-eng.github.io/fire-simulator/'
+        });
+        const text = `【FIREシミュレーション結果】\n` +
+            `💰 リスク資産: ${(p.initialRiskAsset / 100_000_000).toLocaleString()}億円\n` +
+            `💴 現金バッファ: ${(p.initialCashBuffer / 10_000).toLocaleString()}万円\n` +
+            `💸 月間取崩し額: ${(p.monthlyExpense / 10_000).toLocaleString()}万円\n` +
+            `📈 リターン/ボラ: ${p.expectedReturn}% / ${p.volatility}%\n` +
+            `📉 インフレ率: ${p.inflationRate}%\n` +
+            `⏳ 期間: ${p.simYears}年\n` +
+            `🔥 成功確率: ${s}%\n\n` +
+            `同じ条件で試す👇\n${url.toString()}`;
+        window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function openCompareTab() {
+        if (!lastSimResult || getIsResultDirty()) return;
+        const p = getParams();
+        const url = buildSimulationUrl(p, {
+            autoRun: false, fixedSeed: true,
+            seed: lastSimResult.usedSeed,
+            percentileRaw: document.getElementById('percentileInput').value
+        });
+        window.open(url.toString(), '_blank');
+    }
+
+    async function copySimUrl() {
+        if (!lastSimResult || getIsResultDirty()) return;
+        const btn = document.getElementById('copySimUrlBtn');
+        if (btn.disabled) return;
+        const originalHtml = btn.innerHTML;
+        const p = getParams();
+        const url = buildSimulationUrl(p, {
+            autoRun: true, fixedSeed: true,
+            seed: lastSimResult.usedSeed,
+            percentileRaw: document.getElementById('percentileInput').value
+        });
+        try {
+            await navigator.clipboard.writeText(url.toString());
+            btn.disabled = true;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
+            btn.classList.add('text-emerald-400');
+            setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
+        } catch {
+            const ta = document.createElement('textarea');
+            ta.value = url.toString();
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            btn.disabled = true;
+            btn.innerHTML = `コピーしました！`;
+            btn.classList.add('text-emerald-400');
+            setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
+        }
+    }
+
+    function syncBaseToAnalysis() {
+        if (!lastSimResult || !lastExecutedParams) return;
+        const ep = convertToEffectiveParams(lastExecutedParams, lastSimResult);
+        import('./analysis-state.js').then(AS => {
+            AS.setBaseContext({ source: 'LAST_MAIN_RUN', effectiveParams: ep, summary: { successRatePct: lastSimResult.successRate, finalMedianJpy: lastSimResult.finalMedian, worst10MaxDdPct: lastSimResult.worst10MaxDd } }, ep);
+            import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab()).catch(e => console.error(e));
+        }).catch(e => console.error(e));
+    }
+    function syncBaseToAnalysisIfOpen() {
+        const tab = document.getElementById('analysisTab');
+        if (tab && !tab.classList.contains('hidden')) syncBaseToAnalysis();
+    }
+    /**
+     * シミュレーション実行時の生パラメータから分析タブ用の有効パラメータ(ep)を生成する。
+     * analysis-runner.js の convertToLegacyParams で元に戻せる。
+     */
+    function convertToEffectiveParams(params, simResult) {
+        return {
+            initialRiskAsset: params.initialRiskAsset,
+            initialCashBuffer: params.cashBufferToggle ? params.initialCashBuffer : 10_000_000,
+            monthlyExpense: params.monthlyExpense,
+            expectedReturn: params.expectedReturn,
+            volatility: params.volatility,
+            inflationRate: params.inflationRate,
+            simYears: params.simYears,
+            simPaths: params.simPaths,
+            seed: simResult?.usedSeed || params.seedNum,
+            modelType: params.useTDistribution ? 'log-t' : 'log-normal',
+            dfMode: params.simDfManual ? 'manual' : 'auto',
+            simDfNum: params.useTDistribution ? params.simDfNum : null,
+            usedDf: simResult?.usedDf || null,
+            inflationMode: params.useArInflation ? 'ar1' : 'fixed',
+            infVol: params.infVol,
+            infAr: params.infAr,
+            cashBufferToggle: params.cashBufferToggle,
+            drawdownTrigger: params.cashBufferToggle ? params.drawdownTrigger : -20.0,
+            drawdownReplenish: params.cashBufferToggle ? params.drawdownReplenish : -5.0,
+            replenishPace: params.cashBufferToggle ? params.replenishPace : 5.0,
+            guardrailToggle: params.guardrailToggle,
+            guardrailTrigger: params.guardrailToggle ? params.guardrailTrigger : -20.0,
+            guardrailRelease: params.guardrailToggle ? params.guardrailRelease : -15.0,
+            guardrailReduction: params.guardrailToggle ? params.guardrailReduction : -20.0,
+            useArInflation: params.useArInflation,
+            percentiles: null,
+        };
+    }
+});
