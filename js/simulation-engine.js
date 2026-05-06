@@ -7,12 +7,14 @@ import { calcAutoDf } from './core/params.js';
 
 let onProgress = null;
 export function setProgressCallback(fn) { onProgress = fn; }
+export function getProgressCallback() { return onProgress; }
 
 export async function runSimulation(params, userPercentiles) {
     if (!userPercentiles) userPercentiles = [10, 25, 50, 75, 90];
     const { simYears, simPaths, volatility, simDfManual, simDfNum, seedNum } = params;
 
-    const numWorkers = Math.min(navigator.hardwareConcurrency || 4, 8);
+    // Bug #13: hardwareConcurrency = 0 の環境で最低1Workerを保証
+    const numWorkers = Math.max(1, Math.min(navigator.hardwareConcurrency || 4, 8));
     const basePaths = Math.floor(simPaths / numWorkers);
     const remainder = simPaths % numWorkers;
     const totalMonths = simYears * 12;
@@ -39,7 +41,7 @@ export async function runSimulation(params, userPercentiles) {
                     resW(e.data);
                 } else if (e.data.type === 'progress') {
                     workerProgress[i] = e.data.completed;
-                    const totalCompleted = workerProgress.reduce((a,b)=>a+b,0);
+                    const totalCompleted = workerProgress.reduce((a, b) => a + b, 0);
                     const progress = Math.round((totalCompleted / simPaths) * 100);
                     if (onProgress) onProgress(progress);
                 }
@@ -47,8 +49,9 @@ export async function runSimulation(params, userPercentiles) {
             worker.onerror = (err) => {
                 if (hasFailed) return;
                 hasFailed = true;
+                // Bug #29: alert を削除し、エラーを再throwで呼び出し元に伝播
                 workers.forEach(w => w.terminate());
-                alert("シミュレーション中にエラーが発生しました。");
+                err.message = "シミュレーション中にエラーが発生しました。";
                 rejW(err);
             };
         });

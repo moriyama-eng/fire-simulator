@@ -168,6 +168,7 @@ __marimo__/
 
 # Agent internal plans and state
 GEMINI.md
+AGENTS.md
 .agent/
 .archive/
 .gemini/
@@ -177,3 +178,6 @@ repomix-output*
 repomix.config.json
 # Node modules
 node_modules/
+
+debug_screenshot.png
+coverage/
