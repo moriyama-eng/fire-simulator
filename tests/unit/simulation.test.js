@@ -7,17 +7,17 @@ import { evaluateMonthEnd } from '../../js/core/simulation.js';
 
 describe('evaluateMonthEnd', () => {
     const cfg = { cashBufferToggle: true, ddThreshold: -0.2, ddReplenishThreshold: -0.05, guardrailToggle: true, triggerGR: -0.2, releaseGR: -0.15 };
-    it('ガードレール発動', () => {
+    it('activates guardrail when drawdown exceeds threshold', () => {
         const state = { isGuardrailActive: false, currentUwMonths: 0, maxUwMonths: 0, maxDD: 0, isReplenishMode: false };
         const res = evaluateMonthEnd(100, 120, -0.25, state, cfg);
         expect(res.isGuardrailActive).toBe(true);
     });
-    it('現金バッファ使用判定', () => {
+    it('uses cash buffer when drawdown threshold is met', () => {
         const state = { isGuardrailActive: false, currentUwMonths: 0, maxUwMonths: 0, maxDD: 0, isReplenishMode: false };
         const res = evaluateMonthEnd(100, 120, -0.25, state, cfg);
         expect(res.useCashNextMonth).toBe(true);
     });
-    it('補充モード開始', () => {
+    it('starts replenishment mode when asset exceeds high water mark', () => {
         const state = { isGuardrailActive: false, currentUwMonths: 0, maxUwMonths: 0, maxDD: 0, isReplenishMode: false };
         const res = evaluateMonthEnd(130, 120, 0, state, cfg);
         expect(res.isReplenishMode).toBe(true);
@@ -38,8 +38,8 @@ const defaultInputs = {
     seedToggle: false, seedNum: '123456'
 };
 
-describe('再現性', () => {
-    it('固定シード 123456 で参照データと一致する', () => {
+describe('Reproducibility', () => {
+    it('matches reference data with fixed seed 123456', () => {
         const params = getParamsFromInputs(defaultInputs);
         const seed = params.seedNum;
         const finalValues = [];

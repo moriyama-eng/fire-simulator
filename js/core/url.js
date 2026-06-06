@@ -3,6 +3,7 @@
 // ====================================================================
 
 import { formatPercentileInput } from './format.js';
+import { setLanguage } from '../i18n.js';
 
 export function buildSimulationUrl(params, options = {}) {
     const {
@@ -10,12 +11,27 @@ export function buildSimulationUrl(params, options = {}) {
         fixedSeed = true,
         baseUrl,
         seed = params.seedNum,
-        percentileRaw = ''
+        percentileRaw = '',
+        lang = null
     } = options;
     const url = new URL(baseUrl || `${location.origin}${location.pathname}`);
     url.searchParams.set('asset', (params.initialRiskAsset / 100_000_000).toString());
-    url.searchParams.set('cash', (params.initialCashBuffer / 10_000).toString());
-    url.searchParams.set('expense', (params.monthlyExpense / 10_000).toString());
+    // 言語に応じて cash と expense の単位を切り替え
+    // 日本語モード (lang === 'ja' または lang 未指定): 万円単位 (1万円 = 10,000円)
+    // 英語モード (lang === 'en'): Kドル単位 (1Kドル = 1,000ドル = 100,000円)
+    const isEnglish = lang === 'en';
+    let cashParam, expenseParam;
+    if (isEnglish) {
+        // Kドル = 内部円 / 100,000
+        cashParam = (params.initialCashBuffer / 100_000).toString();
+        expenseParam = (params.monthlyExpense / 100_000).toString();
+    } else {
+        // 万円 = 内部円 / 10,000
+        cashParam = (params.initialCashBuffer / 10_000).toString();
+        expenseParam = (params.monthlyExpense / 10_000).toString();
+    }
+    url.searchParams.set('cash', cashParam);
+    url.searchParams.set('expense', expenseParam);
     url.searchParams.set('ret', params.expectedReturn.toFixed(1));
     url.searchParams.set('vol', params.volatility.toFixed(1));
     url.searchParams.set('inf', params.inflationRate.toFixed(1));
@@ -39,6 +55,13 @@ export function buildSimulationUrl(params, options = {}) {
     url.searchParams.set('grTrig', params.guardrailTrigger.toFixed(1));
     url.searchParams.set('grRel', params.guardrailRelease.toFixed(1));
     url.searchParams.set('grRed', params.guardrailReduction.toFixed(1));
+    // targetAssetRatio: パラメータ名 'tar'
+    if (params.targetAssetRatio !== undefined) {
+        url.searchParams.set('tar', params.targetAssetRatio.toFixed(1));
+    }
+    if (lang) {
+        url.searchParams.set('lang', lang);
+    }
     return url;
 }
 
@@ -47,7 +70,8 @@ export function parseQueryParams(searchString) {
     const keys = [
         'asset','cash','expense','ret','vol','inf','years','paths','pct',
         'cb','gr','seed','fixSeed','auto','model','dfAuto','dfNum',
-        'infModel','infVol','infAr','ddTrig','ddRepl','replPace','grTrig','grRel','grRed'
+        'infModel','infVol','infAr','ddTrig','ddRepl','replPace','grTrig','grRel','grRed',
+        'tar', 'lang'
     ];
     const result = {};
     for (const k of keys) if (p.has(k)) result[k] = p.get(k);
@@ -96,11 +120,27 @@ export function applyParsedParams(parsed) {
     setNum('infVolNum','infVol'); setNum('infArNum','infAr');
     setNum('drawdownTriggerNum','ddTrig'); setNum('drawdownReplenishNum','ddRepl'); setNum('replenishPaceNum','replPace');
     setNum('guardrailTriggerNum','grTrig'); setNum('guardrailReleaseNum','grRel'); setNum('guardrailReductionNum','grRed');
+    // targetAssetRatio: パラメータ名 'tar'
+    if (parsed['tar'] !== undefined) {
+        const el = document.getElementById('targetAssetRatioNum');
+        if (el) {
+            el.value = parsed['tar'];
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('blur', { bubbles: true }));
+        }
+    }
 }
 
 export function applyQueryParams(runMainFn) {
     const parsed = parseQueryParams(window.location.search);
     if (Object.keys(parsed).length === 0) return;
+
+    // 【重要】言語設定は数値変換（applyParsedParams）より先に実行する
+    // これにより英語モードのURLでも現金バッファや月間支出が正しくUSD単位で解釈される
+    if (parsed['lang'] && (parsed['lang'] === 'ja' || parsed['lang'] === 'en')) {
+        setLanguage(parsed['lang']);
+    }
+
     applyParsedParams(parsed);
     if (parsed['auto'] === '1') setTimeout(() => runMainFn(), 150);
 }

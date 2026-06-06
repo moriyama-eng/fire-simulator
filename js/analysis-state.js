@@ -5,16 +5,16 @@
 // paramKey は baseEffectiveParams（app.js で生成）内のプロパティ名と厳密に一致させること。
 // また、applyFactorChange (analysis-runner.js) で因子の変更を適用するプロパティ名でもある。
 export const FACTORS = [
-    { key: 'initial_risk_asset_jpy', label: '初期リスク資産', category: '資産', catClass: 'cat-asset', unit: '億円', step: 0.1, decimals: 1, scale: 1e8, paramKey: 'initialRiskAsset' },
-    { key: 'initial_cash_buffer_jpy', label: '初期現金バッファ', category: '資産', catClass: 'cat-asset', unit: '万円', step: 500, decimals: 0, scale: 1e4, paramKey: 'initialCashBuffer' },
-    { key: 'monthly_expense_jpy', label: '初期月間取崩し額', category: '資産', catClass: 'cat-asset', unit: '万円', step: 5, decimals: 0, scale: 1e4, paramKey: 'monthlyExpense' },
-    { key: 'expected_return_pct', label: '期待リターン', category: 'マーケット', catClass: 'cat-market', unit: '%', step: 1.0, decimals: 1, scale: 1, paramKey: 'expectedReturn' },
-    { key: 'volatility_pct', label: 'ボラティリティ', category: 'マーケット', catClass: 'cat-market', unit: '%', step: 1.0, decimals: 1, scale: 1, paramKey: 'volatility' },
-    { key: 'inflation_rate_pct', label: 'インフレ率', category: 'マーケット', catClass: 'cat-market', unit: '%', step: 0.5, decimals: 1, scale: 1, paramKey: 'inflationRate' },
-    { key: 'drawdown_trigger_pct', label: 'ドローダウン閾値<br>（取崩し判定）', category: '現金バッファ', catClass: 'cat-buffer', unit: '%', step: 5.0, decimals: 1, scale: 1, paramKey: 'drawdownTrigger', requiresFeature: 'cashBuffer' },
-    { key: 'replenish_pace_x_expense', label: '補充ペース<br>（月間取崩し額比）', category: '現金バッファ', catClass: 'cat-buffer', unit: '倍', step: 0.5, decimals: 1, scale: 1, paramKey: 'replenishPace', requiresFeature: 'cashBuffer' },
-    { key: 'guardrail_trigger_pct', label: 'ドローダウン閾値<br>（ガードレール発動）', category: 'ガードレール', catClass: 'cat-guardrail', unit: '%', step: 5.0, decimals: 1, scale: 1, paramKey: 'guardrailTrigger', requiresFeature: 'guardrail' },
-    { key: 'guardrail_reduction_pct', label: '発動時の支出調整率', category: 'ガードレール', catClass: 'cat-guardrail', unit: '%', step: 5.0, decimals: 1, scale: 1, paramKey: 'guardrailReduction', requiresFeature: 'guardrail' },
+    { key: 'initial_risk_asset_jpy', labelKey: 'analysis.factors.initial_risk_asset_jpy', categoryKey: 'analysis.category.asset', catClass: 'cat-asset', unitKey: 'unit.oku', step: 0.1, decimals: 1, scale: 1e8, paramKey: 'initialRiskAsset' },
+    { key: 'initial_cash_buffer_jpy', labelKey: 'analysis.factors.initial_cash_buffer_jpy', categoryKey: 'analysis.category.asset', catClass: 'cat-asset', unitKey: 'unit.man', step: 500, decimals: 0, scale: 1e4, paramKey: 'initialCashBuffer' },
+    { key: 'monthly_expense_jpy', labelKey: 'analysis.factors.monthly_expense_jpy', categoryKey: 'analysis.category.asset', catClass: 'cat-asset', unitKey: 'unit.man', step: 5, decimals: 0, scale: 1e4, paramKey: 'monthlyExpense' },
+    { key: 'expected_return_pct', labelKey: 'analysis.factors.expected_return_pct', categoryKey: 'analysis.category.market', catClass: 'cat-market', unitKey: 'unit.percent', step: 1.0, decimals: 1, scale: 1, paramKey: 'expectedReturn' },
+    { key: 'volatility_pct', labelKey: 'analysis.factors.volatility_pct', categoryKey: 'analysis.category.market', catClass: 'cat-market', unitKey: 'unit.percent', step: 1.0, decimals: 1, scale: 1, paramKey: 'volatility' },
+    { key: 'inflation_rate_pct', labelKey: 'analysis.factors.inflation_rate_pct', categoryKey: 'analysis.category.market', catClass: 'cat-market', unitKey: 'unit.percent', step: 0.5, decimals: 1, scale: 1, paramKey: 'inflationRate' },
+    { key: 'drawdown_trigger_pct', labelKey: 'analysis.factors.drawdown_trigger_pct', categoryKey: 'analysis.category.buffer', catClass: 'cat-buffer', unitKey: 'unit.percent', step: 5.0, decimals: 1, scale: 1, paramKey: 'drawdownTrigger', requiresFeature: 'cashBuffer' },
+    { key: 'replenish_pace_x_expense', labelKey: 'analysis.factors.replenish_pace_x_expense', categoryKey: 'analysis.category.buffer', catClass: 'cat-buffer', unitKey: 'unit.multiplier', step: 0.5, decimals: 1, scale: 1, paramKey: 'replenishPace', requiresFeature: 'cashBuffer' },
+    { key: 'guardrail_trigger_pct', labelKey: 'analysis.factors.guardrail_trigger_pct', categoryKey: 'analysis.category.guardrail', catClass: 'cat-guardrail', unitKey: 'unit.percent', step: 5.0, decimals: 1, scale: 1, paramKey: 'guardrailTrigger', requiresFeature: 'guardrail' },
+    { key: 'guardrail_reduction_pct', labelKey: 'analysis.factors.guardrail_reduction_pct', categoryKey: 'analysis.category.guardrail', catClass: 'cat-guardrail', unitKey: 'unit.percent', step: 5.0, decimals: 1, scale: 1, paramKey: 'guardrailReduction', requiresFeature: 'guardrail' },
 ];
 
 // ----- 分析タブ状態管理 -----
@@ -96,7 +96,9 @@ export function getFactorBaseValue(factorKey) {
     if (!factor) return null;
     const raw = bp[factor.paramKey];
     if (raw == null) return null;
-    return raw / (factor.scale || 1);
+    let value = raw / (factor.scale || 1);
+
+    return value;
 }
 
 /**
@@ -114,17 +116,25 @@ export function getScenarioCount() {
     return 1 + state.selectedFactors.length * 4;
 }
 
-/**
- * テスト専用: 状態を完全に初期化する
- * app.js, analysis-ui.js, analysis-runner.js からは絶対に呼び出さないこと
- */export function _resetStateForTest() {
-  state.baseContext = null;
-  state.baseEffectiveParams = null;
-  state.selectedFactors = [];
-  state.analysisResult = null;
-  state.isRunning = false;
-  state.errorMessage = null;
+export function _resetStateForTest() {
+    state.baseContext = null;
+    state.baseEffectiveParams = null;
+    state.selectedFactors = [];
+    state.analysisResult = null;
+    state.isRunning = false;
+    state.errorMessage = null;
 }
+
+/**
+ * テスト専用: 因子を強制設定する
+ */
+export function _setAvailableFactorsForTest(factors) {
+    // 内部的に状態を汚染させる hack
+    // 実際には getAvailableFactors が state.baseEffectiveParams に依存しているため
+    // テスト用に関数を増やすより、setBaseContext を適切に呼ぶべき。
+    // 今回はテストコード側を修正する
+}
+
 
 /**
  * ベース成功率(pct)に応じた目標成功率の改善幅を返す
@@ -136,8 +146,8 @@ export function getScenarioCount() {
  * @returns {number} 改善幅(%pt)
  */
 export function getSuccessRateTargetDelta(baseRatePct) {
-  if (baseRatePct >= 95) return 0;
-  if (baseRatePct >= 90) return 1.0;
-  if (baseRatePct >= 85) return 2.0;
-  return 5.0;
+    if (baseRatePct >= 95) return 0;
+    if (baseRatePct >= 90) return 1.0;
+    if (baseRatePct >= 85) return 2.0;
+    return 5.0;
 }

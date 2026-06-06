@@ -34,7 +34,7 @@ beforeEach(() => {
   originalJSZip = global.JSZip; // 現在のグローバル値を退避（同一ファイル内のテスト間隔離のため必須）
   originalCreateObjectURL = URL.createObjectURL;
   URL.createObjectURL = vi.fn().mockReturnValue('blob:test');
-  
+
   vi.clearAllMocks();
   global.JSZip = MockJSZip;
 
@@ -43,8 +43,8 @@ beforeEach(() => {
     expected_return_pct: [
       makeScenarioPoint(-2, { success_rate_pct: 85.13 }),
       makeScenarioPoint(-1, { success_rate_pct: 90.01 }),
-      makeScenarioPoint(1,  { success_rate_pct: 95.70 }),
-      makeScenarioPoint(2,  { success_rate_pct: 97.43 }),
+      makeScenarioPoint(1, { success_rate_pct: 95.70 }),
+      makeScenarioPoint(2, { success_rate_pct: 97.43 }),
     ]
   };
   AS.getAnalysisResult.mockReturnValue(makeAnalysisResult(perFactorResults));
@@ -54,25 +54,25 @@ afterEach(() => {
   global.JSZip = originalJSZip; // テスト終了ごとに必ず元の値に復元
 });
 
-describe('generateAndDownloadZip - エラーケース', () => {
-  it('分析結果が null ならエラーをスローする', async () => {
+describe('generateAndDownloadZip - error cases', () => {
+  it('throws error when analysis result is null', async () => {
     AS.getAnalysisResult.mockReturnValue(null);
-    await expect(generateAndDownloadZip()).rejects.toThrow('分析結果なし');
+    await expect(generateAndDownloadZip()).rejects.toThrow(/No analysis result|error\.noResult/i);
   });
 
-  it('JSZip が読み込まれていない場合、エラーをスローする', async () => {
+  it('throws error when JSZip is not loaded', async () => {
     global.JSZip = undefined;
-    await expect(generateAndDownloadZip()).rejects.toThrow('JSZipが読み込まれていません');
+    await expect(generateAndDownloadZip()).rejects.toThrow(/JSZip is not loaded|error\.noJSZip/i);
   });
 });
 
-describe('generateAndDownloadZip - ZIP 構造', () => {
+describe('generateAndDownloadZip - ZIP structure', () => {
   beforeEach(() => {
     mockZipFile.mockClear();
     mockZipFolderFile.mockClear();
   });
 
-  it('manifest.json が追加され、metadata 配列が正しい', async () => {
+  it('adds manifest.json with correct metadata array', async () => {
     await generateAndDownloadZip();
     const manifestCall = mockZipFile.mock.calls.find(call => call[0] === 'manifest.json');
     expect(manifestCall).toBeTruthy();
@@ -88,7 +88,7 @@ describe('generateAndDownloadZip - ZIP 構造', () => {
     expect(manifest.outputs.metadata.some(item => item.includes('expected_return_pct'))).toBe(true);
   });
 
-  it('summary.csv が追加される（ヘッダとデータ行数）', async () => {
+  it('adds summary.csv with header and correct row count', async () => {
     await generateAndDownloadZip();
     const summaryCall = mockZipFile.mock.calls.find(call => call[0] === 'summary.csv');
     expect(summaryCall).toBeTruthy();
@@ -100,7 +100,7 @@ describe('generateAndDownloadZip - ZIP 構造', () => {
     expect(lines.length).toBe(6); // ヘッダ + base + 4水準
   });
 
-  it('comparison_summary.csv が追加される（ヘッダとデータ行数）', async () => {
+  it('adds comparison_summary.csv with header and correct row count', async () => {
     await generateAndDownloadZip();
     const compCall = mockZipFile.mock.calls.find(call => call[0] === 'comparison_summary.csv');
     expect(compCall).toBeTruthy();
@@ -110,18 +110,18 @@ describe('generateAndDownloadZip - ZIP 構造', () => {
     expect(lines.length).toBe(5); // ヘッダ + 4水準
   });
 
-  it('metadata フォルダが作成される', async () => {
+  it('creates metadata folder', async () => {
     await generateAndDownloadZip();
     expect(mockZipFolder).toHaveBeenCalledWith('metadata');
   });
 
-  it('metadata フォルダ内に base + 4水準 = 5つの JSON ファイルが追加される', async () => {
+  it('adds 5 JSON files (base + 4 levels) inside metadata folder', async () => {
     await generateAndDownloadZip();
     const jsonCalls = mockZipFolderFile.mock.calls.filter(call => call[0].endsWith('.json'));
     expect(jsonCalls.length).toBe(5);
   });
 
-  it('metadata JSON に worst10_max_dd が負の数値として含まれる', async () => {
+  it('includes worst10_max_dd as negative number in metadata JSON', async () => {
     await generateAndDownloadZip();
     const jsonCall = mockZipFolderFile.mock.calls.find(call =>
       call[0].endsWith('.json') && call[0] !== 'base.json'
@@ -134,7 +134,7 @@ describe('generateAndDownloadZip - ZIP 構造', () => {
     expect(parsed.result_summary).toHaveProperty('final_p10_jpy');
   });
 
-  it('metadata base.json が正しい構造を持つ', async () => {
+  it('has correct structure for metadata base.json', async () => {
     await generateAndDownloadZip();
     const baseCall = mockZipFolderFile.mock.calls.find(call => call[0] === 'base.json');
     expect(baseCall).toBeTruthy();
@@ -145,7 +145,7 @@ describe('generateAndDownloadZip - ZIP 構造', () => {
   });
 });
 
-describe('generateAndDownloadZip - ダウンロード', () => {
+describe('generateAndDownloadZip - download', () => {
   let createObjectURLSpy, appendChildSpy, removeChildSpy;
 
   beforeEach(() => {
@@ -160,7 +160,7 @@ describe('generateAndDownloadZip - ダウンロード', () => {
     removeChildSpy.mockRestore();
   });
 
-  it('Blob を生成し、ダウンロードリンクを作成する', async () => {
+  it('creates blob and download link', async () => {
     await generateAndDownloadZip();
 
     expect(mockGenerateAsync).toHaveBeenCalledWith({ type: 'blob' });
@@ -171,7 +171,7 @@ describe('generateAndDownloadZip - ダウンロード', () => {
     expect(appendedElement.download).toMatch(/^analysis_\d{14}\.zip$/);
   });
 
-  it('ZIP ファイル名が analysis_YYYYMMDDHHmmss.zip 形式である', async () => {
+  it('generates ZIP filename in analysis_YYYYMMDDHHmmss.zip format', async () => {
     await generateAndDownloadZip();
 
     const aElement = appendChildSpy.mock.calls[0][0];
@@ -179,5 +179,35 @@ describe('generateAndDownloadZip - ダウンロード', () => {
     const timestamp = aElement.download.replace('analysis_', '').replace('.zip', '');
     expect(timestamp.length).toBe(14);
     expect(Number.isInteger(Number(timestamp))).toBe(true);
+  });
+});
+
+// ===== REQ-4-9: target_asset_maintain_rate のCSV/JSON出力テスト =====
+describe('generateAndDownloadZip - target_asset_maintain_rate', () => {
+  it('includes target_asset_maintain_rate in summary.csv header and data', async () => {
+    await generateAndDownloadZip();
+    const summaryCall = mockZipFile.mock.calls.find(call => call[0] === 'summary.csv');
+    expect(summaryCall).toBeTruthy();
+    const csv = summaryCall[1];
+    const lines = csv.split('\n');
+    const header = lines[0];
+    expect(header).toContain('target_asset_maintain_rate');
+    
+    // データ行にカンマ区切りで値が存在することを確認
+    const dataRow = lines[1]; // base scenario row
+    const headerColumns = header.split(',');
+    const idx = headerColumns.indexOf('target_asset_maintain_rate');
+    expect(idx).toBeGreaterThan(-1);
+    const dataColumns = dataRow.split(',');
+    expect(dataColumns[idx]).not.toBe('');
+  });
+
+  it('includes target_asset_maintain_rate in metadata JSON', async () => {
+    await generateAndDownloadZip();
+    const baseJsonCall = mockZipFolderFile.mock.calls.find(call => call[0] === 'base.json');
+    expect(baseJsonCall).toBeTruthy();
+    const parsed = JSON.parse(baseJsonCall[1]);
+    expect(parsed.result_summary).toHaveProperty('target_asset_maintain_rate');
+    expect(typeof parsed.result_summary.target_asset_maintain_rate).toBe('number');
   });
 });

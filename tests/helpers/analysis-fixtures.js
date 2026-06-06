@@ -10,6 +10,7 @@ export function makeBaseMetrics(overrides = {}) {
     final_median_jpy: 538074816,
     final_p10_jpy: 39342408,
     worst10_max_dd: -0.8054955005645752,
+    target_asset_maintain_rate: 93.23,
     ...overrides
   };
 }
@@ -97,6 +98,8 @@ export function makeDummySimResult(overrides = {}) {
     modelType: overrides.modelType ?? 'log-t',
     usedDf: overrides.usedDf ?? 4.2,
     params: { simPaths: 1000, totalMonths: dataLen - 1 },
+    targetAssetMaintainRate: overrides.targetAssetMaintainRate ?? 93.23,
+    targetAssetRatio: overrides.targetAssetRatio ?? 1.0,
   };
 }
 
@@ -147,6 +150,7 @@ export function makeBaseEffectiveParams(overrides = {}) {
     guardrailReduction: -20.0,
     useArInflation: false,       // 実際のデフォルトは固定インフレ（inflationModelToggle OFF）
     percentiles: null,
+    targetAssetRatio: overrides.targetAssetRatio ?? 1.0,
     ...overrides
   };
 }

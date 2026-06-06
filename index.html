@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIRE モンテカルロ・シミュレータ v2.0.0</title>
+    <title data-i18n="header.title">FIRE モンテカルロ・シミュレータ v2.1.0</title>
+    <meta name="app-version" content="2.1.0">
     <meta name="description" content="リスク資産と現金バッファを用いたモンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -31,18 +32,26 @@
 
 <body class="dark text-gray-100">
     <div id="tooltip-container"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;"></div>
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;">
+    </div>
 
     <header class="py-6 px-4 sm:px-8">
-        <div class="max-w-7xl mx-auto">
-            <h1
-                class="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                FIRE モンテカルロ・シミュレータ
-            </h1>
-            <div class="flex items-center gap-2 mt-1">
-                <p id="headerDescription" class="text-sm text-slate-300 font-medium tracking-wide">
-                    モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
-
+        <div class="max-w-7xl mx-auto flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+                    data-i18n="header.title">
+                    FIRE モンテカルロ・シミュレータ
+                </h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <p id="headerDescription" class="text-sm text-slate-300 font-medium tracking-wide"
+                        data-i18n="header.description">
+                        モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 ml-auto">
+                <button data-lang="ja" class="lang-btn active" aria-label="日本語">日本語</button>
+                <button data-lang="en" class="lang-btn" aria-label="English">English <span
+                        class="text-[10px] text-amber-400">(experimental)</span></button>
             </div>
         </div>
     </header>
@@ -51,10 +60,10 @@
         <div class="tab-nav-bar flex border-b border-slate-700/50">
             <button id="simTabBtn"
                 class="tab-btn active px-6 py-3 text-sm font-bold text-indigo-300 border-b-2 border-transparent"
-                aria-selected="true">シミュレーション</button>
+                aria-selected="true" data-i18n="tab.simulation">シミュレーション</button>
             <button id="analysisTabBtn"
                 class="tab-btn px-6 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent"
-                aria-selected="false">分析</button>
+                aria-selected="false" data-i18n="tab.analysis">分析</button>
         </div>
     </div>
 
@@ -66,16 +75,18 @@
                 <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
                     <!-- 資産設定 -->
                     <div class="glass-card glow-border rounded-2xl p-5">
-                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">資産設定</h2>
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4"
+                            data-i18n="asset.title">資産設定</h2>
                         <div class="space-y-5">
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">初期リスク資産 <span
-                                            class="text-indigo-300 ml-1">億円</span></label>
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="asset.riskAsset">初期リスク資産</span> <span
+                                            class="text-indigo-300 ml-1" data-i18n="unit.oku">億円</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="asset.riskAsset.tooltip">
                                             シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値（取崩し判定）未満ならば、月間取崩し額をリスク資産から取崩します。
                                         </div>
                                     </div>
@@ -93,12 +104,13 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">初期現金バッファ <span
-                                            class="text-indigo-300 ml-1">万円</span></label>
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="asset.cashBuffer">初期現金バッファ</span> <span
+                                            class="text-indigo-300 ml-1" data-i18n="unit.man">万円</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="asset.cashBuffer.tooltip">
                                             シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合には、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。<br><span
                                                 class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>
                                         </div>
@@ -117,12 +129,13 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">初期月間取崩し額 <span
-                                            class="text-indigo-300 ml-1">万円</span></label>
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="asset.expense">初期月間取崩し額</span> <span class="text-indigo-300 ml-1"
+                                            data-i18n="unit.man">万円</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="asset.expense.tooltip">
                                             シミュレーション開始時点での月間取崩し額です。<br>※税金や社会保険料等を含んだ、資産から減少する総額を入力してください。<br>インフレ率の設定に応じて将来の取崩し額が計算されます。<br>
                                         </div>
                                     </div>
@@ -138,21 +151,55 @@
                                         data-target="monthlyExpenseNum">＋</button>
                                 </div>
                             </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-xs text-slate-300 font-medium">
+                                        <span data-i18n="asset.targetAsset">終了時目標資産</span>
+                                        <span class="text-indigo-300 ml-1">%</span>
+                                    </label>
+                                    <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                        <span
+                                            class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                        <div class="tooltip-text" data-i18n-html="asset.targetAsset.tooltip">
+                                            シミュレーション終了時に、初期総資産（リスク資産+現金バッファ）のこの割合以上の資産を維持できる確率を計算します。<br>
+                                            100%の場合は元本維持確率に相当します。<br>
+                                            ※インフレ調整は行いません。
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <button type="button" class="stepper-btn decrement"
+                                        data-target="targetAssetRatioNum">−</button>
+                                    <div class="stepper-value-container">
+                                        <!-- step=10 だが手動入力は小数を許可する（バリデーションは min/max のみ） -->
+                                        <input type="number" id="targetAssetRatioNum" min="0" max="500" step="10"
+                                            value="100" class="stepper-input">
+                                    </div>
+                                    <button type="button" class="stepper-btn increment"
+                                        data-target="targetAssetRatioNum">＋</button>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1" data-i18n="asset.targetAsset.hint">
+                                    初期総資産に対する割合（100%=元本維持）
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     <!-- マーケット設定 -->
                     <div class="glass-card glow-border rounded-2xl p-5">
-                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">マーケット設定</h2>
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4"
+                            data-i18n="market.title">マーケット設定</h2>
                         <div class="space-y-5">
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">期待リターン <span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="market.expectedReturn">期待リターン</span> <span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">リスク資産の年平均成長率（算術平均）です。<br>過去の市場平均などを参考に設定します。</div>
+                                        <div class="tooltip-text" data-i18n-html="market.expectedReturn.tooltip">
+                                            リスク資産の年平均成長率（算術平均）です。<br>過去の市場平均などを参考に設定します。</div>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between">
@@ -168,13 +215,15 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">ボラティリティ <span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="market.volatility">ボラティリティ</span> <span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
-                                            リスク資産のリターンのばらつき（標準偏差）です。<br>この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。<br></div>
+                                        <div class="tooltip-text" data-i18n-html="market.volatility.tooltip">
+                                            リスク資産のリターンのばらつき（標準偏差）です。<br>この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。<br>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between">
@@ -190,12 +239,14 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">期待インフレ率 <span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="market.inflation">期待インフレ率</span> <span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">長期的な平均インフレ率です。<br>（AR-1モデルではこの値を中心にしてインフレ率が変動します）
+                                        <div class="tooltip-text" data-i18n-html="market.inflation.tooltip">
+                                            長期的な平均インフレ率です。<br>（AR-1モデルではこの値を中心にしてインフレ率が変動します）
                                         </div>
                                     </div>
                                 </div>
@@ -213,11 +264,12 @@
 
                             <div class="pt-2 border-t border-slate-700/50">
                                 <div class="flex justify-between items-center mb-3">
-                                    <label class="text-xs font-medium text-slate-300">リスク資産変動モデル</label>
+                                    <label class="text-xs font-medium text-slate-300"
+                                        data-i18n="market.modelLabel">リスク資産変動モデル</label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="market.modelTooltip">
                                             リスク資産の価格変動パターンを選択します。<br>対数正規分布は伝統的な金融理論に基づくモデルです。<br>対数t分布はファットテール（極端な暴落）を考慮した現実的なリスク管理モデルです。
                                         </div>
                                     </div>
@@ -225,16 +277,19 @@
                                 <select id="returnModelSelect"
                                     class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 mb-3 cursor-pointer appearance-none"
                                     style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath fill=%22%239ca3af%22 d=%22M3 5l3 3 3-3%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.75rem center;">
-                                    <option value="log-normal">対数正規分布（伝統的な金融理論）</option>
-                                    <option value="log-t">対数t分布（現実的なリスク管理）</option>
+                                    <option value="log-normal" data-i18n="market.model.lognormal">対数正規分布（伝統的な金融理論）
+                                    </option>
+                                    <option value="log-t" data-i18n="market.model.logt">対数t分布（現実的なリスク管理）</option>
                                 </select>
                                 <!-- t分布パラメータ -->
                                 <div id="tDistParams" class="space-y-4 transition-opacity duration-300 hidden">
                                     <div>
                                         <div class="flex justify-between items-center mb-2">
-                                            <label class="text-xs text-slate-300 font-medium">t分布 自由度</label>
+                                            <label class="text-xs text-slate-300 font-medium"
+                                                data-i18n="market.dfLabel">t分布 自由度</label>
                                             <div class="flex items-center gap-1.5">
-                                                <span class="text-[10px] text-slate-300 font-medium">固定</span>
+                                                <span class="text-[10px] text-slate-300 font-medium"
+                                                    data-i18n="seed.fixed">固定</span>
                                                 <label class="relative inline-flex items-center cursor-pointer">
                                                     <input type="checkbox" id="simDfToggle" class="sr-only peer"
                                                         checked>
@@ -245,11 +300,12 @@
                                                         class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5">
                                                     </div>
                                                 </label>
-                                                <span class="text-[10px] text-slate-300 font-medium">自動</span>
+                                                <span class="text-[10px] text-slate-300 font-medium"
+                                                    data-i18n="market.dfAuto">自動</span>
                                                 <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
                                                     <span
                                                         class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                                    <div class="tooltip-text">
+                                                    <div class="tooltip-text" data-i18n-html="market.dfTooltip">
                                                         t分布の裾の重さを制御するパラメータです。<br>値が小さいほど極端な暴落が頻発します。<br>自動モードではボラティリティから自動計算します。
                                                     </div>
                                                 </div>
@@ -280,9 +336,11 @@
 
                             <div class="pt-2 border-t border-slate-700/50">
                                 <div class="flex justify-between items-center mb-3">
-                                    <label class="text-xs font-medium text-slate-300">インフレ変動モデル (AR-1)</label>
+                                    <label class="text-xs font-medium text-slate-300"
+                                        data-i18n="market.inflationModelLabel">インフレ変動モデル (AR-1)</label>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-xs text-slate-300 font-medium">固定</span>
+                                        <span class="text-xs text-slate-300 font-medium"
+                                            data-i18n="market.inflationFixed">固定</span>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" id="inflationModelToggle" class="sr-only peer">
                                             <div
@@ -292,7 +350,15 @@
                                                 class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
                                             </div>
                                         </label>
-                                        <span class="text-xs text-slate-300 font-medium">変動</span>
+                                        <span class="text-xs text-slate-300 font-medium"
+                                            data-i18n="market.inflationVariable">変動</span>
+                                        <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
+                                            <span
+                                                class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                            <div class="tooltip-text" data-i18n-html="market.inflationModelTooltip">
+                                                インフレ率の変動モデルを選択します。<br>固定：常に一定のインフレ率を使用します。<br>変動(AR-1)：平均回帰型の確率モデルでインフレ率が毎月変動します。
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -300,12 +366,13 @@
                                     class="space-y-4 opacity-50 pointer-events-none transition-opacity duration-300">
                                     <div>
                                         <div class="flex justify-between items-center mb-2">
-                                            <label class="text-xs text-slate-300 font-medium">インフレ・ボラティリティ <span
+                                            <label class="text-xs text-slate-300 font-medium"><span
+                                                    data-i18n="market.inflationVol">インフレ・ボラティリティ</span> <span
                                                     class="text-indigo-300 ml-1">%</span></label>
                                             <div class="tooltip-container tooltip-right-align" tabindex="0">
                                                 <span
                                                     class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                                <div class="tooltip-text">
+                                                <div class="tooltip-text" data-i18n-html="market.inflationVol.tooltip">
                                                     毎年のインフレ率の「ブレ幅（標準偏差）」です。<br>米国の過去実績に合わせて 2.0%
                                                     程度に設定すると現実的です。<br>この値が大きいほど、想定外のインフレ高騰リスクが高まります。<br></div>
                                             </div>
@@ -323,11 +390,13 @@
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-center mb-2">
-                                            <label class="text-xs text-slate-300 font-medium">インフレ粘着性 (AR係数) </label>
+                                            <label class="text-xs text-slate-300 font-medium"
+                                                data-i18n="market.inflationAr">インフレ粘着性 (AR係数)
+                                            </label>
                                             <div class="tooltip-container tooltip-right-align" tabindex="0">
                                                 <span
                                                     class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                                <div class="tooltip-text">
+                                                <div class="tooltip-text" data-i18n-html="market.inflationAr.tooltip">
                                                     インフレの「長引きやすさ」を設定します。<br>0.0 (ランダム): 毎月完全にランダム。<br>0.5 (標準値):
                                                     実際の月次データに近い設定。<br>高インフレが継続しやすくなります（スタグフレーション・リスクの再現）。<br>0.9
                                                     (極めて強い):
@@ -352,16 +421,19 @@
 
                     <!-- シミュレーション設定 -->
                     <div class="glass-card glow-border rounded-2xl p-5">
-                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4">シミュレーション設定</h2>
+                        <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4"
+                            data-i18n="sim.title">シミュレーション設定</h2>
                         <div class="space-y-5">
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">シミュレーション年数 <span
-                                            class="text-indigo-300 ml-1">年</span></label>
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="sim.years">シミュレーション年数</span> <span
+                                            class="text-indigo-300 ml-1" data-i18n="unit.years">年</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">資産運用と取崩しを継続する期間（年数）です。<br></div>
+                                        <div class="tooltip-text" data-i18n-html="sim.years.tooltip">
+                                            資産運用と取崩しを継続する期間（年数）です。<br></div>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between">
@@ -377,12 +449,13 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">シミュレーション回数 <span
-                                            class="text-indigo-300 ml-1">回</span></label>
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="sim.paths">シミュレーション回数</span> <span
+                                            class="text-indigo-300 ml-1" data-i18n="unit.paths">回</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="sim.paths.tooltip">
                                             モンテカルロ・シミュレーションを試行する回数です。<br>回数が多いほど確率の精度が増しますが、計算に時間がかかります。
                                         </div>
                                     </div>
@@ -401,11 +474,13 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">パーセンタイル</label>
+                                    <label class="text-xs text-slate-300 font-medium"
+                                        data-i18n="sim.percentile">パーセンタイル</label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">グラフに表示するパーセンタイル線をカンマ区切りで指定します（例: 10, 25, 50, 75,
+                                        <div class="tooltip-text" data-i18n-html="sim.percentile.tooltip">
+                                            グラフに表示するパーセンタイル線をカンマ区切りで指定します（例: 10, 25, 50, 75,
                                             90）。<br>設定できるのは最大5本です。数字以外の文字や範囲外の値（0・100など）は自動で除去され、昇順に並び替えて整形されます。<br>色は昇順で
                                             赤→橙→黄→黄緑→緑 のグラデーションで表示されます。</div>
                                     </div>
@@ -419,9 +494,10 @@
                     <!-- 現金バッファ設定 -->
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
-                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">現金バッファ設定</h2>
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0"
+                                data-i18n="cb.title">現金バッファ設定</h2>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-slate-300 font-medium">OFF</span>
+                                <span class="text-xs text-slate-300 font-medium" data-i18n="cb.off">OFF</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="cashBufferToggle" class="sr-only peer" checked>
                                     <div
@@ -431,18 +507,19 @@
                                         class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
                                     </div>
                                 </label>
-                                <span class="text-xs text-slate-300 font-medium">ON</span>
+                                <span class="text-xs text-slate-300 font-medium" data-i18n="cb.on">ON</span>
                             </div>
                         </div>
                         <div id="cashBufferParams" class="space-y-5 transition-opacity duration-300">
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（取崩し判定）<span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="cb.ddTrigger">ドローダウン閾値（取崩し判定）</span><span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="cb.ddTrigger.tooltip">
                                             総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br><span
                                                 class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>
                                         </div>
@@ -461,12 +538,13 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（補充終了）<span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="cb.ddReplenish">ドローダウン閾値（補充終了）</span><span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="cb.ddReplenish.tooltip">
                                             ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。<br><span
                                                 class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われます。</span><br><span
                                                 class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われます。</span>
@@ -486,12 +564,13 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">補充ペース（月間取崩し額比）<span
-                                            class="text-indigo-300 ml-1">倍</span></label>
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="cb.replenishPace">補充ペース（月間取崩し額比）</span><span
+                                            class="text-indigo-300 ml-1" data-i18n="unit.multiplier">倍</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="cb.replenishPace.tooltip">
                                             補充モード中、毎月リスク資産から現金バッファへ補填する額を指定します。「月間取崩し額」に対する倍率です。<br>
                                         </div>
                                     </div>
@@ -513,10 +592,10 @@
                     <!-- 支出ガードレール設定 -->
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
-                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">支出ガードレール設定
-                            </h2>
+                            <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0"
+                                data-i18n="gr.title">支出ガードレール設定</h2>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-slate-300 font-medium">OFF</span>
+                                <span class="text-xs text-slate-300 font-medium" data-i18n="cb.off">OFF</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="guardrailToggle" class="sr-only peer">
                                     <div
@@ -526,7 +605,7 @@
                                         class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
                                     </div>
                                 </label>
-                                <span class="text-xs text-slate-300 font-medium">ON</span>
+                                <span class="text-xs text-slate-300 font-medium" data-i18n="cb.on">ON</span>
                             </div>
                         </div>
                         <div id="guardrailParams"
@@ -534,12 +613,13 @@
                             <!-- 1: ドローダウン閾値（ガードレール発動） -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール発動）<span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="gr.trigger">ドローダウン閾値（ガードレール発動）</span><span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="gr.trigger.tooltip">
                                             総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% =
                                             資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。<br><span
                                                 class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>
@@ -560,12 +640,13 @@
                             <!-- 2: ドローダウン閾値（ガードレール終了） -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">ドローダウン閾値（ガードレール終了）<span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="gr.release">ドローダウン閾値（ガードレール終了）</span><span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="gr.release.tooltip">
                                             ガードレール発動中、ドローダウンが改善しこの割合を上回るとガードレールが自動解除され、元の取崩し額に戻ります。<br>例：-15% =
                                             ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。<br><span
                                                 class="text-amber-300">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>
@@ -586,12 +667,13 @@
                             <!-- 3: 発動時の支出調整率 -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-xs text-slate-300 font-medium">発動時の支出調整率<span
+                                    <label class="text-xs text-slate-300 font-medium"><span
+                                            data-i18n="gr.reduction">発動時の支出調整率</span><span
                                             class="text-indigo-300 ml-1">%</span></label>
                                     <div class="tooltip-container tooltip-right-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="gr.reduction.tooltip">
                                             ガードレール発動中、月間取崩し額にこの割合を掛けて支出を自動調整します。<br>例：-20% =
                                             取崩し額を20%削減して支出を抑制。<br>「ドローダウン閾値（ガードレール終了）」を上回るまで回復すると自動解除され、元の取崩し額に戻ります。
                                         </div>
@@ -614,9 +696,9 @@
                     <!-- シミュレーションシード設定 -->
                     <div class="glass-card glow-border rounded-xl p-4 mb-4">
                         <div class="flex items-center justify-between mb-3">
-                            <label class="text-xs font-semibold text-slate-300">乱数シード値</label>
+                            <label class="text-xs font-semibold text-slate-300" data-i18n="seed.label">乱数シード値</label>
                             <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] text-slate-300 font-medium">固定</span>
+                                <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.fixed">固定</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="seedToggle" class="sr-only peer" checked>
                                     <div
@@ -626,10 +708,10 @@
                                         class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5">
                                     </div>
                                 </label>
-                                <span class="text-[10px] text-slate-300 font-medium">ランダム</span>
+                                <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.random">ランダム</span>
                                 <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="seed.tooltip">
                                         乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現されたシミュレーション結果が得られます。<br>「Xにポスト」、「同条件の別タブを開く」、「解析結果のURLリンクをコピー」で共有されるURLには、実行時のシード値が自動的に含まれます。シード値を揃えることで、条件変更による差分を純粋に比較できます。
                                     </div>
                                 </div>
@@ -646,7 +728,8 @@
                                bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto]
                                hover:bg-right transition-all duration-500
                                shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40
-                               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
+                               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                        data-i18n="button.run">
                         シミュレーション実行
                     </button>
 
@@ -655,21 +738,21 @@
                         <button type="button" id="saveImageBtn" class="w-full py-3 rounded-xl font-bold text-sm tracking-wide
                         bg-slate-800 text-slate-200 border border-slate-700/50 hover:bg-slate-700 transition-colors
                         flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled title="シミュレーション実行後に使用できます">
+                            disabled title="シミュレーション実行後に使用できます" data-i18n-attr="title:button.tooltipDisabled">
                             <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current">
                                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
                             </svg>
-                            画像を保存
+                            <span data-i18n="button.saveImage">画像を保存</span>
                         </button>
                         <button type="button" id="shareXBtn" class="w-full py-3 rounded-xl font-bold text-sm tracking-wide
                         bg-black text-white border border-slate-700/50 hover:bg-slate-900 transition-colors
                         flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled title="シミュレーション実行後に使用できます">
+                            disabled title="シミュレーション実行後に使用できます" data-i18n-attr="title:button.tooltipDisabled">
                             <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current">
                                 <path
                                     d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                             </svg>
-                            Xにポスト
+                            <span data-i18n="button.shareX">Xにポスト</span>
                         </button>
                     </div>
                     <!-- 比較用タブボタン -->
@@ -677,16 +760,16 @@
                         <button type="button" id="openCompareTabBtn" class="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide
                         bg-slate-700/60 text-slate-300 border border-slate-600/50 hover:bg-slate-600/60 transition-colors
                         flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                            disabled title="シミュレーション実行後に使用できます">
+                            disabled title="シミュレーション実行後に使用できます" data-i18n-attr="title:button.tooltipDisabled">
                             <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current flex-shrink-0">
                                 <path
                                     d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h7v-2H5V5h14v7h2V5a2 2 0 00-2-2zm-1 12h-3v-3l-5 5 5 5v-3h3v-4z" />
                             </svg>
-                            同条件の別タブを開く（比較用）
+                            <span data-i18n="button.openCompare">同条件の別タブを開く（比較用）</span>
                         </button>
                         <div class="tooltip-container tooltip-right-align flex-shrink-0" tabindex="0">
                             <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                            <div class="tooltip-text">
+                            <div class="tooltip-text" data-i18n-html="url.tooltipOpenCompare">
                                 現在の入力条件と同じ乱数シード値に固定したURLを別タブで開きます。<br>別タブ側で一部の条件を変えてシミュレーションすることで、条件変更による影響を同じ乱数で比較できます。<br>別タブを開いた後は、入力値を変更して「シミュレーション実行」ボタンを押してください。
                             </div>
                         </div>
@@ -696,16 +779,16 @@
                         <button type="button" id="copySimUrlBtn" class="flex-1 py-3 rounded-xl font-bold text-sm tracking-wide
                         bg-slate-700/60 text-slate-300 border border-slate-600/50 hover:bg-slate-600/60 transition-colors
                         flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                            disabled title="シミュレーション実行後に使用できます">
+                            disabled title="シミュレーション実行後に使用できます" data-i18n-attr="title:button.tooltipDisabled">
                             <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4 fill-current flex-shrink-0">
                                 <path
                                     d="M16 1H4a2 2 0 00-2 2v14h2V3h12V1zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11v14z" />
                             </svg>
-                            解析結果のURLリンクをコピー
+                            <span data-i18n="button.copyUrl">解析結果のURLリンクをコピー</span>
                         </button>
                         <div class="tooltip-container tooltip-right-align flex-shrink-0" tabindex="0">
                             <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                            <div class="tooltip-text">
+                            <div class="tooltip-text" data-i18n-html="url.tooltipCopy">
                                 現在の入力条件・シード値・自動実行フラグ（auto=1）を含むURLをクリップボードにコピーします。<br>このURLをブラウザで開くと、同じ条件でシミュレーションが自動的に実行されます。<br>シミュレーション結果の保存や共有に活用できます。
                             </div>
                         </div>
@@ -722,12 +805,13 @@
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex flex-col gap-2 mb-4">
                             <div class="flex items-center gap-2">
-                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">
+                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider"
+                                    data-i18n="chart.asset.title">
                                     総資産推移（パーセンタイル）
                                 </h2>
                                 <div class="tooltip-container tooltip-center-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="chart.asset.tooltip">
                                         各経過年数時点における総資産額の分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>上に行くほど強気な相場、下に行くほど弱気な相場のシナリオを反映しています。
                                     </div>
                                 </div>
@@ -735,7 +819,8 @@
                             <div class="flex items-center gap-4">
                                 <!-- ダウンサイドフォーカス トグル -->
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs text-slate-300 font-medium">全表示</span>
+                                    <span class="text-xs text-slate-300 font-medium"
+                                        data-i18n="chart.asset.all">全表示</span>
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" id="downsideFocusAsset" class="sr-only peer">
                                         <div
@@ -745,11 +830,12 @@
                                             class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
                                         </div>
                                     </label>
-                                    <span class="text-xs text-slate-300 font-medium">50%以下のみ</span>
+                                    <span class="text-xs text-slate-300 font-medium"
+                                        data-i18n="chart.asset.downsideOnly">50%以下のみ</span>
                                     <div class="tooltip-container tooltip-center-align" tabindex="0">
                                         <span
                                             class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                        <div class="tooltip-text">
+                                        <div class="tooltip-text" data-i18n-html="chart.asset.downsideTooltip">
                                             ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>資産が下振れするリスクに焦点を当てて確認したい場合に便利です。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。
                                         </div>
                                     </div>
@@ -770,19 +856,20 @@
                     <div class="glass-card glow-border rounded-2xl p-5">
                         <div class="flex flex-col gap-2 mb-4">
                             <div class="flex items-center gap-2">
-                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">
+                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider"
+                                    data-i18n="chart.cash.title">
                                     現金バッファ推移（パーセンタイル）
                                 </h2>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="chart.cash.tooltip">
                                         各経過年数時点における現金バッファの残高分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>現金バッファが取崩され、資産が回復した際にリスク資産から現金バッファが補充される挙動を可視化しています。
                                     </div>
                                 </div>
                             </div>
                             <!-- ダウンサイドフォーカス トグル -->
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-slate-300 font-medium">全表示</span>
+                                <span class="text-xs text-slate-300 font-medium" data-i18n="chart.asset.all">全表示</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="downsideFocusCash" class="sr-only peer">
                                     <div
@@ -792,10 +879,11 @@
                                         class="toggle-dot absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5">
                                     </div>
                                 </label>
-                                <span class="text-xs text-slate-300 font-medium">50%以下のみ</span>
+                                <span class="text-xs text-slate-300 font-medium"
+                                    data-i18n="chart.asset.downsideOnly">50%以下のみ</span>
                                 <div class="tooltip-container tooltip-center-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="chart.cash.downsideTooltip">
                                         ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>現金バッファが尽きやすい悪い状況に絞って確認できます。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。
                                     </div>
                                 </div>
@@ -809,11 +897,13 @@
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="glass-card glow-border rounded-2xl p-5">
                             <div class="flex items-center gap-2 mb-4">
-                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最大ドローダウン 発生確率
+                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider"
+                                    data-i18n="chart.dd.title">最大ドローダウン
+                                    発生確率
                                 </h2>
                                 <div class="tooltip-container tooltip-center-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="chart.dd.tooltip">
                                         最大ドローダウン（総資産の過去最高値からの最大下落率）が、特定の値よりも悪化する（下回る）確率を表します。<br>例えばグラフ上で横軸が-50%、縦軸が30%の場合、「最大ドローダウンが-50%より悪化する確率が30%ある」ことを意味します。
                                     </div>
                                 </div>
@@ -825,11 +915,13 @@
 
                         <div class="glass-card glow-border rounded-2xl p-5">
                             <div class="flex items-center gap-2 mb-4">
-                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">最長停滞期間 発生確率
+                                <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider"
+                                    data-i18n="chart.uw.title">最長停滞期間
+                                    発生確率
                                 </h2>
                                 <div class="tooltip-container tooltip-center-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="chart.uw.tooltip">
                                         総資産が過去最高値を更新できずに停滞し続ける期間（最長停滞期間）が、特定の年数以上長引く確率を表します。<br>例えばグラフ上で横軸が5年、縦軸が20%の場合、「最高値の回復までに5年以上かかる確率が20%ある」ことを意味します。
                                     </div>
                                 </div>
@@ -850,12 +942,13 @@
             <div class="lg:col-span-1 space-y-6">
                 <!-- 基準シナリオ カード -->
                 <div id="card1" class="glass-card rounded-2xl p-5">
-                    <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-3">基準シナリオ</h3>
+                    <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-3"
+                        data-i18n="analysis.baseScenario">基準シナリオ</h3>
                     <div id="card1Summary" class="text-sm text-slate-300 space-y-1"></div>
                     <div id="card1Detail" class="mt-3 text-xs text-slate-400 space-y-1"></div>
                     <div class="flex gap-2 mt-4">
                         <button id="card1EditBtn" class="text-xs text-indigo-400 hover:text-indigo-300"
-                            data-action="edit-base">シミュレーションタブで条件を編集</button>
+                            data-action="edit-base" data-i18n="analysis.editBase">シミュレーションタブで条件を編集</button>
                     </div>
                 </div>
 
@@ -863,21 +956,25 @@
                 <div class="glass-card rounded-2xl p-5">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2 mb-3">
-                          <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0">分析対象因子</h3>
-                          <div class="tooltip-container tooltip-right-align" tabindex="0">
-                            <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                            <div class="tooltip-text">
-                              因子をクリックすると分析対象に追加されます。<br>各因子は基準値から段階的に値を変えた5水準でシミュレーションを実行します。
+                            <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider m-0"
+                                data-i18n="analysis.factorsTitle">分析対象因子
+                            </h3>
+                            <div class="tooltip-container tooltip-right-align" tabindex="0">
+                                <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                <div class="tooltip-text" data-i18n-html="analysis.factorsHelp">
+                                    因子をクリックすると分析対象に追加されます。<br>各因子は基準値から段階的に値を変えた5水準でシミュレーションを実行します。
+                                </div>
                             </div>
-                          </div>
                         </div>
                         <span class="text-xs text-slate-400" id="selectedFactorCount">選択中: 0因子</span>
                     </div>
                     <div id="factorSelector" class="space-y-2 pr-1"></div>
                     <div class="mt-4 pt-4 border-t border-slate-700/50">
                         <div class="flex justify-between text-sm">
-                            <span>シナリオ総数: <strong id="scenarioCount">1</strong></span>
-                            <span class="text-indigo-400 text-xs">目安: <span id="estTime">-</span>秒</span>
+                            <span><span data-i18n="analysis.scenarioCountPrefix">シナリオ総数:</span> <strong
+                                    id="scenarioCount">1</strong></span>
+                            <span class="text-indigo-400 text-xs"><span data-i18n="analysis.estTimePrefix">目安:</span>
+                                <span id="estTime">-</span></span>
                         </div>
                         <div id="analysisError"
                             class="hidden text-rose-400 text-xs mt-2 p-2 bg-rose-500/10 border border-rose-500/30 rounded">
@@ -887,11 +984,10 @@
                             disabled>
                             分析を実行
                         </button>
-<button id="exportZipBtn" class="mt-3 w-full py-2.5 bg-slate-700/60 text-slate-300 border border-slate-600/50 rounded-xl text-sm font-bold 
-  disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600/60 transition-colors"
-  disabled>
-  ZIP出力 (ベータ)
-</button>
+                        <button id="exportZipBtn" class="mt-3 w-full py-2.5 bg-slate-700/60 text-slate-300 border border-slate-600/50 rounded-xl text-sm font-bold 
+  disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600/60 transition-colors" disabled>
+                            ZIP出力 (ベータ)
+                        </button>
                     </div>
                 </div>
             </div>
@@ -902,16 +998,19 @@
                 <div id="cardTarget" class="glass-card rounded-2xl p-5 hidden">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                         <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">指標の改善に必要な因子変動量
+                            <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider"
+                                data-i18n="analysis.target.title">
+                                指標の改善に必要な因子変動量
                             </h3>
                             <div class="tooltip-container tooltip-right-align" tabindex="0">
                                 <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                <div class="tooltip-text">
+                                <div class="tooltip-text" data-i18n-html="analysis.target.tooltip">
                                     5つの水準のシミュレーション結果をもとに、指標の改善に必要な因子の変動量を<b>線形補間</b>で計算しています。<br>
                                     改善後の指標値が隣接する2水準の間に位置する場合、その区間内で線形補間して必要な因子値を求めます。<br>
                                     改善後の指標値が水準の範囲外の場合、「この因子の範囲では改善後の指標値に届きません。」と表示します。<br>
                                     FIRE成功率の改善後の指標値は、現在の成功率に応じて自動的に調整されます。<br>
-                                    <b class="text-amber-300">⚠️ 線形補間は簡易的な近似計算であり、実際のシミュレーション結果は非線形に変化する場合があります。参考値としてご利用ください。</b>
+                                    <b class="text-amber-300">⚠️
+                                        線形補間は簡易的な近似計算であり、実際のシミュレーション結果は非線形に変化する場合があります。参考値としてご利用ください。</b>
                                 </div>
                             </div>
                         </div>
@@ -919,14 +1018,15 @@
                             <div class="flex items-center gap-2">
                                 <select id="targetMetric" data-action="change-target-metric"
                                     class="bg-slate-800 border border-slate-600 rounded px-3 py-1 text-sm text-slate-200">
-                                    <option value="success_rate_pct" id="targetMetricOptionSuccess">FIRE成功率 改善 +X%pt
-                                    </option>
-                                    <option value="final_p10_jpy">最終総資産 10%タイル +2,000万円</option>
-                                    <option value="worst10_max_dd">最大DD 10%タイル 改善 5%pt</option>
+                                    <option value="success_rate_pct" id="targetMetricOptionSuccess" data-i18n="analysis.target.metric.successRateInitial">FIRE成功率 改善 +X%pt</option>
+                                    <option value="final_p10_jpy" data-i18n="analysis.target.metric.finalP10">最終総資産
+                                        10%タイル +2,000万円</option>
+                                    <option value="worst10_max_dd" data-i18n="analysis.target.metric.worst10MaxDd">最大DD
+                                        10%タイル 改善 5%pt</option>
                                 </select>
                                 <div class="tooltip-container tooltip-right-align" tabindex="0">
                                     <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text">
+                                    <div class="tooltip-text" data-i18n-html="analysis.target.metricTooltip">
                                         <b>FIRE成功率 改善 +X%pt</b>: FIRE成功率を現在値から指定幅改善するのに必要な因子変動を計算します。<br>
                                         <b>最終総資産 10%タイル +2,000万円</b>:
                                         全シミュレーション結果の下位10%の最終総資産を2,000万円改善するのに必要な因子変動を計算します。<br>
@@ -935,7 +1035,7 @@
                                 </div>
                             </div>
                             <span class="text-xs text-slate-400 text-right">
-                                現在の<span id="targetMetricLabel">FIRE成功率</span>: <strong id="currentMetricValue"
+                                <span id="currentMetricPrefix" data-i18n="analysis.target.currentPrefix">現在の</span><span id="targetMetricLabel" data-i18n="analysis.target.metricLabels.successRate">FIRE成功率</span><span id="currentMetricColon" data-i18n="analysis.target.currentColon">: </span><strong id="currentMetricValue"
                                     class="text-slate-200">-</strong>
                             </span>
                         </div>
@@ -944,10 +1044,14 @@
                         <table class="target-table text-sm" id="targetTable">
                             <thead>
                                 <tr>
-                                    <th class="p-2 text-xs text-slate-400 text-center">因子</th>
-                                    <th class="p-2 text-right text-xs text-slate-400">現在値</th>
-                                    <th class="p-2 text-right text-xs text-slate-400">必要な変更量</th>
-                                    <th class="p-2 text-right text-xs text-slate-400">変更後の値</th>
+                                    <th class="p-2 text-xs text-slate-400 text-center"
+                                        data-i18n="analysis.target.factorCol">因子</th>
+                                    <th class="p-2 text-right text-xs text-slate-400"
+                                        data-i18n="analysis.target.current">現在値</th>
+                                    <th class="p-2 text-right text-xs text-slate-400" data-i18n="analysis.target.need">
+                                        必要な変更量</th>
+                                    <th class="p-2 text-right text-xs text-slate-400" data-i18n="analysis.target.after">
+                                        変更後の値</th>
                                     <th class="p-2"><!-- dummy --></th>
                                 </tr>
                             </thead>
@@ -959,11 +1063,15 @@
                 <!-- 因子別比較表 -->
                 <div id="cardCompare" class="glass-card rounded-2xl p-5 hidden">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider">因子別比較表</h3>
+                        <h3 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider"
+                            data-i18n="analysis.compare.title">因子別比較表</h3>
                         <div class="compare-legend">
-                            <span><span class="legend-swatch positive"></span>改善方向</span>
-                            <span><span class="legend-swatch base"></span>基準</span>
-                            <span><span class="legend-swatch negative"></span>悪化方向</span>
+                            <span><span class="legend-swatch positive"></span><span
+                                    data-i18n="analysis.compare.legend.positive">改善方向</span></span>
+                            <span><span class="legend-swatch base"></span><span
+                                    data-i18n="analysis.compare.legend.base">基準</span></span>
+                            <span><span class="legend-swatch negative"></span><span
+                                    data-i18n="analysis.compare.legend.negative">悪化方向</span></span>
                         </div>
                     </div>
                     <div id="compareCardsContainer" class="compare-cards-grid"></div>
@@ -977,9 +1085,10 @@
 
     <footer class="py-10 text-center border-t border-slate-800/50 mt-12 bg-slate-900/30">
         <div class="max-w-7xl mx-auto px-4">
-            <p class="text-slate-300 text-sm font-bold tracking-wider mb-2">FIRE モンテカルロ・シミュレータ</p>
+            <p class="text-slate-300 text-sm font-bold tracking-wider mb-2" data-i18n="footer.title">FIRE モンテカルロ・シミュレータ
+            </p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v2.0.0</span>
+                <span>v2.1.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -999,7 +1108,7 @@
                     Created by @moriyama_eng
                 </a>
             </p>
-            <p class="text-slate-600 text-xs">&copy; 2026 もりやま</p>
+            <p class="text-slate-600 text-xs" data-i18n="footer.copyright">© 2026 もりやま</p>
         </div>
     </footer>
 
@@ -1009,8 +1118,8 @@
     <div id="captureContainer">
         <!-- ヘッダー（固定高にしてタイトルを垂直中央配置、上部余白を極小化） -->
         <div class="h-[140px] flex items-center justify-center px-12">
-            <h1
-                class="font-extrabold tracking-tight text-[52px] text-slate-200 leading-[1.2] m-0 text-center drop-shadow-[0_4px_20px_#6366f166]">
+            <h1 class="font-extrabold tracking-tight text-[52px] text-slate-200 leading-[1.2] m-0 text-center drop-shadow-[0_4px_20px_#6366f166]"
+                data-i18n="capture.title">
                 FIRE モンテカルロ・シミュレータ
             </h1>
         </div>
@@ -1022,7 +1131,8 @@
                 <div
                     class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-3xl pointer-events-none">
                 </div>
-                <h2 class="font-bold text-indigo-300 mb-5 flex items-center gap-4 text-[30px]">
+                <h2 class="font-bold text-indigo-300 mb-5 flex items-center gap-4 text-[30px]"
+                    data-i18n="capture.conditionTitle">
                     <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
@@ -1033,41 +1143,41 @@
                 <div class="grid grid-cols-2 gap-y-5 gap-x-6 text-2xl text-slate-300 px-4">
                     <!-- 1行目 -->
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">💰</span>
-                        <span>リスク資産: <strong id="capRiskAsset"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">-億円</strong></span>
+                        <span><span data-i18n="capture.riskAsset">リスク資産:</span> <strong id="capRiskAsset"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyValue">-億円</strong></span>
                     </div>
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">💴</span>
-                        <span>現金バッファ: <strong id="capCash"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">-万円</strong></span>
+                        <span><span data-i18n="capture.cashBuffer">現金バッファ:</span> <strong id="capCash"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyValue">-万円</strong></span>
                     </div>
 
                     <!-- 2行目：月間取崩し + 変動モデル -->
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">💸</span>
-                        <span>月間取崩し: <strong id="capExpense"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">-万円</strong></span>
+                        <span><span data-i18n="capture.expense">月間取崩し:</span> <strong id="capExpense"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyValue">-万円</strong></span>
                     </div>
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">🌊</span>
-                        <span>変動モデル: <strong id="capModel"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">対数正規分布</strong></span>
+                        <span><span data-i18n="capture.model">変動モデル:</span> <strong id="capModel"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyModel">対数正規分布</strong></span>
                     </div>
 
                     <!-- 3行目：リターン/ボラ + インフレ率 -->
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">📈</span>
-                        <span>ﾘﾀｰﾝ / ﾎﾞﾗ: <strong id="capReturnVol"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">-%/-%</strong></span>
+                        <span><span data-i18n="capture.returnVol">ﾘﾀｰﾝ / ﾎﾞﾗ:</span> <strong id="capReturnVol"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyValue">-%/-%</strong></span>
                     </div>
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">📉</span>
-                        <span>インフレ率: <strong id="capInf"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">-%</strong></span>
+                        <span><span data-i18n="capture.inflation">インフレ率:</span> <strong id="capInf"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyValue">-%</strong></span>
                     </div>
 
                     <!-- 4行目：期間 + 支出ガードレール -->
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">⏳</span>
-                        <span>期間: <strong id="capYears"
-                                class="text-white font-bold text-[30px] whitespace-nowrap">-年</strong></span>
+                        <span><span data-i18n="capture.years">期間:</span> <strong id="capYears"
+                                class="text-white font-bold text-[30px] whitespace-nowrap" data-i18n="capture.emptyValue">-年</strong></span>
                     </div>
                     <div class="flex items-center gap-3"><span class="text-[28px] leading-none">🛡️</span>
-                        <span>支出ガードレール: <strong id="capGuardrail"
+                        <span><span data-i18n="capture.guardrail">支出ガードレール:</span> <strong id="capGuardrail"
                                 class="text-white font-bold text-[30px] whitespace-nowrap">OFF</strong></span>
                     </div>
                 </div>
@@ -1076,10 +1186,12 @@
             <!-- 総資産推移 (高さ 480px) -->
             <div
                 class="bg-slate-900/60 rounded-3xl border border-slate-700/50 pt-5 pb-5 shadow-2xl flex flex-col h-[480px]">
-                <h2 class="font-bold text-indigo-300 mb-4 px-10 flex items-center gap-4 text-[30px]">
+                <h2 class="font-bold text-indigo-300 mb-4 px-10 flex items-center gap-4 text-[30px]"
+                    data-i18n="capture.chartTitle">
                     <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
+                        </path>
                     </svg>
                     総資産推移
                 </h2>
@@ -1098,23 +1210,39 @@
                 <div class="relative z-10">
                     <div class="flex items-baseline justify-between mb-4">
                         <h2 class="font-bold text-indigo-300 flex items-center gap-4 text-[30px]">
-                            <span class="text-[32px] leading-none">🏆</span> シミュレーション結果
+                            <span class="text-[32px] leading-none">🏆</span> <span
+                                data-i18n="capture.resultTitle">シミュレーション結果</span>
                         </h2>
                         <div id="capExecTime" class="text-slate-400 text-[24px] font-medium"></div>
                     </div>
                     <div class="flex flex-col gap-3 text-slate-200 px-4">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4"><span class="text-[32px] leading-none">🔥</span> <span
-                                    class="font-bold text-[30px]">FIRE 成功率</span></div>
+                            <div class="flex items-center gap-4"><span class="text-[32px] leading-none">🔥</span>
+                                <span class="font-bold text-[30px]" data-i18n="capture.successRate">FIRE 成功率</span>
+                            </div>
                             <strong id="capSuccess"
                                 class="font-black text-emerald-400 drop-shadow-lg text-[64px]">-%</strong>
                         </div>
                         <div class="h-px bg-indigo-500/20 w-full"></div>
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4"><span class="text-[32px] leading-none">💰</span> <span
-                                    class="font-bold text-[30px]">最終総資産(中央値)</span></div>
+                            <div class="flex items-center gap-4"><span class="text-[32px] leading-none">💰</span>
+                                <span class="font-bold text-[30px]" data-i18n="capture.finalMedian">最終総資産(中央値)</span>
+                            </div>
                             <strong id="capMedian"
-                                class="font-black text-blue-300 drop-shadow-lg text-[52px]">-億円</strong>
+                                class="font-black text-blue-300 drop-shadow-lg text-[52px]" data-i18n="capture.emptyValue">-億円</strong>
+                        </div>
+                        <div class="h-px bg-indigo-500/20 w-full"></div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4"><span class="text-[32px] leading-none">🎯</span>
+                                <span class="font-bold text-[30px]"
+                                    data-i18n="capture.targetMaintainRate">目標資産維持確率</span>
+                            </div>
+                            <div class="text-right">
+                                <strong id="capTargetMaintainRate"
+                                    class="font-black text-emerald-400 drop-shadow-lg text-[64px]">-%</strong>
+                                <div class="text-[20px] text-slate-400"><span data-i18n="capture.targetLabel">(目標: </span><span id="capTargetRatio">100</span>%)
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1126,7 +1254,8 @@
             class="h-[100px] px-10 border-t border-slate-800/50 flex flex-row items-center justify-between text-slate-400 gap-3">
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
-                <span class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/ | v2.0.0</span>
+                <span id="capFooterUrl" class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/
+                    | v2.1.0</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">
