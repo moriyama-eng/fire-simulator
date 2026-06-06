@@ -51,7 +51,7 @@ export async function runSimulation(params, userPercentiles) {
                 hasFailed = true;
                 // Bug #29: alert を削除し、エラーを再throwで呼び出し元に伝播
                 workers.forEach(w => w.terminate());
-                err.message = "シミュレーション中にエラーが発生しました。";
+                err.message = 'error.simFailed';
                 rejW(err);
             };
         });
@@ -84,12 +84,18 @@ export async function runSimulation(params, userPercentiles) {
         globalPathIndex += pathsCountInWorker;
     }
 
+    // 初期総資産（円単位）を計算：リスク資産 + 現金バッファ（CB ON時のみ）
+    // CB OFF時は params.initialCashBuffer が 0 になる（getParamsFromInputs で保証される）
+    const initialTotalAssets = params.initialRiskAsset + (params.cashBufferToggle ? params.initialCashBuffer : 0);
+
     const result = aggregateResultsProduction({
         totalsBuffer: mergedTotals.buffer,
         cashesBuffer: mergedCashes.buffer,
         ddsBuffer: mergedDds.buffer,
         maxDdPerPath, maxUwPerPath,
-        simPaths, dataLen, percentiles: userPercentiles, bankruptCount
+        simPaths, dataLen, percentiles: userPercentiles, bankruptCount,
+        targetAssetRatio: params.targetAssetRatio,
+        initialTotalAssets: initialTotalAssets,
     });
 
     result.usedSeed = params.seedNum;

@@ -4,6 +4,7 @@ import { buildSimulationUrl, applyQueryParams } from './core/url.js';
 import { getIsResultDirty, markInputChanged as coreMarkInputChanged, markResultClean } from './core/state.js';
 import { transposeFlat, aggregateResultsProduction } from './core/aggregation.js';
 import { runSimulation, setProgressCallback } from './simulation-engine.js';
+import { t, setLanguage, getLanguage, formatCurrency, formatPercent, formatDate, formatYears, formatNumber } from './i18n.js';
 
 // ====================================================================
 // グローバル状態管理
@@ -18,6 +19,284 @@ let isResultDirty = false;  // 入力変更後未実行状態フラグ
 let lastExecutedParams = null;      // 最後に成功した実行パラメータ
 let lastMainExecutionMs = null;     // 実行時間ミリ秒
 window.lastMainExecutionMs = null;
+
+// ====================================================================
+// i18n 周辺関数
+// ====================================================================
+let isTranslating = false;
+function applyTranslations() {
+    if (isTranslating) return;
+    isTranslating = true;
+    try {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = t(el.getAttribute('data-i18n'));
+        });
+        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+            el.innerHTML = t(el.getAttribute('data-i18n-html'));
+        });
+        document.querySelectorAll('[data-i18n-attr]').forEach(el => {
+            const spec = el.getAttribute('data-i18n-attr').split(':');
+            if (spec.length === 2) el.setAttribute(spec[0], t(spec[1]));
+        });
+        document.title = t('header.title');
+    } finally {
+        isTranslating = false;
+    }
+}
+
+// MutationObserver: 動的に追加された要素の翻訳を保証する（ES2020非依存）
+var translationObserver = null;
+function setupTranslationObserver() {
+    if (translationObserver) translationObserver.disconnect();
+    translationObserver = new MutationObserver(function (mutations) {
+        var needsTranslation = false;
+        for (var i = 0; i < mutations.length; i++) {
+            var mutation = mutations[i];
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                for (var j = 0; j < mutation.addedNodes.length; j++) {
+                    var node = mutation.addedNodes[j];
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.hasAttribute && node.hasAttribute('data-i18n')) {
+                            needsTranslation = true;
+                            break;
+                        }
+                        if (node.querySelector && node.querySelector('[data-i18n]')) {
+                            needsTranslation = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (needsTranslation) break;
+        }
+        if (needsTranslation) {
+            applyTranslations();
+        }
+    });
+    translationObserver.observe(document.body, { childList: true, subtree: true });
+}
+setupTranslationObserver();
+
+// ====================================================================
+// ツールチップ初期化（静的・動的を問わず全てのツールチップに適用）
+// ====================================================================
+function initTooltips() {
+    const tooltipContainer = document.getElementById('tooltip-container');
+    if (!tooltipContainer) return;
+
+    document.querySelectorAll('.tooltip-container').forEach(trigger => {
+        const tooltip = trigger.querySelector('.tooltip-text');
+        if (!tooltip) return;
+
+        // ツールチップ本体を body 直下の専用領域に移動（まだ移動していない場合のみ）
+        if (tooltip.parentElement !== tooltipContainer) {
+            tooltipContainer.appendChild(tooltip);
+        }
+
+        // 既存のリスナーを削除してから再設定（重複防止）
+        const removeListeners = () => {
+            trigger.removeEventListener('mouseenter', trigger._mouseEnterHandler);
+            trigger.removeEventListener('mouseleave', trigger._mouseLeaveHandler);
+            trigger.removeEventListener('focusin', trigger._focusInHandler);
+            trigger.removeEventListener('focusout', trigger._focusOutHandler);
+        };
+        removeListeners();
+
+        const positionTooltip = () => {
+            const triggerRect = trigger.getBoundingClientRect();
+            const tooltipHeight = tooltip.offsetHeight;
+            const tooltipWidth = tooltip.offsetWidth;
+            const viewportWidth = window.innerWidth;
+
+            let left = triggerRect.left + triggerRect.width / 2;
+            const tooltipMargin = 16;
+            const tooltipRight = left + tooltipWidth / 2;
+            if (tooltipRight > viewportWidth - tooltipMargin) {
+                left = viewportWidth - tooltipWidth / 2 - tooltipMargin;
+            }
+            const tooltipLeft = left - tooltipWidth / 2;
+            if (tooltipLeft < tooltipMargin) {
+                left = tooltipWidth / 2 + tooltipMargin;
+            }
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${triggerRect.top - tooltipHeight - tooltipMargin}px`;
+            tooltip.style.transform = 'translateX(-50%)';
+        };
+
+        const mouseEnterHandler = () => {
+            positionTooltip();
+            tooltip.style.visibility = 'visible';
+            tooltip.style.opacity = '1';
+            window.addEventListener('scroll', positionTooltip);
+        };
+        const mouseLeaveHandler = () => {
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.opacity = '0';
+            window.removeEventListener('scroll', positionTooltip);
+        };
+
+        // ハンドラを保存して後で削除できるようにする
+        trigger._mouseEnterHandler = mouseEnterHandler;
+        trigger._mouseLeaveHandler = mouseLeaveHandler;
+        trigger._focusInHandler = mouseEnterHandler;  // focusin は同じ処理
+        trigger._focusOutHandler = mouseLeaveHandler; // focusout は同じ処理
+
+        trigger.addEventListener('mouseenter', mouseEnterHandler);
+        trigger.addEventListener('mouseleave', mouseLeaveHandler);
+        trigger.addEventListener('focusin', mouseEnterHandler);
+        trigger.addEventListener('focusout', mouseLeaveHandler);
+    });
+}
+
+// t分布自由度パネルの更新（i18n対応・モジュールレベル）
+function updateDfPanel() {
+    const dfToggle = document.getElementById('simDfToggle');
+    const dfAutoDisplayWrapper = document.getElementById('dfAutoDisplayWrapper');
+    const dfManualWrapper = document.getElementById('dfManualWrapper');
+    const volatilityInput = document.getElementById('volatilityNum');
+    if (!dfToggle) return;
+
+    if (!dfToggle.checked) {
+        // 固定 (unchecked)
+        if (dfAutoDisplayWrapper) dfAutoDisplayWrapper.classList.add('hidden');
+        if (dfManualWrapper) {
+            dfManualWrapper.classList.remove('h-0', 'opacity-50', 'pointer-events-none');
+            setTimeout(() => { dfManualWrapper.classList.add('opacity-100'); }, 10);
+        }
+    } else {
+        // 自動 (checked)
+        if (dfAutoDisplayWrapper) dfAutoDisplayWrapper.classList.remove('hidden');
+        if (dfManualWrapper) {
+            dfManualWrapper.classList.add('h-0', 'opacity-50', 'pointer-events-none');
+            dfManualWrapper.classList.remove('opacity-100');
+        }
+        // 値の更新
+        if (volatilityInput && dfAutoDisplayWrapper) {
+            const vol = parseFloat(volatilityInput.value) || 18.0;
+            const dfVal = calcAutoDf(vol).toFixed(1);
+            const wrappedDf = '<span id="autoDfDisplay" class="font-bold text-indigo-300">' + dfVal + '</span>';
+            dfAutoDisplayWrapper.innerHTML = t('market.dfAutoDisplay', [wrappedDf]);
+        }
+    }
+}
+
+/**
+ * 現金バッファと月間取崩し額の値を言語に応じて変換する
+ * @param {string} targetLang - 'ja' または 'en'
+ */
+function convertCurrencyInputs(targetLang) {
+    const cashInput = document.getElementById('initialCashBufferNum');
+    const expenseInput = document.getElementById('monthlyExpenseNum');
+    if (!cashInput || !expenseInput) return;
+
+    // 現在の値を取得（カンマ除去）
+    let cashVal = parseFloat(cashInput.value.replace(/,/g, ''));
+    let expenseVal = parseFloat(expenseInput.value.replace(/,/g, ''));
+    if (isNaN(cashVal)) cashVal = 0;
+    if (isNaN(expenseVal)) expenseVal = 0;
+
+    // ステップ・min・max を取得
+    let cashStep = parseFloat(cashInput.getAttribute('step') || '500');
+    let expenseStep = parseFloat(expenseInput.getAttribute('step') || '5');
+    let cashMin = parseFloat(cashInput.getAttribute('min') || '0');
+    let expenseMin = parseFloat(expenseInput.getAttribute('min') || '0');
+    let cashMax = parseFloat(cashInput.getAttribute('max') || '10000');
+    let expenseMax = parseFloat(expenseInput.getAttribute('max') || '500');
+
+    if (targetLang === 'en') {
+        // 日本語 → 英語（万円 → ドル、÷10）
+        cashVal = cashVal / 10;
+        expenseVal = expenseVal / 10;
+        cashStep = cashStep / 10;
+        expenseStep = expenseStep / 10;
+        cashMin = cashMin / 10;
+        expenseMin = expenseMin / 10;
+        cashMax = cashMax / 10;
+        expenseMax = expenseMax / 10;
+    } else {
+        // 英語 → 日本語（ドル → 万円、×10）
+        cashVal = cashVal * 10;
+        expenseVal = expenseVal * 10;
+        cashStep = cashStep * 10;
+        expenseStep = expenseStep * 10;
+        cashMin = cashMin * 10;
+        expenseMin = expenseMin * 10;
+        cashMax = cashMax * 10;
+        expenseMax = expenseMax * 10;
+    }
+
+    // 表示用フォーマット（整数の場合は小数点以下を表示しない）
+    const formatNumber = (val) => {
+        if (Number.isInteger(val)) return val.toString();
+        return val.toFixed(1);
+    };
+
+    cashInput.value = formatNumber(cashVal).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    expenseInput.value = formatNumber(expenseVal).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    // 属性を更新
+    cashInput.setAttribute('step', cashStep.toString());
+    expenseInput.setAttribute('step', expenseStep.toString());
+    cashInput.setAttribute('min', cashMin.toString());
+    expenseInput.setAttribute('min', expenseMin.toString());
+    cashInput.setAttribute('max', cashMax.toString());
+    expenseInput.setAttribute('max', expenseMax.toString());
+
+    // 変更イベントを発火（dirty状態更新のため）
+    cashInput.dispatchEvent(new Event('input', { bubbles: true }));
+    expenseInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function onLanguageChanged() {
+    applyTranslations();
+    updateDfPanel();
+    // 言語切り替え時に通貨入力値を変換
+    convertCurrencyInputs(getLanguage());
+    if (lastSimResult && lastExecutedParams) {
+        updateSummaryCard(lastSimResult, lastExecutedParams);
+    } else {
+        renderEmptySummaryCard(document.getElementById('cashBufferToggle')?.checked);
+    }
+    if (assetChart && lastSimResult) {
+        const isLog = document.getElementById('logScaleToggle')?.checked;
+        renderAssetChart(lastSimResult, isLog);
+        applyDownsideFocus(assetChart, document.getElementById('downsideFocusAsset')?.checked);
+    }
+    if (cashChart && lastSimResult) {
+        renderCashChart(lastSimResult);
+        applyDownsideFocus(cashChart, document.getElementById('downsideFocusCash')?.checked);
+    }
+    if (ddHistChart && lastSimResult) renderDdCdfChart(lastSimResult);
+    if (uwHistChart && lastSimResult) renderUwCdfChart(lastSimResult);
+    import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab());
+    updateActiveLangButton();
+}
+
+function setupLangSwitcher() {
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const lang = btn.dataset.lang;
+            if (lang === 'ja' || lang === 'en') {
+                setLanguage(lang);
+            }
+        });
+    });
+}
+
+function updateActiveLangButton() {
+    const lang = getLanguage();
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        // クラスの切り替え
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+        // ARIA属性も更新（アクセシビリティ向上）
+        if (btn.dataset.lang === lang) {
+            btn.setAttribute('aria-pressed', 'true');
+        } else {
+            btn.setAttribute('aria-pressed', 'false');
+        }
+    });
+}
 
 // ====================================================================
 // 入力パラメータのDOM取得とバリデーション
@@ -55,10 +334,39 @@ function getParams() {
         simDfToggle: document.getElementById('simDfToggle').checked,
         simDfNum: document.getElementById('simDfNum').value,
         seedToggle: document.getElementById('seedToggle').checked,
-        seedNum: document.getElementById('seedNum').value
+        seedNum: document.getElementById('seedNum').value,
+        targetAssetRatioNum: document.getElementById('targetAssetRatioNum').value,
     });
 }
 
+// ====================================================================
+// ダウンサイドフォーカス適用
+// ====================================================================
+function applyDownsideFocus(chart, enabled) {
+    // まず全 dataset の表示・非表示を確定する
+    chart.data.datasets.forEach((ds, i) => {
+        const pct = parseInt(ds.label, 10);
+        const visible = !enabled || pct <= 50;
+        chart.setDatasetVisibility(i, visible);
+    });
+
+    // ファンチャートの fill 補正:
+    let firstVisible = true;
+    chart.data.datasets.forEach((ds) => {
+        const pct = parseInt(ds.label, 10);
+        const visible = !enabled || pct <= 50;
+        if (visible) {
+            if (firstVisible) {
+                ds.fill = false;
+                firstVisible = false;
+            } else {
+                ds.fill = '-1';
+            }
+        }
+    });
+
+    chart.update('none');
+}
 
 
 
@@ -69,17 +377,16 @@ function setupHybridInputs() {
     // 各インプットフィールドの属性から小数点以下の表示桁数を判定する
     function getPrecision(input) {
         const stepAttr = input.getAttribute('step') || "1";
-        const valueAttr = (input.getAttribute('value') || "0").replace(/,/g, '');
+        // リアルタイムの画面表示値を使用（カンマ除去）
+        const currentValue = (input.value || "0").replace(/,/g, '');
 
-        // step属性文字列に '.' が含まれていればその桁数を優先
         if (stepAttr.includes('.')) {
             return stepAttr.split('.')[1].length;
         }
-        // value属性に '.' が含まれていればその桁数を使用
-        if (valueAttr.includes('.')) {
-            return valueAttr.split('.')[1].length;
+        if (currentValue.includes('.')) {
+            return currentValue.split('.')[1].length;
         }
-        return 0; // 整数
+        return 0;
     }
 
     buttons.forEach(btn => {
@@ -273,7 +580,7 @@ function xTickCallback(value, index) {
     if (totalYears <= 15) interval = 2;
     else if (totalYears <= 40) interval = 5;
     else interval = 10;
-    if (index % (interval * 12) === 0) return `${Math.round(index / 12)}年`;
+    if (index % (interval * 12) === 0) return formatYears(Math.round(index / 12));
     return null;
 }
 
@@ -282,8 +589,12 @@ function tooltipTitleCallback(tooltipItems) {
     const index = tooltipItems[0].dataIndex;
     const year = Math.floor(index / 12);
     const month = index % 12;
-    if (month === 0) return `経過 ${year}年`;
-    return `経過 ${year}年${month}ヶ月`;
+    const lang = getLanguage() || '';
+    const isJa = lang.startsWith('ja');
+    if (month === 0) {
+        return isJa ? t('chart.tooltip.year', [year]) : t('chart.tooltip.year', [year]);
+    }
+    return t('chart.tooltip.yearMonth', [year, month]);
 }
 
 function renderAssetChart(result, isLogScale) {
@@ -311,7 +622,7 @@ function renderAssetChart(result, isLogScale) {
         const fillMode = (idx === 0) ? false : '-1';
 
         return {
-            label: `${pct}％`,
+            label: (getLanguage() || '').startsWith('ja') ? `${pct}％` : `${pct}%`,
             data: data,
             borderColor: color,
             backgroundColor: color + '26', // HEXアルファ (26=約15%の透明度で一律塗りつぶし)
@@ -341,20 +652,29 @@ function renderAssetChart(result, isLogScale) {
                     callbacks: {
                         title: tooltipTitleCallback,
                         label: function (context) {
-                            const val = context.parsed.y;
                             const allItems = context.chart.tooltip.dataPoints;
                             // ラベル部分の最大文字数を算出（1桁vs2桁のパーセンタイル桁そろえ）
                             const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
                             const lbl = context.dataset.label.padStart(maxLblLen);
-                            if (val === null || val === undefined) return `${lbl}:  億円`;
-                            // 億円換算（小数第2位）
-                            const oku = (val / 100000000).toFixed(2); // 円→億円 (A6)
-                            // 数値部分の動的桁揃え
-                            const maxLen = Math.max(...allItems.map(item => {
-                                const v = item.parsed.y;
-                                return (v !== null && v !== undefined) ? (v / 100000000).toFixed(2).length : 1;
-                            }));
-                            return `${lbl}:${oku.padStart(maxLen + 1)} 億円`;
+
+                            // IIFEにより、外側のスコープの変数との衝突を回避する
+                            return (function () {
+                                const v = context.parsed.y;
+                                const lang = getLanguage() || '';
+                                const isJa = lang.startsWith('ja');
+                                if (v === null || v === undefined) {
+                                    return isJa ? `${lbl}:  億円` : `${lbl}:  B JPY`;
+                                }
+                                if (isJa) {
+                                    const oku = (v / 100000000).toFixed(2);
+                                    const maxLen = Math.max(...allItems.map(item => {
+                                        const iv = item.parsed.y;
+                                        return (iv !== null && iv !== undefined) ? (iv / 100000000).toFixed(2).length : 1;
+                                    }));
+                                    return `${lbl}:${oku.padStart(maxLen + 1)} 億円`;
+                                }
+                                return `${lbl}: ${formatCurrency(v, '億円')}`;
+                            })();
                         },
                     },
                 },
@@ -372,8 +692,6 @@ function renderAssetChart(result, isLogScale) {
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 13 },
-                        maxRotation: 0,
-                        autoSkip: false,
                         callback: xTickCallback,
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -384,23 +702,19 @@ function renderAssetChart(result, isLogScale) {
                         color: '#94a3b8',
                         font: { size: 13 },
                         callback: function (value) {
-                            // 億円換算
-                            const oku = value / 100000000; // 円→億円 (A7-5)
-                            if (oku <= 0) return null;
-
                             // 対数スケール時: Y軸の表示桁幅（オーダー）による動的間引きアルゴリズム
                             const chart = this.chart;
                             const isLog = chart.options.scales.y.type === 'logarithmic';
                             if (isLog) {
                                 // 現在のY軸の最小値最大値から表示桁幅を算出
-                                const yMin = chart.scales.y.min || 10_000_000; // 1000万円 (A7-1)
-                                const yMax = chart.scales.y.max || 1_000_000_000; // 10億円 (A7-2)
-                                const minOrder = Math.floor(Math.log10(yMin / 100000000)); // (A7-3)
-                                const maxOrder = Math.floor(Math.log10(yMax / 100000000)); // (A7-4)
+                                const yMin = chart.scales.y.min || 10_000_000;
+                                const yMax = chart.scales.y.max || 1_000_000_000;
+                                const minOrder = Math.floor(Math.log10(yMin / 100000000));
+                                const maxOrder = Math.floor(Math.log10(yMax / 100000000));
                                 const orderRange = Math.max(1, maxOrder - minOrder + 1);
 
-                                const exponent = Math.floor(Math.log10(oku));
-                                const mantissa = oku / Math.pow(10, exponent);
+                                const exponent = Math.floor(Math.log10(value));
+                                const mantissa = value / Math.pow(10, exponent);
 
                                 // 桁幅の種類が4つ以上なら、間引きを強化して10の累乗(mantissa=1)のみ表示
                                 if (orderRange >= 4) {
@@ -412,10 +726,7 @@ function renderAssetChart(result, isLogScale) {
                                     if (!isAllowed) return null;
                                 }
                             }
-
-                            if (oku >= 100) return `${Math.round(oku).toLocaleString('ja-JP')} 億円`;
-                            if (oku >= 1) return `${oku.toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`;
-                            return `${(value / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円`; // 円→万円 (A7-6)
+                            return formatCurrency(value, value >= 1e8 ? '億円' : '万円');
                         },
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -449,7 +760,7 @@ function renderCashChart(result) {
         const fillMode = (idx === 0) ? false : '-1';
 
         return {
-            label: `${pct}％`,
+            label: (getLanguage() || '').startsWith('ja') ? `${pct}％` : `${pct}%`,
             data: Array.from(cashPercentileData[origIdx]),
             borderColor: color,
             backgroundColor: color + '26',
@@ -483,14 +794,7 @@ function renderCashChart(result) {
                             const allItems = context.chart.tooltip.dataPoints;
                             const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
                             const lbl = context.dataset.label.padStart(maxLblLen);
-                            if (val === null || val === undefined) return `${lbl}:  万円`;
-
-                            const formattedVal = Math.round(val / 10000).toLocaleString('ja-JP'); // 円→万円 (A8)
-                            const maxLen = Math.max(...allItems.map(item => {
-                                const v = item.parsed.y;
-                                return (v !== null && v !== undefined) ? Math.round(v / 10000).toLocaleString('ja-JP').length : 1;
-                            }));
-                            return `${lbl}:${formattedVal.padStart(maxLen + 1)} 万円`;
+                            return `${lbl}: ${formatCurrency(val, '万円')}`;
                         },
                     },
                 },
@@ -508,8 +812,6 @@ function renderCashChart(result) {
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 13 },
-                        maxRotation: 0,
-                        autoSkip: false,
                         callback: xTickCallback,
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -521,8 +823,7 @@ function renderCashChart(result) {
                         color: '#94a3b8',
                         font: { size: 13 },
                         callback: function (value) {
-                            if (value >= 100_000_000) return `${(value / 100_000_000).toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 億円`; // 円→億円 (A9)
-                            return `${(value / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円`; // 円→万円 (A9)
+                            return formatCurrency(value, value >= 1e8 ? '億円' : '万円');
                         },
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -577,7 +878,7 @@ function renderDdCdfChart(result) {
         type: 'line',
         data: {
             datasets: [{
-                label: '発生確率',
+                label: t('chart.probability'),
                 data: points,
                 borderColor: '#f43f5e',
                 backgroundColor: 'rgba(244, 63, 94, 0.2)',
@@ -596,12 +897,18 @@ function renderDdCdfChart(result) {
                     bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
                     titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
                     callbacks: {
-                        title: () => '最大ドローダウン 発生確率',
+                        title: () => t('chart.dd.tooltipTitle'),
                         label: function (context) {
                             if (context.parsed.x === -100) {
-                                return '総資産が枯渇する確率: ' + context.parsed.y.toFixed(1) + '%';
+                                return [
+                                    t('chart.tooltip.deadLabel'),
+                                    t('chart.tooltip.probabilityLabel', [context.parsed.y.toFixed(1)])
+                                ];
                             }
-                            return '最大ドローダウンが ' + context.parsed.x.toFixed(1) + '% より悪化する確率: ' + context.parsed.y.toFixed(1) + '%';
+                            return [
+                                t('chart.tooltip.ddWorseLabel', [context.parsed.x.toFixed(1)]),
+                                t('chart.tooltip.probabilityLabel', [context.parsed.y.toFixed(1)])
+                            ];
                         }
                     }
                 },
@@ -612,7 +919,7 @@ function renderDdCdfChart(result) {
             scales: {
                 x: {
                     type: 'linear',
-                    title: { display: true, text: '最大ドローダウン', color: '#94a3b8' },
+                    title: { display: true, text: t('chart.dd.axisTitle'), color: '#94a3b8' },
                     min: -100,
                     max: 0,
                     ticks: {
@@ -678,7 +985,7 @@ function renderUwCdfChart(result) {
         type: 'line',
         data: {
             datasets: [{
-                label: '発生確率',
+                label: t('chart.probability'),
                 data: points,
                 borderColor: '#f59e0b',
                 backgroundColor: 'rgba(245, 158, 11, 0.2)',
@@ -697,17 +1004,16 @@ function renderUwCdfChart(result) {
                     bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
                     titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
                     callbacks: {
-                        title: () => '最長停滞期間 発生確率',
+                        title: () => t('chart.uw.tooltipTitle'),
                         label: function (context) {
                             const totalMo = Math.round(context.parsed.x);
                             const y = Math.floor(totalMo / 12);
                             const m = totalMo % 12;
-                            let str = "";
-                            if (y > 0) str += y + "年";
-                            if (m > 0) str += m + "ヶ月";
-                            if (y === 0 && m === 0) str = "0年";
-
-                            return '最長停滞期間が ' + str + ' 以上続く確率: ' + context.parsed.y.toFixed(1) + '%';
+                            const periodStr = t('chart.tooltip.uwPeriod', [y, m]);
+                            return [
+                                t('chart.tooltip.uwLongerLabel', [periodStr]),
+                                t('chart.tooltip.probabilityLabel', [context.parsed.y.toFixed(1)])
+                            ];
                         }
                     }
                 },
@@ -718,14 +1024,14 @@ function renderUwCdfChart(result) {
             scales: {
                 x: {
                     type: 'linear',
-                    title: { display: true, text: '最長停滞期間', color: '#94a3b8' },
+                    title: { display: true, text: t('chart.uw.axisTitle'), color: '#94a3b8' },
                     min: 0,
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 13 },
                         stepSize: 60, // 5年(60ヵ月)刻みに統一
                         callback: function (value) {
-                            return (value / 12) + '年';
+                            return formatYears(value / 12);
                         }
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' }
@@ -753,27 +1059,17 @@ function renderUwCdfChart(result) {
 function updateSummaryCard(result, params) {
     const container = document.getElementById('summaryCardContainer');
 
-    // パラメータのパース (UI表示用)
-    const initialAssetOku = (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
-    const monthlyExpenseMan = (params.monthlyExpense / 10000).toLocaleString('ja-JP');
     const successRate = result.successRate.toFixed(1);
-    const medianOku = (result.finalMedian / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1, minimumFractionDigits: 1 }); // 円→億円 (A4)
-
-    // インフレモデルの表記を決定
-    const infModelText = params.useArInflation ? `AR-1変動 (${params.inflationRate}%, Vol:${params.infVol}%)` : `固定 (${params.inflationRate}%)`;
 
     // 成功率に応じたステータスカラー
     let statusGrad = 'from-emerald-500/20 to-teal-500/5';
     let statusText = 'text-emerald-400';
-    let statusIcon = '';
     if (result.successRate < 80) {
         statusGrad = 'from-rose-500/20 to-red-500/5';
         statusText = 'text-rose-400';
-        statusIcon = '';
     } else if (result.successRate < 90) {
         statusGrad = 'from-amber-500/20 to-orange-500/5';
         statusText = 'text-amber-400';
-        statusIcon = '';
     }
 
     container.innerHTML = `
@@ -782,10 +1078,10 @@ function updateSummaryCard(result, params) {
             <div class="relative z-10">
                 <div class="flex items-center justify-between gap-4 mb-5 border-b border-white/10 pb-3">
                     <div class="flex items-center space-x-2">
-                        <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
-                        ${getIsResultDirty() ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">条件変更あり</span>' : ''}
+                        <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm" data-i18n="summary.title">シミュレーション結果 サマリ</h3>
+                        ${getIsResultDirty() ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30" data-i18n="summary.dirtyWarning">条件変更あり</span>' : ''}
                     </div>
-                    <span id="uiExecTime" class="text-xs text-slate-300 font-medium">${new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span id="uiExecTime" class="text-xs text-slate-300 font-medium">${formatDate(new Date())}</span>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -793,16 +1089,37 @@ function updateSummaryCard(result, params) {
                     <div class="flex flex-col justify-start items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
                         <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                             <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
-                                <span>FIRE 成功率</span>
+                                <span data-i18n="summary.successRate">FIRE 成功率</span>
                             </p>
                             <p class="text-4xl font-extrabold ${statusText} drop-shadow-md">
                                 ${successRate}<span class="text-xl ml-1">%</span>
                             </p>
                         </div>
                         <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                            <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終総資産 中央値</p>
+                            <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1" data-i18n="summary.finalMedian">最終総資産 中央値</p>
                             <p class="text-3xl font-bold text-blue-300 drop-shadow-md">
-                                ${medianOku}<span class="text-xl ml-1">億円</span>
+                                ${(() => {
+            const lang = getLanguage() || '';
+            const isJa = lang.startsWith('ja');
+            if (isJa) return (result.finalMedian / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円';
+            const usd = result.finalMedian / 100;
+            const m = usd / 1000000;
+            return '$' + m.toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' M';
+        })()}
+                            </p>
+                        </div>
+                        <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest" data-i18n="summary.targetMaintainRate">目標資産維持確率</p>
+                                <div class="tooltip-container tooltip-left-align" tabindex="0">
+                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                    <div class="tooltip-text">
+                                        ${t('summary.targetMaintainRate.tooltip', [params.targetAssetRatio])}
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold ${result.targetAssetMaintainRate >= 80 ? 'text-emerald-400' : (result.targetAssetMaintainRate >= 50 ? 'text-amber-400' : 'text-rose-400')} drop-shadow-md">
+                                ${result.targetAssetMaintainRate.toFixed(1)}<span class="text-xl ml-1">%</span>
                             </p>
                         </div>
                     </div>
@@ -810,62 +1127,83 @@ function updateSummaryCard(result, params) {
                     <!-- Right: Parameters -->
                     <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 text-sm content-center">
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">初期リスク資産</p>
-                            <p class="font-bold text-white text-base">${(params.initialRiskAsset / 100000000).toLocaleString('ja-JP')} 億円</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.riskAsset">初期リスク資産</p>
+                            <p class="font-bold text-white text-base">${(function () {
+            const lang = getLanguage() || '';
+            const isJa = lang.startsWith('ja');
+            return isJa
+                ? (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'
+                : '$' + (params.initialRiskAsset / 100000000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' M';
+        })()}</p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">初期現金バッファ</p>
-                            <p class="font-bold text-white text-base">${params.cashBufferToggle ? (params.initialCashBuffer / 10000).toLocaleString('ja-JP') + ' 万円' : '<span class="text-slate-500">0 万円</span>'}</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.cashBuffer">初期現金バッファ</p>
+                            <p class="font-bold text-white text-base">${params.cashBufferToggle ? (() => {
+            const lang = getLanguage() || '';
+            const isJa = lang.startsWith('ja');
+            if (isJa) return (params.initialCashBuffer / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 }) + '万円';
+            // 万円 → 円 → ドル（÷100）→ Kドル（÷1000）
+            const usd = params.initialCashBuffer / 100;
+            const k = usd / 1000;
+            return '$' + k.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' K';
+        })() : '<span class="text-slate-500">0</span>'}</p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">初期月間取崩し額</p>
-                            <p class="font-bold text-white text-base">${(params.monthlyExpense / 10000).toLocaleString('ja-JP')} 万円</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.expense">初期月間取崩し額</p>
+                            <p class="font-bold text-white text-base">${(() => {
+            const lang = getLanguage() || '';
+            const isJa = lang.startsWith('ja');
+            if (isJa) return (params.monthlyExpense / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 }) + '万円';
+            const usd = params.monthlyExpense / 100;
+            const k = usd / 1000;
+            return '$' + k.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' K';
+        })()}</p>
                         </div>
 
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">期待リターン / ボラ</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.returnVol">期待リターン / ボラ</p>
                             <p class="font-bold text-white text-base">${params.expectedReturn.toFixed(1)}% / ${params.volatility.toFixed(1)}%</p>
                         </div>
                         <div class="space-y-1 shrink-0">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">期待インフレ率</p>
-                            <p class="font-bold text-white text-base">${infModelText}</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.inflation">期待インフレ率</p>
+                            <p class="font-bold text-white text-base">${params.useArInflation ? t('summary.inflation.ar1', [params.inflationRate.toFixed(1), params.infVol.toFixed(1)]) : t('summary.inflation.fixed', [params.inflationRate.toFixed(1)])}</p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション設定</p>
-                            <p class="font-bold text-white text-base">${params.simYears} 年 / ${(params.simPaths).toLocaleString('ja-JP')} 回</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.simSettings">シミュレーション設定</p>
+                            <p class="font-bold text-white text-base">${formatYears(params.simYears)} / ${formatNumber(params.simPaths, 'unit.paths')}</p>
                         </div>
                         <div class="space-y-1 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">変動モデル</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.model.label">変動モデル</p>
                             <p class="font-bold text-white text-base">
-                                ${result.modelType === 'log-t' ? `対数t分布 <span class="text-xs ml-1">(自由度: ${result.usedDf.toFixed(1)})</span>` : '対数正規分布'}
+                                ${result.modelType === 'log-t' ? `${t('summary.model.logt')} <span class="text-xs ml-1">(自由度: ${result.usedDf.toFixed(1)})</span>` : t('summary.model.lognormal')}
                             </p>
                         </div>
                         <div class="space-y-1 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">乱数シード値</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.seed">乱数シード値</p>
                             <p class="font-bold text-white text-base">${result.usedSeed.toString()}</p>
                         </div>
                         <div class="hidden sm:block pt-2 border-t border-slate-700/50"></div>
                         
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.cbSettings">現金バッファ設定</p>
                             <div class="font-bold text-slate-100 text-xs sm:text-sm space-y-0.5">
                                 ${params.cashBufferToggle ? `
-                                 <p><span class="text-slate-400">取崩し判定：</span>ドローダウン ${params.drawdownTrigger}%</p>
-                                 <p><span class="text-slate-400">補充開始：</span>総資産最高値更新</p>
-                                 <p><span class="text-slate-400">補充終了：</span>ドローダウン ${params.drawdownReplenish}%以下に悪化</p>
-                                 <p><span class="text-slate-400">補充ペース：</span>月間取崩し額の${params.replenishPace}倍</p>
-                                 ` : `<p class="text-slate-500">OFF</p>`}
+                                 <p><span class="text-slate-400">${t('summary.cb.triggerLabel')}:</span> <span class="font-bold text-white">${t('summary.cb.triggerValue', [params.drawdownTrigger])}</span></p>
+                                 <p><span class="text-slate-400">${t('summary.cb.replenishStart')}:</span> <span class="font-bold text-white">${t('summary.cb.replenishStartValue')}</span></p>
+                                 <p><span class="text-slate-400">${t('summary.cb.replenishEnd')}:</span> <span class="font-bold text-white">${t('summary.cb.replenishEndValue', [params.drawdownReplenish])}</span></p>
+                                 <p><span class="text-slate-400">${t('summary.cb.replenishPace')}:</span> <span class="font-bold text-white">${t('summary.cb.replenishPaceValue', [params.replenishPace])}</span></p>
+                                ` : `<p class="text-slate-500" data-i18n="summary.off">OFF</p>`}
                             </div>
                         </div>
                         
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">支出ガードレール設定</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.grSettings">支出ガードレール設定</p>
                             <div class="font-bold text-slate-100 text-xs sm:text-sm">
-                                ${params.guardrailToggle
-            ? `<p><span class="text-slate-400">ガードレール発動：</span>ドローダウン ${params.guardrailTrigger}%以下に悪化</p>
-                                       <p><span class="text-slate-400">ガードレール終了：</span>ドローダウン ${params.guardrailRelease}%以上まで回復</p>
-                                       <p><span class="text-slate-400">発動時の支出調整率：</span>${params.guardrailReduction}%（月間取崩し額に適用）</p>`
-            : `<p class="text-slate-500">OFF</p>`}
+                                ${params.guardrailToggle ? `
+                                 <p><span class="text-slate-400">${t('summary.gr.triggerLabel')}:</span> <span class="font-bold text-white">${t('summary.gr.triggerValue', [params.guardrailTrigger])}</span></p>
+                                 <p><span class="text-slate-400">${t('summary.gr.releaseLabel')}:</span> <span class="font-bold text-white">${t('summary.gr.releaseValue', [params.guardrailRelease])}</span></p>
+                                 <p><span class="text-slate-400">${t('summary.gr.reductionLabel')}:</span> <span class="font-bold text-white">${t('summary.gr.reductionValue', [params.guardrailReduction])}</span></p>
+                                ` : `<p class="text-slate-500" data-i18n="summary.off">OFF</p>`}
                             </div>
                         </div>
 
@@ -877,6 +1215,8 @@ function updateSummaryCard(result, params) {
     // reflow
     void container.offsetWidth;
     container.classList.add('opacity-100');
+    applyTranslations();
+    initTooltips();
 }
 
 // ====================================================================
@@ -886,18 +1226,13 @@ function renderEmptySummaryCard(cbChecked = false) {
     const container = document.getElementById('summaryCardContainer');
     if (!container) return;
 
-    const params = getParams();
-    const infModelText = document.getElementById('inflationModelToggle').checked
-        ? `AR-1変動 (ボラ ${params.infVol.toFixed(1)}%, AR ${params.infAr.toFixed(1)})`
-        : '固定 (0%)';
-
     container.innerHTML = `
         <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
             <div class="absolute inset-0 bg-slate-800/20 opacity-30"></div>
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
-                    <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm">シミュレーション結果 サマリ</h3>
-                    <span class="text-xs text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">未実行</span>
+                    <h3 class="text-sm font-bold tracking-widest text-slate-100 drop-shadow-sm" data-i18n="summary.title">シミュレーション結果 サマリ</h3>
+                    <span class="text-xs text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis" data-i18n="summary.notExecuted">未実行</span>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -905,16 +1240,24 @@ function renderEmptySummaryCard(cbChecked = false) {
                     <div class="flex flex-col justify-start items-start lg:border-r border-white/10 lg:pr-6 space-y-4">
                         <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                             <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1 flex justify-between">
-                                <span>FIRE 成功率</span>
+                                <span data-i18n="summary.successRate">FIRE 成功率</span>
                             </p>
                             <p class="text-4xl font-extrabold text-slate-500 drop-shadow-md">
-                                -<span class="text-xl ml-1">%</span>
+                                -
                             </p>
                         </div>
                         <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                            <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1">最終総資産 中央値</p>
+                            <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest mb-1" data-i18n="summary.finalMedian">最終総資産 中央値</p>
                             <p class="text-3xl font-bold text-slate-500 drop-shadow-md">
-                                -<span class="text-xl ml-1">億円</span>
+                                -
+                            </p>
+                        </div>
+                        <div class="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-xs text-slate-200 font-semibold uppercase tracking-widest" data-i18n="summary.targetMaintainRate">目標資産維持確率</p>
+                            </div>
+                            <p class="text-3xl font-bold text-slate-500 drop-shadow-md">
+                                -
                             </p>
                         </div>
                     </div>
@@ -922,56 +1265,49 @@ function renderEmptySummaryCard(cbChecked = false) {
                     <!-- Right: Parameters (Empty State) -->
                     <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 text-sm content-center opacity-70">
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">初期リスク資産</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.riskAsset">初期リスク資産</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">初期現金バッファ</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.cashBuffer">初期現金バッファ</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">初期月間取崩し額</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.expense">初期月間取崩し額</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
 
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">期待リターン / ボラ</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.returnVol">期待リターン / ボラ</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="space-y-1 shrink-0">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">期待インフレ率</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.inflation">期待インフレ率</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">シミュレーション設定</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.simSettings">シミュレーション設定</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="space-y-1 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">変動モデル</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.model.label">変動モデル</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="space-y-1 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">乱数シード値</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.seed">乱数シード値</p>
                             <p class="font-bold text-slate-500 text-base">-</p>
                         </div>
                         <div class="hidden sm:block pt-2 border-t border-slate-700/50"></div>
                         
-                        ${cbChecked ? `
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.cbSettings">現金バッファ設定</p>
                             <div class="font-bold text-slate-500 text-xs sm:text-sm">
                                 <p>-</p>
                             </div>
-                        </div>` : `
-                        <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">現金バッファ設定</p>
-                            <div class="font-bold text-slate-500 text-xs sm:text-sm">
-                                <p>-</p>
-                            </div>
-                        </div>`}
+                        </div>
                         
                         <div class="space-y-1 col-span-2 sm:col-span-3 pt-2 border-t border-slate-700/50">
-                            <p class="text-xs text-slate-300 font-medium tracking-wide">支出ガードレール設定</p>
+                            <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.grSettings">支出ガードレール設定</p>
                             <div class="font-bold text-slate-500 text-xs sm:text-sm">
                                 <p>-</p>
                             </div>
@@ -986,6 +1322,8 @@ function renderEmptySummaryCard(cbChecked = false) {
     container.classList.remove('hidden');
     void container.offsetWidth;
     container.classList.add('opacity-100');
+    applyTranslations();
+    initTooltips();
 }
 
 // ====================================================================
@@ -1044,11 +1382,15 @@ async function runMain() {
             }
         }, 100);
 
+    } catch (error) {
+        console.error("Simulation error:", error);
+        const reason = error.message.startsWith('error.') ? t(error.message) : error.message;
+        alert(t('error.simulationFailed') + ": " + reason);
     } finally {
         // Bug #21: 確実にデフォルト状態にリセット
         if (runBtn) {
             runBtn.disabled = false;
-            runBtn.innerHTML = 'シミュレーション実行';
+            runBtn.innerHTML = t('button.run');
             runBtn.style.background = '';
         }
         isRunning = false;
@@ -1083,36 +1425,50 @@ async function saveImage() {
     try {
         // ボタンをローディング状態に
         btn.disabled = true;
-        btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>画像生成中...`;
+        btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>${t('button.savingImage')}`;
 
         const params = getParams();
 
         // 1. キャプチャ用DOM（シミュレーション条件）にデータを反映
         const uiExecTime = document.getElementById('uiExecTime');
         if (uiExecTime) {
-            document.getElementById('capExecTime').textContent = "実行日時: " + uiExecTime.textContent;
+            document.getElementById('capExecTime').textContent = uiExecTime.textContent;
         }
-        document.getElementById('capRiskAsset').textContent = (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'; // 円→億円 (A10)
-        document.getElementById('capCash').textContent = (params.initialCashBuffer / 10000).toLocaleString('ja-JP') + '万円'; // 円→万円 (A10)
-        document.getElementById('capExpense').textContent = (params.monthlyExpense / 10000).toLocaleString('ja-JP') + '万円'; // 円→万円 (A10)
+        const lang = getLanguage() || '';
+        const isJa = lang.startsWith('ja');
+        document.getElementById('capRiskAsset').textContent = isJa
+            ? (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'
+            : formatCurrency(params.initialRiskAsset, '億円');
+        document.getElementById('capCash').textContent = isJa
+            ? formatCurrency(params.initialCashBuffer, '万円')
+            : formatCurrency(params.initialCashBuffer, '万円');
+        document.getElementById('capExpense').textContent = isJa
+            ? formatCurrency(params.monthlyExpense, '万円')
+            : formatCurrency(params.monthlyExpense, '万円');
 
-        const modelText = lastSimResult.modelType === 'log-t' ? '対数t分布' : '対数正規分布';
+        const modelText = lastSimResult.modelType === 'log-t' ? t('summary.model.logt') : t('summary.model.lognormal');
         document.getElementById('capModel').textContent = modelText;
 
         document.getElementById('capReturnVol').textContent = params.expectedReturn.toFixed(1) + '% / ' + params.volatility.toFixed(1) + '%';
         document.getElementById('capInf').textContent = params.inflationRate.toFixed(1) + '%';
-        document.getElementById('capYears').textContent = params.simYears + '年';
+        document.getElementById('capYears').textContent = formatYears(params.simYears);
 
         // ガードレール状態を反映（ON/OFFのみ表示）
-        document.getElementById('capGuardrail').textContent = params.guardrailToggle ? 'ON' : 'OFF';
+        document.getElementById('capGuardrail').textContent = params.guardrailToggle ? t('gr.on') : t('gr.off');
+
+        // キャプチャにバージョン番号を反映
+        var footerUrlEl = document.getElementById('capFooterUrl');
+        if (footerUrlEl) footerUrlEl.textContent = t('capture.footerUrl');
 
         // キャプチャ用DOM（シミュレーション結果）にデータを反映
-        document.getElementById('capSuccess').textContent = lastSimResult.successRate.toFixed(1) + '%';
-        document.getElementById('capMedian').textContent = (lastSimResult.finalMedian / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'; // 円→億円 (A10)
+        document.getElementById('capSuccess').textContent = formatPercent(lastSimResult.successRate / 100);
+        document.getElementById('capMedian').textContent = formatCurrency(lastSimResult.finalMedian, '億円');
+        document.getElementById('capTargetMaintainRate').textContent = lastSimResult.targetAssetMaintainRate.toFixed(1) + '%';
+        document.getElementById('capTargetRatio').textContent = params.targetAssetRatio;
 
         // 2. グラフ画像を転写（スマホでもPC表示のアスペクト比を維持するため一時的に固定サイズへ変更）
         const chartCanvas = document.getElementById('assetChartCanvas');
-        if (!chartCanvas) throw new Error("グラフ要素が見つかりませんでした (assetChartCanvas not found)");
+        if (!chartCanvas) throw new Error("Chart element not found (assetChartCanvas not found)");
 
         const chartContainer = chartCanvas.parentElement;
         const chartCard = chartContainer.parentElement;
@@ -1140,11 +1496,19 @@ async function saveImage() {
             const origLegendSize = assetChart.options.plugins.legend.labels.font.size;
             const origXTickSize = assetChart.options.scales.x.ticks.font.size;
             const origYTickSize = assetChart.options.scales.y.ticks.font.size;
+            const origMaxRotation = assetChart.options.scales.x.ticks.maxRotation;
+            const origMinRotation = assetChart.options.scales.x.ticks.minRotation;
 
             // 保存用にフォントサイズを極限まで拡大 (1080px幅に対して他項目と調和するサイズ)
             assetChart.options.plugins.legend.labels.font.size = 38;
             assetChart.options.scales.x.ticks.font.size = 34;
             assetChart.options.scales.y.ticks.font.size = 34;
+            
+            // 英語モードのみX軸ラベルを36度傾斜させる（日本語モードは自動判別される水平表示を維持）
+            if (!isJa) {
+                assetChart.options.scales.x.ticks.maxRotation = 36;
+                assetChart.options.scales.x.ticks.minRotation = 36;
+            }
 
             assetChart.resize();
             assetChart.update('none');
@@ -1158,6 +1522,10 @@ async function saveImage() {
             assetChart.options.plugins.legend.labels.font.size = origLegendSize;
             assetChart.options.scales.x.ticks.font.size = origXTickSize;
             assetChart.options.scales.y.ticks.font.size = origYTickSize;
+            if (!isJa) {
+                assetChart.options.scales.x.ticks.maxRotation = origMaxRotation;
+                assetChart.options.scales.x.ticks.minRotation = origMinRotation;
+            }
 
             chartContainer.style.width = origWidth;
             chartContainer.style.height = origHeight;
@@ -1170,7 +1538,7 @@ async function saveImage() {
             assetChart.update('none');
 
             const capImg = document.getElementById('capChartImg');
-            if (!capImg) throw new Error("プレビュー用の画像要素が見つかりませんでした (capChartImg not found)");
+            if (!capImg) throw new Error("Preview image element not found (capChartImg not found)");
             capImg.src = chartDataUrl;
         }
 
@@ -1178,10 +1546,8 @@ async function saveImage() {
 
         // 3. html2canvasでオフスクリーンコンテナをキャプチャ
         const container = document.getElementById('captureContainer');
-        if (!container) throw new Error("書き出し用のテンプレートが見つかりませんでした (captureContainer not found)");
+        if (!container) throw new Error("Export template not found (captureContainer not found)");
 
-        // スマホ等のビューポートによる影響を最小化するため、一時的にスクロール位置をリセット（念のため）
-        // ※ユーザーの要望によりスクロール処理を削除
         const canvas = await html2canvas(container, {
             scale: 2, // 高解像度化のために2倍に設定
             useCORS: true,
@@ -1198,20 +1564,18 @@ async function saveImage() {
             scrollY: 0,
         });
 
-        // window.scrollTo(origScrollX, origScrollY); // 元に戻す (スクロール処理削除に伴いコメントアウトまたは削除)
-
         // 4. ダウンロード実行
         const url = canvas.toDataURL('image/png', 1.0);
         const a = document.createElement('a');
         a.href = url;
-        const dateStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/[^0-9]/g, '');
+        const dateStr = formatDate(new Date()).replace(/[^0-9]/g, '');
         a.download = `FIRE_Sim_Result_${dateStr}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
 
         // 成功時のフィードバック表示
-        btn.innerHTML = `<svg class="w-5 h-5 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>保存しました！`;
+        btn.innerHTML = `<svg class="w-5 h-5 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>${t('button.imageSaved')}`;
         btn.classList.add('text-emerald-400');
         setTimeout(() => {
             btn.innerHTML = originalHtml;
@@ -1221,7 +1585,8 @@ async function saveImage() {
 
     } catch (err) {
         console.error("画像保存エラーの詳細:", err);
-        alert("画像の生成に失敗しました。シミュレーション完了後に実行してください。\n\n詳細: " + err.message);
+        const reason = err.message.startsWith('error.') ? t(err.message) : err.message;
+        alert(t('error.imageFailed', [reason]));
         // エラー時は即座に復元
         btn.innerHTML = originalHtml;
         btn.disabled = false;
@@ -1235,10 +1600,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setProgressCallback((progress) => {
         const btn = document.getElementById('runBtn');
         if (!btn) return;
-        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中... ${progress}%`;
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>${t('button.running', [progress])}`;
         btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
     });
     setupHybridInputs();
+    setupLangSwitcher();
+    document.addEventListener('languageChanged', onLanguageChanged);
     document.getElementById('runBtn').addEventListener('click', runMain);
     document.getElementById('logScaleToggle').addEventListener('change', onScaleToggle);
 
@@ -1265,34 +1632,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 自由度 (自動/固定) トグル連動
     const dfToggle = document.getElementById('simDfToggle');
-    const dfAutoDisplayWrapper = document.getElementById('dfAutoDisplayWrapper');
-    const dfManualWrapper = document.getElementById('dfManualWrapper');
     const volatilityInput = document.getElementById('volatilityNum');
-    const autoDfDisplay = document.getElementById('autoDfDisplay');
 
-    const updateDfPanel = () => {
-        if (!dfToggle) return;
-        if (!dfToggle.checked) {
-            // 固定 (unchecked)
-            dfAutoDisplayWrapper.classList.add('hidden');
-            dfManualWrapper.classList.remove('h-0', 'opacity-50', 'pointer-events-none');
-            setTimeout(() => { dfManualWrapper.classList.add('opacity-100'); }, 10);
-        } else {
-            // 自動 (checked)
-            dfAutoDisplayWrapper.classList.remove('hidden');
-            dfManualWrapper.classList.add('h-0', 'opacity-50', 'pointer-events-none');
-            dfManualWrapper.classList.remove('opacity-100');
-            // 値の更新
-            const vol = parseFloat(volatilityInput.value) || 18.0;
-            autoDfDisplay.textContent = calcAutoDf(vol).toFixed(1);
-        }
-    };
     if (dfToggle && volatilityInput) {
         dfToggle.addEventListener('change', updateDfPanel);
         volatilityInput.addEventListener('input', () => {
             if (dfToggle.checked) {
-                const vol = parseFloat(volatilityInput.value) || 18.0;
-                autoDfDisplay.textContent = calcAutoDf(vol).toFixed(1);
+                updateDfPanel();
             }
         });
         updateDfPanel();
@@ -1406,7 +1752,17 @@ document.addEventListener('DOMContentLoaded', () => {
     updateGrPanel();
 
     // 初期状態の（未実行）サマリカードを描画
+    applyTranslations();
+    updateActiveLangButton();  // 初期表示時に現在の言語に対応するボタンをアクティブにする
     renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
+
+    // 言語に応じて初期値を正しく設定する（英語モードでは日本語の初期値 1,000/30 を 100/3 に変換）
+    // convertCurrencyInputs は内部でイベント発火も行うため、依存するリスナーも正常に動作する
+    const initialLang = getLanguage();
+    if (initialLang === 'en') {
+        convertCurrencyInputs('en');
+    }
+    // 日本語モードの場合は HTML のデフォルト値（1,000 / 30）がそのまま使用されるため、追加の処理は不要
 
     // パラメータが変更されたら未実行サマリを更新または警告バッジを表示するリスナーを各input/selectに追加
     // 表示制御用のトグル（downsideFocusAsset, downsideFocusCash, logScaleToggle）は除外する (v1.8.3修正)
@@ -1529,113 +1885,12 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(sentinel);
     }
 
-    // ツールチップをガラスカードの外に脱出させる
-    const tooltipContainer = document.getElementById('tooltip-container');
-    document.querySelectorAll('.tooltip-container').forEach(trigger => {
-        const tooltip = trigger.querySelector('.tooltip-text');
-        if (!tooltip || !tooltipContainer) return;
-        // ツールチップ本体を body 直下の専用領域に移動
-        tooltipContainer.appendChild(tooltip);
-        // 位置計算用の共通関数
-        const positionTooltip = () => {
-            const triggerRect = trigger.getBoundingClientRect();
-            const tooltipHeight = tooltip.offsetHeight;
-            const tooltipWidth = tooltip.offsetWidth;
-            const viewportWidth = window.innerWidth;
-
-            // 中央揃えの基本位置を算出
-            let left = triggerRect.left + triggerRect.width / 2;
-
-            // ツールチップの右端が画面に収まるように補正
-            const tooltipMargin = 16;
-            const tooltipRight = left + tooltipWidth / 2;
-            if (tooltipRight > viewportWidth - tooltipMargin) {
-                left = viewportWidth - tooltipWidth / 2 - tooltipMargin;
-            }
-
-            // ツールチップの左端が画面に収まるように補正
-            const tooltipLeft = left - tooltipWidth / 2;
-            if (tooltipLeft < tooltipMargin) {
-                left = tooltipWidth / 2 + tooltipMargin;
-            }
-
-            tooltip.style.left = `${left}px`;
-            tooltip.style.top = `${triggerRect.top - tooltipHeight - tooltipMargin}px`;
-            tooltip.style.transform = 'translateX(-50%)';
-        };
-        // ホバー時／フォーカス時に位置を計算して表示
-        trigger.addEventListener('mouseenter', () => {
-            positionTooltip();
-            tooltip.style.visibility = 'visible';
-            tooltip.style.opacity = '1';
-            window.addEventListener('scroll', positionTooltip);
-        });
-        trigger.addEventListener('mouseleave', () => {
-            tooltip.style.visibility = 'hidden';
-            tooltip.style.opacity = '0';
-            window.removeEventListener('scroll', positionTooltip);
-        });
-        // タブアクセス用
-        trigger.addEventListener('focusin', () => {
-            positionTooltip();
-            tooltip.style.visibility = 'visible';
-            tooltip.style.opacity = '1';
-            window.addEventListener('scroll', positionTooltip);
-        });
-        trigger.addEventListener('focusout', () => {
-            tooltip.style.visibility = 'hidden';
-            tooltip.style.opacity = '0';
-            window.removeEventListener('scroll', positionTooltip);
-        });
-    });
+    // ツールチップ初期化（静的要素用）
+    initTooltips();
 
     // ====================================================================
     // ダウンサイドフォーカス適用
     // ====================================================================
-    // enabled=true のとき 50% 超のパーセンタイル系列を非表示にする
-    // Chart.js の setDatasetVisibility を使い、再生成なしで切替
-    // ファンチャートの fill 参照が非表示 dataset を指す場合は fill=false に補正する
-    function applyDownsideFocus(chart, enabled) {
-        // まず全 dataset の表示・非表示を確定する
-        chart.data.datasets.forEach((ds, i) => {
-            const pct = parseInt(ds.label, 10);
-            const visible = !enabled || pct <= 50;
-            chart.setDatasetVisibility(i, visible);
-        });
-
-        // ファンチャートの fill 補正:
-        // 表示中 dataset のうち最上位（最初に visible=true になる dataset）は
-        // 一つ上の dataset が非表示になっているため fill=false にする
-        // それ以外の表示 dataset は fill='-1' を維持（隣接する visible な dataset が存在するため）
-        let firstVisible = true;
-        chart.data.datasets.forEach((ds) => {
-            const pct = parseInt(ds.label, 10);
-            const visible = !enabled || pct <= 50;
-            if (visible) {
-                if (firstVisible) {
-                    // 表示中で最上位の線: 上に visible な dataset がないので fill なし
-                    ds.fill = false;
-                    firstVisible = false;
-                } else {
-                    // 2番目以降: 一つ上が visible なので fill='-1' を維持
-                    ds.fill = '-1';
-                }
-            }
-        });
-
-        chart.update('none');
-    }
-
-
-    // ====================================================================
-    // 同条件の別タブを開く（比較用）
-    // ====================================================================
-
-
-    // ====================================================================
-    // 解析結果URLリンクをクリップボードにコピー
-    // ====================================================================
-
     function shareToX() {
         if (!lastSimResult || getIsResultDirty()) return;
         const p = getParams();
@@ -1644,17 +1899,20 @@ document.addEventListener('DOMContentLoaded', () => {
             autoRun: true, fixedSeed: true,
             seed: lastSimResult.usedSeed,
             percentileRaw: document.getElementById('percentileInput').value,
-            baseUrl: 'https://moriyama-eng.github.io/fire-simulator/'
+            baseUrl: 'https://moriyama-eng.github.io/fire-simulator/',
+            lang: getLanguage()
         });
-        const text = `【FIREシミュレーション結果】\n` +
-            `💰 リスク資産: ${(p.initialRiskAsset / 100_000_000).toLocaleString()}億円\n` +
-            `💴 現金バッファ: ${(p.initialCashBuffer / 10_000).toLocaleString()}万円\n` +
-            `💸 月間取崩し額: ${(p.monthlyExpense / 10_000).toLocaleString()}万円\n` +
-            `📈 リターン/ボラ: ${p.expectedReturn}% / ${p.volatility}%\n` +
-            `📉 インフレ率: ${p.inflationRate}%\n` +
-            `⏳ 期間: ${p.simYears}年\n` +
-            `🔥 成功確率: ${s}%\n\n` +
-            `同じ条件で試す👇\n${url.toString()}`;
+        const text = t('share.x.template', [
+            formatCurrency(p.initialRiskAsset, '億円'),
+            formatCurrency(p.initialCashBuffer, '万円'),
+            formatCurrency(p.monthlyExpense, '万円'),
+            p.expectedReturn.toFixed(1),
+            p.volatility.toFixed(1),
+            p.inflationRate.toFixed(1),
+            formatYears(p.simYears),
+            s,
+            url.toString()
+        ]);
         window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
     }
 
@@ -1664,7 +1922,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = buildSimulationUrl(p, {
             autoRun: false, fixedSeed: true,
             seed: lastSimResult.usedSeed,
-            percentileRaw: document.getElementById('percentileInput').value
+            percentileRaw: document.getElementById('percentileInput').value,
+            lang: getLanguage()
         });
         window.open(url.toString(), '_blank');
     }
@@ -1678,12 +1937,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = buildSimulationUrl(p, {
             autoRun: true, fixedSeed: true,
             seed: lastSimResult.usedSeed,
-            percentileRaw: document.getElementById('percentileInput').value
+            percentileRaw: document.getElementById('percentileInput').value,
+            lang: getLanguage()
         });
         try {
             await navigator.clipboard.writeText(url.toString());
             btn.disabled = true;
-            btn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>コピーしました！`;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4 w-4 fill-current"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>${t('button.copied')}`;
             btn.classList.add('text-emerald-400');
             setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
         } catch {
@@ -1694,7 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.execCommand('copy');
             document.body.removeChild(ta);
             btn.disabled = true;
-            btn.innerHTML = `コピーしました！`;
+            btn.innerHTML = t('button.copied');
             btn.classList.add('text-emerald-400');
             setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('text-emerald-400'); btn.disabled = false; }, 2000);
         }
@@ -1712,10 +1972,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tab = document.getElementById('analysisTab');
         if (tab && !tab.classList.contains('hidden')) syncBaseToAnalysis();
     }
-    /**
-     * シミュレーション実行時の生パラメータから分析タブ用の有効パラメータ(ep)を生成する。
-     * analysis-runner.js の convertToLegacyParams で元に戻せる。
-     */
     function convertToEffectiveParams(params, simResult) {
         return {
             initialRiskAsset: params.initialRiskAsset,
@@ -1743,6 +1999,7 @@ document.addEventListener('DOMContentLoaded', () => {
             guardrailRelease: params.guardrailToggle ? params.guardrailRelease : -15.0,
             guardrailReduction: params.guardrailToggle ? params.guardrailReduction : -20.0,
             useArInflation: params.useArInflation,
+            targetAssetRatio: params.targetAssetRatio,
             percentiles: null,
         };
     }

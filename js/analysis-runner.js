@@ -28,7 +28,7 @@ import { runSimulation } from './simulation-engine.js';
 export function convertToLegacyParams(ep) {
     return {
         initialRiskAsset: ep.initialRiskAsset,
-        initialCashBuffer: ep.initialCashBuffer ?? 0,
+        initialCashBuffer: ep.cashBufferToggle ? (ep.initialCashBuffer ?? 0) : 0,
         monthlyExpense: ep.monthlyExpense,
         expectedReturn: ep.expectedReturn,
         volatility: ep.volatility,
@@ -51,14 +51,15 @@ export function convertToLegacyParams(ep) {
         simDfNum: ep.simDfNum ?? 4.0,
         useFixedSeed: true,
         seedNum: ep.seed,
+        targetAssetRatio: ep.targetAssetRatio,
     };
 }
 
 export async function runAnalysis(onProgress) {
     const baseEp = AS.getState().baseEffectiveParams;
-    if (!baseEp) throw new Error('Base条件が設定されていません。');
+    if (!baseEp) throw new Error('error.noBase');
     const selected = AS.getSelectedFactors();
-    if (selected.length === 0) throw new Error('因子が選択されていません。');
+    if (selected.length === 0) throw new Error('error.noFactors');
 
     const baseLegacy = convertToLegacyParams(baseEp);
     const pcts = [10, 30, 50, 70, 90];
@@ -107,5 +108,6 @@ function extractMetrics(simResult) {
         final_median_jpy: simResult.finalMedian,
         final_p10_jpy: simResult.totalPercentileData[p10Idx][simResult.dataLen - 1],
         worst10_max_dd: simResult.worst10MaxDd,
+        target_asset_maintain_rate: simResult.targetAssetMaintainRate,
     };
 }

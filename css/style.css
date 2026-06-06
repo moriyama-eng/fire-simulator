@@ -163,7 +163,6 @@ input[type="number"]::-webkit-inner-spin-button {
     position: fixed;
     z-index: 110;
     transform: translateX(-50%);
-    /* right: -8px; 削除: 個別クラスで制御 */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     transition: opacity 0.2s, visibility 0.2s;
     font-size: 0.75rem;
@@ -201,7 +200,6 @@ input[type="number"]::-webkit-inner-spin-button {
     border-style: solid;
     border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
 }
-
 
 /* 中央配置 */
 .tooltip-center-align .tooltip-text {
@@ -262,7 +260,6 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 36px;
 }
 
-/* 既存の num-input をステッパー用に調整 */
 .stepper-input {
     background: transparent;
     text-align: center;
@@ -289,19 +286,12 @@ input[type="number"]::-webkit-inner-spin-button {
     z-index: -9999;
 }
 
-/* ==================================================================== */
-/* 分析タブ用スタイル */
-/* ==================================================================== */
-
-/* タブ選択行のスティッキー化 */
 .tab-nav-bar {
     position: sticky;
     top: 0;
     z-index: 100;
     background: rgba(15, 23, 42, 0);
-    /* body の背景色を参考に半透明 */
     backdrop-filter: blur(12px);
-    /* 既存の border-b は維持 */
 }
 
 .tab-btn {
@@ -326,16 +316,13 @@ input[type="number"]::-webkit-inner-spin-button {
     display: none;
 }
 
-/* ==================================================================== */
-/* 分析タブ用スタイル (v2.0.0) */
-/* ==================================================================== */
-
-/* 因子セレクターカード */
 .factor-select-card {
     transition: all 0.2s;
     cursor: pointer;
     border-left: 4px solid transparent;
     overflow: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .factor-select-card:hover {
@@ -350,30 +337,11 @@ input[type="number"]::-webkit-inner-spin-button {
     background: rgba(99, 102, 241, 0.08);
 }
 
-/* カテゴリ色分け */
-.factor-select-card.cat-asset {
-    border-left-color: #f59e0b;
-    border-left-width: 4px !important;
-}
+.factor-select-card.cat-asset { border-left-color: #f59e0b; border-left-width: 4px !important; }
+.factor-select-card.cat-market { border-left-color: #6366f1; border-left-width: 4px !important; }
+.factor-select-card.cat-buffer { border-left-color: #10b981; border-left-width: 4px !important; }
+.factor-select-card.cat-guardrail { border-left-color: #f43f5e; border-left-width: 4px !important; }
 
-.factor-select-card.cat-market {
-    border-left-color: #6366f1;
-    border-left-width: 4px !important;
-}
-
-.factor-select-card.cat-buffer {
-    border-left-color: #10b981;
-    border-left-width: 4px !important;
-}
-
-.factor-select-card.cat-guardrail {
-    border-left-color: #f43f5e;
-    border-left-width: 4px !important;
-}
-
-/* ツールチップ */
-
-/* 因子別比較表カードグリッド */
 .compare-cards-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -390,7 +358,6 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: 0.65rem;
 }
 
-/* 比較表の行構造（ヘッダーとデータ行共通） */
 .compare-header-row,
 .compare-row {
     display: grid;
@@ -408,7 +375,6 @@ input[type="number"]::-webkit-inner-spin-button {
     font-weight: 500;
 }
 
-/* バー表示 */
 .bar-stack {
     display: flex;
     flex-direction: column;
@@ -428,20 +394,9 @@ input[type="number"]::-webkit-inner-spin-button {
     border-radius: 3px;
 }
 
-.bar-fill.positive,
-.dd-bar-fill.positive {
-    background: #10b981;
-}
-
-.bar-fill.negative,
-.dd-bar-fill.negative {
-    background: #f43f5e;
-}
-
-.bar-fill.base,
-.dd-bar-fill.base {
-    background: #6366f1;
-}
+.bar-fill.positive, .dd-bar-fill.positive { background: #10b981; }
+.bar-fill.negative, .dd-bar-fill.negative { background: #f43f5e; }
+.bar-fill.base, .dd-bar-fill.base { background: #6366f1; }
 
 .bar-value {
     font-size: 0.68rem;
@@ -449,7 +404,6 @@ input[type="number"]::-webkit-inner-spin-button {
     line-height: 1.2;
 }
 
-/* 設定値セル（中央揃え） */
 .setting-cell {
     display: flex;
     flex-direction: column;
@@ -461,7 +415,9 @@ input[type="number"]::-webkit-inner-spin-button {
     font-size: 0.75rem;
     color: #cbd5e1;
     text-align: right;
-    white-space: nowrap;
+    min-width: 0;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
 .base-badge {
@@ -471,7 +427,6 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: center;
 }
 
-/* 最大DDバー（右端起点） */
 .dd-bar-track {
     width: 100%;
     height: 7px;
@@ -487,36 +442,18 @@ input[type="number"]::-webkit-inner-spin-button {
     border-radius: 3px;
 }
 
-/* ターゲットテーブル */
 .target-table {
     table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
-    /* セル間の隙間をなくす */
 }
 
-/* 列幅を明示（%指定） */
-.target-table col.col-factor {
-    width: 30%;
-}
+.target-table col.col-factor { width: 30%; }
+.target-table col.col-curr { width: 22%; }
+.target-table col.col-need { width: 24%; }
+.target-table col.col-after { width: 24%; }
+.target-table col.col-dummy { width: 0%; }
 
-.target-table col.col-curr {
-    width: 22%;
-}
-
-.target-table col.col-need {
-    width: 24%;
-}
-
-.target-table col.col-after {
-    width: 24%;
-}
-
-.target-table col.col-dummy {
-    width: 0%;
-}
-
-/* 数値が入る列（現在値、必要な変更量、変更後の値）は改行禁止 */
 .target-table th,
 .target-table td:nth-child(2),
 .target-table td:nth-child(3),
@@ -524,13 +461,11 @@ input[type="number"]::-webkit-inner-spin-button {
     white-space: nowrap;
 }
 
-/* colspan で結合された「届きません」メッセージだけは折り返しを許可 */
 .target-table td[colspan="2"] {
     white-space: normal;
     word-break: break-word;
     text-align: left;
 }
-
 
 .target-table th:first-child {
     text-align: center;
@@ -539,37 +474,57 @@ input[type="number"]::-webkit-inner-spin-button {
 .target-table td:first-child {
     text-align: left;
     padding-left: 0.25rem;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
 }
 
-/* スマホ対応 */
 @media (max-width: 480px) {
-
     .compare-header-row,
     .compare-row {
         grid-template-columns: 70px 1fr 1fr 1fr;
         gap: 5px;
     }
-
-    .setting-value {
-        font-size: 0.7rem;
-    }
-
-    .bar-value {
-        font-size: 0.62rem;
-    }
-
-    .compare-header-row {
-        font-size: 0.5rem;
-    }
-
+    .setting-value { font-size: 0.7rem; }
+    .bar-value { font-size: 0.62rem; }
+    .compare-header-row { font-size: 0.5rem; }
     .target-table td,
-    .target-table th {
-        font-size: 0.65rem;
+    .target-table th { font-size: 0.65rem; }
+
+    /* REQ-MOBILE-01: 指標改善カードのヘッダー縦並び */
+    #cardTarget > div:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    #cardTarget > div:first-child > div:last-child {
+        align-items: flex-start;
+        width: 100%;
+    }
+    /* 案1: 親の横並びコンテナの幅を制限 */
+    #cardTarget > div:first-child > div:last-child > div:first-child {
+        max-width: 100%;
+    }
+    /* セレクトボックスが縮むのを許可し、余白とフォントサイズを調整 */
+    #targetMetric {
+        max-width: 100%;
+        font-size: 0.78rem;
+        padding-left: 0.25rem !important;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    /* REQ-MOBILE-02: 因子列の折り返し */
+    .target-table td:first-child {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        max-width: none;
+        word-break: break-word;
+        line-height: 1.3;
     }
 }
 
-/* 比較表 凡例 */
 .compare-legend {
     display: flex;
     gap: 0.75rem;
@@ -589,30 +544,36 @@ input[type="number"]::-webkit-inner-spin-button {
     border-radius: 2px;
 }
 
-.legend-swatch.positive {
-    background: #10b981;
-}
+.legend-swatch.positive { background: #10b981; }
+.legend-swatch.negative { background: #f43f5e; }
+.legend-swatch.base { background: #6366f1; }
 
-.legend-swatch.negative {
-    background: #f43f5e;
-}
-
-.legend-swatch.base {
-    background: #6366f1;
-}
-
-/* 自動スクロール時の固定タブバーとの重なりを防ぐ */
 #summaryCardContainer,
 #cardTarget {
     scroll-margin-top: 30px;
-    /* PC：カード2列表示 */
 }
 
-/* スマホ：カード1列表示 */
 @media (max-width: 1023px) {
-
     #summaryCardContainer,
     #cardTarget {
         scroll-margin-top: 64px;
     }
 }
+
+.lang-btn { background: rgba(30,41,59,0.5); border: 1px solid rgba(100,116,139,0.3); color: #94a3b8; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; transition: all 0.2s ease; cursor: pointer; }
+.lang-btn:hover { color: #e2e8f0; }
+.lang-btn.active { background: rgba(99,102,241,0.2); border-color: #818cf8; color: #a5b4fc; }
+
+/* 画像保存テンプレート（#captureContainer）の英語モード対応 */
+#captureContainer h1,
+#captureContainer h2,
+#captureContainer h3 {
+    font-size: 32px;
+    word-break: break-word;
+    white-space: normal;
+    max-width: 100%;
+    line-height: 1.3;
+}
+#captureContainer h1 { font-size: 44px; }
+#captureContainer h2 { font-size: 34px; }
+#captureContainer h3 { font-size: 28px; }

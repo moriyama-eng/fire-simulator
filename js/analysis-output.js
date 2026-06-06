@@ -1,4 +1,4 @@
-﻿// js/analysis-output.js
+// js/analysis-output.js
 // 分析タブ ZIP出力モジュール
 // 責務: CSV生成、JSON生成、ZIPアーカイブ作成
 // 依存: js/analysis-state.js (JSZipはグローバル)
@@ -7,8 +7,8 @@ import * as AS from './analysis-state.js';
 
 export async function generateAndDownloadZip() {
   const result = AS.getAnalysisResult();
-  if (!result) throw new Error('分析結果なし');
-  if (typeof JSZip === 'undefined') throw new Error('JSZipが読み込まれていません');
+  if (!result) throw new Error('error.noResult');
+  if (typeof JSZip === 'undefined') throw new Error('error.noJSZip');
   const zip = new JSZip();
 
   const analysisRunId = new Date().toISOString();
@@ -25,7 +25,7 @@ export async function generateAndDownloadZip() {
   const summaryRows = [];
   summaryRows.push({
     analysis_run_id: analysisRunId, scenario_id: 'base', is_base: true,
-    factor_key: '', factor_label: '基準シナリオ', level_code: '',
+    factor_key: '', factor_label: 'Base scenario', level_code: '',
     value_after_change: '', value_unit: '',
     success_rate_pct: baseMetrics.success_rate_pct,
     final_median_jpy: baseMetrics.final_median_jpy,
@@ -33,7 +33,8 @@ export async function generateAndDownloadZip() {
     median_max_dd: '', worst10_max_dd: baseMetrics.worst10_max_dd,
     median_underwater_months: '', worst10_underwater_months: '',
     seed: '', sim_paths: '', sim_years: '', model_type: '', df_mode: '',
-    used_df: '', inflation_mode: '', cash_buffer_enabled: '', guardrail_enabled: ''
+    used_df: '', inflation_mode: '', cash_buffer_enabled: '', guardrail_enabled: '',
+    target_asset_maintain_rate: baseMetrics.target_asset_maintain_rate
   });
 
   const comparisonRows = [];
@@ -53,7 +54,8 @@ export async function generateAndDownloadZip() {
       finalP10Jpy: baseMetrics.final_p10_jpy,
       totalPercentileData: [],
       dataLen: 0,
-      worst10MaxDd: baseMetrics.worst10_max_dd
+      worst10MaxDd: baseMetrics.worst10_max_dd,
+      targetAssetMaintainRate: baseMetrics.target_asset_maintain_rate
     },
     analysisPercentiles: []
   });
@@ -62,8 +64,8 @@ export async function generateAndDownloadZip() {
   if (result.perFactorResults) {
     for (const [factorKey, scenarios] of Object.entries(result.perFactorResults)) {
       const factor = AS.FACTORS.find(f => f.key === factorKey);
-      const factorLabel = factor ? factor.label : factorKey;
-      const unit = factor ? factor.unit : '';
+      const factorLabel = factorKey;
+      const unit = '';
 
       for (const scenario of scenarios) {
         const m = scenario.metrics;
@@ -88,7 +90,8 @@ export async function generateAndDownloadZip() {
           median_underwater_months: '',
           worst10_underwater_months: '',
           seed: '', sim_paths: '', sim_years: '', model_type: '', df_mode: '',
-          used_df: '', inflation_mode: '', cash_buffer_enabled: '', guardrail_enabled: ''
+          used_df: '', inflation_mode: '', cash_buffer_enabled: '', guardrail_enabled: '',
+          target_asset_maintain_rate: m.target_asset_maintain_rate
         });
 
         // 比較行
@@ -126,15 +129,16 @@ export async function generateAndDownloadZip() {
             finalP10Jpy: m.final_p10_jpy,
             totalPercentileData: [],
             dataLen: 0,
-            worst10MaxDd: m.worst10_max_dd
-          },          analysisPercentiles: [] // 空でOK
+            worst10MaxDd: m.worst10_max_dd,
+            targetAssetMaintainRate: m.target_asset_maintain_rate
+          }, analysisPercentiles: [] // 空でOK
         });
       }
     }
   }
 
   // --- CSV生成 ---
-  const summaryHeader = ['analysis_run_id', 'scenario_id', 'is_base', 'factor_key', 'factor_label', 'level_code', 'value_after_change', 'value_unit', 'success_rate_pct', 'final_median_jpy', 'final_p10_jpy', 'median_max_dd', 'worst10_max_dd', 'median_underwater_months', 'worst10_underwater_months', 'seed', 'sim_paths', 'sim_years', 'model_type', 'df_mode', 'used_df', 'inflation_mode', 'cash_buffer_enabled', 'guardrail_enabled'];
+  const summaryHeader = ['analysis_run_id', 'scenario_id', 'is_base', 'factor_key', 'factor_label', 'level_code', 'value_after_change', 'value_unit', 'success_rate_pct', 'final_median_jpy', 'final_p10_jpy', 'median_max_dd', 'worst10_max_dd', 'median_underwater_months', 'worst10_underwater_months', 'seed', 'sim_paths', 'sim_years', 'model_type', 'df_mode', 'used_df', 'inflation_mode', 'cash_buffer_enabled', 'guardrail_enabled', 'target_asset_maintain_rate'];
   const summaryCsv = summaryHeader.join(',') + '\n' +
     summaryRows.map(row => summaryHeader.map(key => csvVal(row[key])).join(',')).join('\n');
 
@@ -178,7 +182,9 @@ export async function generateAndDownloadZip() {
       result_summary: {
         success_rate_pct: entry.simResult.successRate,
         final_median_jpy: entry.simResult.finalMedian,
-        final_p10_jpy: entry.simResult.finalP10Jpy,        worst10_max_dd: entry.simResult.worst10MaxDd
+        final_p10_jpy: entry.simResult.finalP10Jpy, 
+        worst10_max_dd: entry.simResult.worst10MaxDd,
+        target_asset_maintain_rate: entry.simResult.targetAssetMaintainRate
       }
     }, null, 2);
     mdFolder.file(`${entry.scenarioId}.json`, jsonContent);

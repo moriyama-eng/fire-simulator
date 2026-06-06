@@ -19,7 +19,9 @@ export function transposeFlat(buffer, simPaths, dataLen) {
 // 総資産・現金・ドローダウンを1種類ずつ計算し、不要になった転置結果はGCに解放させる。
 export function aggregateResultsProduction({
     totalsBuffer, cashesBuffer, ddsBuffer,
-    maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount
+    maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount,
+    targetAssetRatio,
+    initialTotalAssets
 }) {
     const totalPercentileData = percentiles.map(() => new Float32Array(dataLen));
     const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
@@ -78,6 +80,21 @@ export function aggregateResultsProduction({
     let medianPIdx = percentiles.indexOf(50);
     if (medianPIdx === -1) medianPIdx = Math.floor(percentiles.length / 2);
 
+    // 目標資産維持確率の計算（REQ-1-5）
+    // targetAssetThreshold = 初期総資産 × targetAssetRatio
+    // 最終月（インデックス dataLen-1）の総資産が閾値以上か判定
+    // 注意: successRate の計算式は変更しない（別指標として追加）
+    const targetThreshold = initialTotalAssets * (targetAssetRatio / 100);
+    let maintainCount = 0;
+    const totalsArray = new Float32Array(totalsBuffer);
+    for (let p = 0; p < simPaths; p++) {
+        const finalAsset = totalsArray[p * dataLen + (dataLen - 1)];
+        if (finalAsset >= targetThreshold) {
+            maintainCount++;
+        }
+    }
+    const targetAssetMaintainRate = (maintainCount / simPaths) * 100;
+
     return {
         percentiles,
         totalPercentileData,
@@ -89,6 +106,8 @@ export function aggregateResultsProduction({
         medianMaxUw, worst10MaxUw,
         maxDdPerPath, maxUwPerPath,
         params: { simPaths, totalMonths: dataLen - 1 },
-        dataLen
+        dataLen,
+        targetAssetMaintainRate,
+        targetAssetRatio
     };
 }

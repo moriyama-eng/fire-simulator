@@ -1,8 +1,9 @@
-﻿// js/analysis-ui.js
+// js/analysis-ui.js
 // 分析タブ v2.0.0 UI 制御
 
 import * as AS from './analysis-state.js';
 import { setProgressCallback, getProgressCallback } from './simulation-engine.js';
+import { t, formatCurrency, formatPercent, formatYears, formatNumber, getLanguage } from './i18n.js';
 
 // ====================================================================
 // メインレンダリング
@@ -29,6 +30,7 @@ export function renderAnalysisTab() {
     const exportBtn = document.getElementById('exportZipBtn');
     if (exportBtn) {
         exportBtn.disabled = !AS.getAnalysisResult();
+        exportBtn.textContent = t('analysis.exportZip');
     }
 
     renderCompareCards();
@@ -40,7 +42,7 @@ export function renderAnalysisTab() {
 function renderBaseCard() {
     const bp = AS.getBaseEffectiveParams();
     if (!bp) {
-        document.getElementById('card1Summary').innerHTML = '<p class="text-slate-500 text-sm">主画面でシミュレーションを実行してください</p>';
+        document.getElementById('card1Summary').innerHTML = `<p class="text-slate-500 text-sm">${t('analysis.noBaseContext')}</p>`;
         const detailEl = document.getElementById('card1Detail');
         if (detailEl) detailEl.classList.add('hidden');
         return;
@@ -53,8 +55,8 @@ function renderBaseCard() {
         const m = result.baseScenario.metrics;
         kpiHtml = `
         <div class="pt-1">
-             <p>FIRE成功率 <span class="font-bold text-emerald-400">${m.success_rate_pct.toFixed(1)}%</span></p>
-             <p>最終総資産 中央値 <span class="font-bold text-blue-300">${(m.final_median_jpy / 1e8).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}億円</span></p>
+             <p>${t('analysis.target.metricLabels.successRate')} <span class="font-bold text-emerald-400">${m.success_rate_pct.toFixed(1)}%</span></p>
+             <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(m.final_median_jpy, '億円')}</span></p>
          </div>`;
     } else {
         // 分析未実行 → baseContext から直近のシミュレーションKPIを表示
@@ -63,26 +65,26 @@ function renderBaseCard() {
             const s = ctx.summary;
             kpiHtml = `
             <div class="pt-1">
-                <p>FIRE成功率 <span class="font-bold text-emerald-400">${s.successRatePct.toFixed(1)}%</span></p>
-                <p>最終総資産 中央値 <span class="font-bold text-blue-300">${(s.finalMedianJpy / 1e8).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}億円</span></p>
+                <p>${t('analysis.target.metricLabels.successRate')} <span class="font-bold text-emerald-400">${s.successRatePct.toFixed(1)}%</span></p>
+                <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(s.finalMedianJpy, '億円')}</span></p>
             </div>`;
         } else {
-            kpiHtml = '<p class="text-slate-500 text-sm">主画面でシミュレーションを実行してください</p>';
+            kpiHtml = `<p class="text-slate-500 text-sm">${t('analysis.noBaseContext')}</p>`;
         }
     }
 
     // --- 条件一覧 (常に表示) ---
     const detailHtml = `
         <div class="space-y-1">
-            <p>初期リスク資産: ${(bp.initialRiskAsset / 1e8).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} 億円</p>
-            <p>初期現金バッファ: ${bp.cashBufferToggle ? (bp.initialCashBuffer / 1e4).toLocaleString('ja-JP', { maximumFractionDigits: 0 }) + '万円' : 'OFF'}</p>
-            <p>初期月間取崩し額: ${(bp.monthlyExpense / 1e4).toLocaleString('ja-JP', { maximumFractionDigits: 0 })} 万円</p>
-            <p>期待リターン / ボラティリティ: ${bp.expectedReturn.toFixed(1)}% / ${bp.volatility.toFixed(1)}%</p>
-            <p>インフレ率: ${bp.inflationRate.toFixed(1)}%</p>
-            <p>シミュレーション設定: ${bp.simYears} 年 / ${bp.simPaths.toLocaleString('ja-JP')} 回</p>
-            <p>変動モデル: ${bp.modelType === 'log-t' ? '対数t分布' : '対数正規分布'}</p>
-            <p>現金バッファ: ${bp.cashBufferToggle ? 'ON' : 'OFF'} | ガードレール: ${bp.guardrailToggle ? 'ON' : 'OFF'}</p>
-            <p>乱数シード値: ${bp.seed}</p>
+            <p>${t('summary.riskAsset')}: ${formatCurrency(bp.initialRiskAsset, '億円')}</p>
+            <p>${t('summary.cashBuffer')}: ${bp.cashBufferToggle ? formatCurrency(bp.initialCashBuffer, '万円') : t('summary.off')}</p>
+            <p>${t('summary.expense')}: ${formatCurrency(bp.monthlyExpense, '万円')}</p>
+            <p>${t('summary.returnVol')}: ${bp.expectedReturn.toFixed(1)}% / ${bp.volatility.toFixed(1)}%</p>
+            <p>${t('summary.inflation')}: ${bp.inflationRate.toFixed(1)}%</p>
+            <p>${t('summary.simSettings')}: ${formatYears(bp.simYears)} / ${formatNumber(bp.simPaths)} ${t('unit.times')}</p>
+            <p>${t('summary.model.label')}: ${bp.modelType === 'log-t' ? t('summary.model.logt') : t('summary.model.lognormal')}</p>
+            <p>${t('summary.cbSettings')}: ${bp.cashBufferToggle ? t('cb.on') : t('cb.off')} | ${t('gr.title')}: ${bp.guardrailToggle ? t('gr.on') : t('gr.off')}</p>
+            <p>${t('summary.seed')}: ${bp.seed}</p>
         </div>
      `;
 
@@ -101,9 +103,10 @@ function renderFactorSelector() {
     const container = document.getElementById('factorSelector');
     const selected = AS.getSelectedFactors();
     const available = AS.getAvailableFactors();
-    document.getElementById('selectedFactorCount').textContent = `選択中: ${selected.length}因子`;
-    document.getElementById('scenarioCount').textContent = AS.getScenarioCount();
+    document.getElementById('selectedFactorCount').textContent = t('analysis.selectedCount', [selected.length]);
+    document.getElementById('scenarioCount').textContent = t('analysis.scenarioCount', [AS.getScenarioCount()]);
     document.getElementById('runAnalysisBtn').disabled = selected.length === 0 || AS.getState().isRunning;
+    document.getElementById('runAnalysisBtn').textContent = t('analysis.run');
 
     // 実行時間見積もりの動的更新（#5）
     const bp = AS.getBaseEffectiveParams();
@@ -113,14 +116,12 @@ function renderFactorSelector() {
         const years = bp.simYears || 30;
         let estMs = 0;
         if (window.lastSimOnlyMs) {
-            // lastSimOnlyMs は現在のパス数・年数・モデルでの実測値
-            // 全シナリオは同一条件で実行されるため、単純にシナリオ数を掛ければよい
             estMs = window.lastSimOnlyMs * totalScenarios;
         } else {
-            // 実測値がない場合のフォールバック
+            // 実測値がない場合の安全網（正常フローでは発生しない）
             estMs = (paths * years) / (10000 * 30) * 350 * totalScenarios;
         }
-        document.getElementById('estTime').textContent = Math.ceil(estMs / 1000);
+        document.getElementById('estTime').textContent = Math.ceil(estMs / 1000) + ' ' + t('unit.seconds');
     } else {
         document.getElementById('estTime').textContent = '-';
     }
@@ -132,11 +133,20 @@ function renderFactorSelector() {
         <div class="glass-card rounded-xl border border-slate-700/30 factor-select-card ${f.catClass} ${isSel ? 'selected ring-1 ring-indigo-500/50' : ''}">
             <div class="p-3 flex items-center justify-between cursor-pointer" data-action="toggle-factor" data-factor-key="${f.key}">
                 <div class="flex-1 min-w-0">
-                    <span class="text-sm font-medium text-slate-200 truncate">${f.label}</span>
-                    <span class="text-xs text-slate-400 block mt-0.5">基準: ${fmtFactorVal(f, AS.getFactorBaseValue(f.key))} ${f.unit}</span>
+                    <span class="text-sm font-medium text-slate-200 truncate">${t(f.labelKey)}</span>
+                    <span class="text-xs text-slate-400 block mt-0.5">${(() => {
+                const baseVal = AS.getFactorBaseValue(f.key);
+                const displayVal = fmtFactorVal(f, baseVal);
+                const isCurrencyFactor = f.unitKey === 'unit.oku' || f.unitKey === 'unit.man';
+                const isEnglish = getLanguage() === 'en';
+                const skipUnit = isEnglish && f.unitKey === 'unit.multiplier';
+                const showUnit = !skipUnit && ((getLanguage() === 'ja') || !isCurrencyFactor);
+                const unitSuffix = showUnit ? ` ${t(f.unitKey)}` : '';
+                return `${t('analysis.factorBaseSuffix')}: ${displayVal}${unitSuffix}`;
+            })()}</span>
                 </div>
                 <div class="flex items-center gap-2 ml-2">
-                    <span class="text-[10px] bg-slate-700/50 text-slate-400 px-1.5 py-0.5 rounded">${f.category}</span>
+                    <span class="text-[10px] bg-slate-700/50 text-slate-400 px-1.5 py-0.5 rounded">${t(f.categoryKey)}</span>
                     <span class="text-xs">${isSel ? '▲' : '▶'}</span>
                 </div>
             </div>
@@ -154,7 +164,7 @@ function renderAccordionBody(factor) {
         <div class="flex gap-2 flex-wrap">
             ${values.map((v, i) => {
         const isBase = i === 2;
-        return `<span class="text-xs ${isBase ? 'bg-indigo-900/40 text-indigo-300 font-bold' : 'bg-slate-700/80 text-slate-300'} px-2 py-1 rounded">${fmtFactorVal(factor, v)}${isBase ? ' (基準)' : ''}</span>`;
+        return `<span class="text-xs ${isBase ? 'bg-indigo-900/40 text-indigo-300 font-bold' : 'bg-slate-700/80 text-slate-300'} px-2 py-1 rounded">${fmtFactorVal(factor, v)}${isBase ? ' (' + t('analysis.factorBaseSuffix') + ')' : ''}</span>`;
     }).join('')}
         </div>
     </div>`;
@@ -162,7 +172,32 @@ function renderAccordionBody(factor) {
 
 function fmtFactorVal(factor, value) {
     if (value === null || value === undefined) return '-';
-    return value.toLocaleString('ja-JP', {
+    const lang = getLanguage();
+
+    if (lang === 'ja') {
+        return value.toLocaleString('ja-JP', {
+            minimumFractionDigits: factor.decimals,
+            maximumFractionDigits: factor.decimals
+        });
+    }
+
+    // 英語モード: 通貨単位の因子のみUSD変換、それ以外は数値フォーマット
+    const isCurrency = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
+    if (isCurrency) {
+        const valueInJPY = value * (factor.scale || 1);
+        return formatCurrency(valueInJPY, '円');
+    }
+
+    // 倍率因子 (unit.multiplier) はスペースなしで 'x' を付加
+    if (factor.unitKey === 'unit.multiplier') {
+        const numStr = value.toLocaleString('en-US', {
+            minimumFractionDigits: factor.decimals,
+            maximumFractionDigits: factor.decimals
+        });
+        return numStr + 'x';
+    }
+
+    return value.toLocaleString('en-US', {
         minimumFractionDigits: factor.decimals,
         maximumFractionDigits: factor.decimals
     });
@@ -187,13 +222,13 @@ function renderTargetTable() {
     const successRateDelta = AS.getSuccessRateTargetDelta(baseMetrics.success_rate_pct);
     const targetMetricOptionSuccess = document.getElementById('targetMetricOptionSuccess');
     if (targetMetricOptionSuccess && successRateDelta > 0) {
-        targetMetricOptionSuccess.textContent = `FIRE成功率 改善 +${successRateDelta.toFixed(0)}%pt`;
+        targetMetricOptionSuccess.textContent = t('analysis.target.metric.successRate', [successRateDelta.toFixed(0)]);
     }
 
     // FIRE成功率95%以上かつ指標が成功率の場合
     if (metric === 'success_rate_pct' && baseMetrics.success_rate_pct >= 95) {
-        document.getElementById('targetTableWrapper').innerHTML = '<p class="text-center text-slate-400 py-6">FIRE成功率は95%以上であり既に十分高いため、改善対象外です。</p>';
-        document.getElementById('targetMetricLabel').textContent = 'FIRE成功率';
+        document.getElementById('targetTableWrapper').innerHTML = `<p class="text-center text-slate-400 py-6">${t('analysis.successRateHigh')}</p>`;
+        document.getElementById('targetMetricLabel').textContent = t('analysis.target.metricLabels.successRate');
         document.getElementById('currentMetricValue').textContent = baseMetrics.success_rate_pct.toFixed(1) + '%';
         return;
     }
@@ -210,10 +245,10 @@ function renderTargetTable() {
             </colgroup>
             <thead>
                 <tr>
-                    <th class="p-2 text-xs text-slate-400 text-center">因子</th>
-                    <th class="p-2 text-right text-xs text-slate-400">現在値</th>
-                    <th class="p-2 text-right text-xs text-slate-400">必要な変更量</th>
-                    <th class="p-2 text-right text-xs text-slate-400">変更後の値</th>
+                    <th class="p-2 text-xs text-slate-400 text-center">${t('analysis.target.factorCol')}</th>
+                    <th class="p-2 text-right text-xs text-slate-400">${t('analysis.target.current')}</th>
+                    <th class="p-2 text-right text-xs text-slate-400">${t('analysis.target.need')}</th>
+                    <th class="p-2 text-right text-xs text-slate-400">${t('analysis.target.after')}</th>
                     <th class="p-2"></th>
                 </tr>
             </thead>
@@ -227,13 +262,13 @@ function renderTargetTable() {
 function updateTargetTableContent(baseMetrics, perFactorResults) {
     const metric = document.getElementById('targetMetric').value;
     const labels = {
-        success_rate_pct: 'FIRE成功率',
-        final_p10_jpy: '最終総資産 10%タイル',
-        worst10_max_dd: '最大DD 10%タイル'
+        success_rate_pct: t('analysis.target.metricLabels.successRate'),
+        final_p10_jpy: t('analysis.target.metricLabels.finalP10'),
+        worst10_max_dd: t('analysis.target.metricLabels.worst10MaxDd')
     };
     const displayFns = {
         success_rate_pct: v => v.toFixed(1) + '%',
-        final_p10_jpy: v => (v / 1e8).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '億円',
+        final_p10_jpy: v => formatCurrency(v, '億円'),
         worst10_max_dd: v => (v * 100).toFixed(1) + '%'
     };
     document.getElementById('targetMetricLabel').textContent = labels[metric];
@@ -257,7 +292,7 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
 
     if (selected.length === 0) {
-        body.innerHTML = '<tr><td colspan="5" class="text-center text-slate-500 p-4">因子を選択してください</td></tr>';
+        body.innerHTML = `<tr><td colspan="5" class="text-center text-slate-500 p-4">${t('analysis.noFactors')}</td></tr>`;
         return;
     }
 
@@ -270,7 +305,6 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
         const baseVal = AS.getFactorBaseValue(key);
 
         // 基準値（level: 0）のポイントを作成
-        // 基準水準(level=0)は runAnalysisRunner でスキップされるため、ここで手動注入する
         const basePoint = {
             factorValue: baseVal,
             metricValue: baseMetrics[metric]
@@ -289,10 +323,16 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
         const minMetric = points[0].metricValue;
         const maxMetric = points[points.length - 1].metricValue;
         if (targetValue <= minMetric || targetValue >= maxMetric) {
+            // 範囲外の場合
+            const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
+            const isEnglish = getLanguage() === 'en';
+            const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
+            const showUnit = !skipUnit && ((getLanguage() === 'ja') || !isCurrencyFactor);
+            const unitSuffix = showUnit ? ` ${t(factor.unitKey)}` : '';
             html += `<tr class="border-b border-slate-700/30">
-                <td class="p-2 font-medium text-slate-200">${factor.label}</td>
-                <td class="p-2 text-right text-slate-300">${fmtFactorVal(factor, baseVal)} ${factor.unit}</td>
-                <td class="p-2 text-center text-slate-500 text-xs" colspan="2">この因子の範囲では改善後の指標値に届きません。</td>
+                <td class="p-2 font-medium text-slate-200">${t(`analysis.factors.${factor.key}`)}</td>
+                <td class="p-2 text-right text-slate-300">${fmtFactorVal(factor, baseVal)}${unitSuffix}</td>
+                <td class="p-2 text-center text-slate-500 text-xs" colspan="2">${t('analysis.outOfRange')}</td>
                 <td></td>
             </tr>`;
         } else {
@@ -307,11 +347,17 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
             const delta = requiredFactorValue - baseVal;
             const deltaColor = delta > 0 ? 'text-emerald-400' : 'text-rose-400';
             const deltaPrefix = delta >= 0 ? '+' : '';
+            // 単位表示の条件分岐（通貨属性の因子は英語モードで単位非表示）
+            const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
+            const isEnglish = getLanguage() === 'en';
+            const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
+            const showUnit = !skipUnit && ((getLanguage() === 'ja') || !isCurrencyFactor);
+            const unitSuffix = showUnit ? ` ${t(factor.unitKey)}` : '';
             html += `<tr class="border-b border-slate-700/30">
-                <td class="p-2 font-medium text-slate-200">${factor.label}</td>
-                <td class="p-2 text-right text-slate-300">${fmtFactorVal(factor, baseVal)} ${factor.unit}</td>
-                <td class="p-2 text-right ${deltaColor} font-mono text-xs">${deltaPrefix}${fmtFactorVal(factor, delta)} ${factor.unit}</td>
-                <td class="p-2 text-right text-slate-200">${fmtFactorVal(factor, requiredFactorValue)} ${factor.unit}</td>
+                <td class="p-2 font-medium text-slate-200">${t(`analysis.factors.${factor.key}`)}</td>
+                <td class="p-2 text-right text-slate-300">${fmtFactorVal(factor, baseVal)}${unitSuffix}</td>
+                <td class="p-2 text-right ${deltaColor} font-mono text-xs">${deltaPrefix}${fmtFactorVal(factor, delta)}${unitSuffix}</td>
+                <td class="p-2 text-right text-slate-200">${fmtFactorVal(factor, requiredFactorValue)}${unitSuffix}</td>
                 <td></td>
             </tr>`;
         }
@@ -338,7 +384,7 @@ function renderCompareCards() {
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
 
     if (selected.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-sm p-4">因子を選択してください</p>';
+        container.innerHTML = `<p class="text-slate-500 text-sm p-4">${t('analysis.noFactors')}</p>`;
         return;
     }
 
@@ -381,10 +427,10 @@ function renderCompareCards() {
         };
         html += `<div class="glass-card compare-card rounded-xl">`;
         html += `<div class="compare-header-row">
-            <div class="text-center">${factor.label}</div>
-            <div class="text-center">FIRE成功率</div>
-            <div class="text-center">最終総資産<br>10%タイル</div>
-            <div class="text-center">最大DD<br>10%タイル</div>
+            <div class="text-center">${t(`analysis.factors.${factor.key}`)}</div>
+            <div class="text-center">${t('analysis.compare.headers.successRate')}</div>
+            <div class="text-center">${t('analysis.compare.headers.finalP10')}</div>
+            <div class="text-center">${t('analysis.compare.headers.worst10MaxDd')}</div>
         </div>`;
 
         const baseVal = AS.getFactorBaseValue(key);
@@ -409,9 +455,15 @@ function renderCompareCards() {
             const ddPercent = (m.worst10_max_dd * 100).toFixed(1);
 
             html += `<div class="compare-row">`;
+            // 因子値表示の単位条件分岐
+            const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
+            const isEnglish = getLanguage() === 'en';
+            const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
+            const showUnit = !skipUnit && ((getLanguage() === 'ja') || !isCurrencyFactor);
+            const unitSuffix = showUnit ? ` ${t(factor.unitKey)}` : '';
             html += `<div class="setting-cell">
-                <span class="setting-value">${fmtFactorVal(factor, val)} ${factor.unit}</span>
-                ${isBase ? '<span class="base-badge">基準</span>' : ''}
+                <span class="setting-value">${fmtFactorVal(factor, val)}${unitSuffix}</span>
+                ${isBase ? `<span class="base-badge">${t('analysis.compare.badge')}</span>` : ''}
             </div>`;
             html += `<div class="bar-stack">
                 <div class="bar-track"><div class="bar-fill ${successColors.bar}" style="width:${successWidth}%"></div></div>
@@ -419,7 +471,7 @@ function renderCompareCards() {
             </div>`;
             html += `<div class="bar-stack">
                 <div class="bar-track"><div class="bar-fill ${p10Colors.bar}" style="width:${p10Width}%"></div></div>
-                <span class="bar-value ${p10Colors.text}">${(m.final_p10_jpy / 1e8).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}億円</span>
+                <span class="bar-value ${p10Colors.text}">${formatCurrency(m.final_p10_jpy, '億円')}</span>
             </div>`;
             html += `<div class="bar-stack">
                 <div class="dd-bar-track"><div class="dd-bar-fill ${ddColors.bar}" style="width:${ddAbsWidth}%"></div></div>
@@ -429,8 +481,7 @@ function renderCompareCards() {
         }
         html += `</div>`;
     }
-    // 凡例はindex.htmlの#cardCompare内に静的に定義済みのためここでは挿入しない
-    container.innerHTML = html || '<p class="text-slate-500 text-sm p-4">因子を選択してください</p>';
+    container.innerHTML = html;
 }
 
 // ====================================================================
@@ -474,34 +525,28 @@ export function setupAnalysisEventDelegation() {
         const btn = document.getElementById('exportZipBtn');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = 'ZIP生成中...';
+        btn.textContent = t('analysis.zipping');
         try {
             const { generateAndDownloadZip } = await import('./analysis-output.js');
             await generateAndDownloadZip();
-            btn.innerHTML = '✅ ダウンロード完了';
+            btn.textContent = t('zipDone');
             setTimeout(() => {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }, 2000);
         } catch (e) {
-            console.error('ZIP出力エラー:', e);
-            alert('ZIP出力に失敗しました: ' + e.message);
+            console.error('ZIP output error:', e);
+            const reason = e.message.startsWith('error.') ? t(e.message) : e.message;
+            alert(t('error.zipFailed', [reason]));
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
     });
 }
 
-/**
- * テスト専用: delegationDone フラグをリセットする
- * テスト間でイベント委譲の再設定を可能にする。
- * 注意: 既存のイベントリスナーは解除しないが、
- * 各テストで document.body.innerHTML を完全に置き換えるため実質的にリセットされる。
- * 将来 setupAnalysisEventDelegation が document や window に
- * リスナーを追加するように変更された場合、テスト間でリスナーが蓄積する可能性がある。
- */
+// テスト専用: delegationDone フラグをリセットする
 export function _resetDelegationForTest() {
-  delegationDone = false;
+    delegationDone = false;
 }
 
 
@@ -511,7 +556,7 @@ async function executeAnalysis() {
     AS.setRunning(true);
     const btn = document.getElementById('runAnalysisBtn');
     btn.disabled = true;
-    btn.textContent = '分析を実行中... 0%';
+    btn.textContent = t('analysis.running', ['0']);
 
     // 分析中はシミュレーションタブの進捗コールバックを無効化（#10）
     const savedCallback = getProgressCallback();
@@ -521,17 +566,18 @@ async function executeAnalysis() {
         const { runAnalysis } = await import('./analysis-runner.js');
         const result = await runAnalysis(progress => {
             const pct = Math.round((progress.done / progress.total) * 100);
-            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 分析を実行中... ${pct}%`;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ${t('analysis.running', [pct])}`;
             btn.style.background = `linear-gradient(to right, rgba(99,102,241,0.8) ${pct}%, rgb(30,41,59) ${pct}%)`;
         });
         AS.setAnalysisResult(result);
     } catch (e) {
-        AS.setErrorMessage(e.message);
+        const msg = e.message.startsWith('error.') ? t(e.message) : e.message;
+        AS.setErrorMessage(msg);
     } finally {
         // 進捗コールバックを復元（#10）
         setProgressCallback(savedCallback);
         btn.disabled = AS.getSelectedFactors().length === 0;
-        btn.innerHTML = '分析を実行';
+        btn.textContent = t('analysis.run');
         btn.style.background = '';
         renderAnalysisTab();
         // 分析実行後の自動スクロール（#2）

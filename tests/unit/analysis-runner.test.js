@@ -48,13 +48,13 @@ beforeEach(() => {
 });
 
 describe('runAnalysis', () => {
-  it('1因子選択時、runSimulation が5回呼ばれる（Base 1回 + 水準 4回）', async () => {
+  it('calls runSimulation 5 times when 1 factor selected', async () => {
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
     await runAnalysis(vi.fn());
     expect(runSimulation).toHaveBeenCalledTimes(5);
   });
 
-  it('基準シナリオのパラメータに useFixedSeed と seedNum が含まれる', async () => {
+  it('base scenario params include useFixedSeed and seedNum', async () => {
     // 注: convertToLegacyParams は useFixedSeed: true をハードコードしている。
     // 現在の実装では常に true だが、将来可変になる場合はテストの拡張が必要。
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
@@ -64,7 +64,7 @@ describe('runAnalysis', () => {
     expect(firstCallArgs.seedNum).toBe(123456);
   });
 
-  it('進捗コールバックが正しい回数・引数で呼ばれる（選択因子数1 → 全5シナリオ → done:0,2,3,4,5 の5回）', async () => {
+  it('calls progress callback with correct counts', async () => {
     const onProgress = vi.fn();
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
     await runAnalysis(onProgress);
@@ -76,7 +76,7 @@ describe('runAnalysis', () => {
     expect(lastCall.done).toBe(5);
   });
 
-  it('エラー発生時、runAnalysis が reject を伝播する（setErrorMessage はUI層の責務のため呼ばれない）', async () => {
+  it('rejects on error', async () => {
     try {
       runSimulation.mockRejectedValue(new Error('test error'));
       AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
@@ -87,7 +87,7 @@ describe('runAnalysis', () => {
     }
   });
 
-  it('戻り値が正しい構造を持つ', async () => {
+  it('returns correct structure', async () => {
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
     const result = await runAnalysis(vi.fn());
     expect(result).toHaveProperty('baseScenario');
@@ -98,7 +98,7 @@ describe('runAnalysis', () => {
 });
 
 describe('convertToLegacyParams', () => {
-  it('基本マッピングが正しい', () => {
+  it('maps basic fields correctly', () => {
     const ep = makeBaseEffectiveParams({ initialRiskAsset: 100_000_000, expectedReturn: 10.0 });
     const result = convertToLegacyParams(ep);
     expect(result.initialRiskAsset).toBe(100_000_000);
@@ -106,7 +106,13 @@ describe('convertToLegacyParams', () => {
     expect(result.useFixedSeed).toBe(true);
   });
 
-  it('CB が OFF かつ initialCashBuffer が null または undefined の場合、0 を返す', () => {
+  it('maps targetAssetRatio correctly', () => {
+    const ep = makeBaseEffectiveParams({ targetAssetRatio: 120 });
+    const result = convertToLegacyParams(ep);
+    expect(result.targetAssetRatio).toBe(120);
+  });
+
+  it('returns 0 for initialCashBuffer when CB is OFF', () => {
     const epNull = makeBaseEffectiveParams({ cashBufferToggle: false, initialCashBuffer: null });
     expect(convertToLegacyParams(epNull).initialCashBuffer).toBe(0);
     const epUndef = makeBaseEffectiveParams({ cashBufferToggle: false });
@@ -114,30 +120,30 @@ describe('convertToLegacyParams', () => {
     expect(convertToLegacyParams(epUndef).initialCashBuffer).toBe(0);
   });
 
-  it('モデルタイプが log-t の場合、useTDistribution が true になる', () => {
+  it('sets useTDistribution true for log-t', () => {
     expect(convertToLegacyParams(makeBaseEffectiveParams({ modelType: 'log-t' })).useTDistribution).toBe(true);
   });
 
-  it('モデルタイプが log-normal の場合、useTDistribution が false になる', () => {
+  it('sets useTDistribution false for log-normal', () => {
     expect(convertToLegacyParams(makeBaseEffectiveParams({ modelType: 'log-normal' })).useTDistribution).toBe(false);
   });
 
-  it('simPaths が 1000 未満の場合は 1000 にクランプされる', () => {
+  it('clamps simPaths to 1000 minimum', () => {
     const ep = makeBaseEffectiveParams({ simPaths: 500 });
     expect(convertToLegacyParams(ep).simPaths).toBe(1000);
   });
 
-  it('simPaths が 50000 を超える場合は 50000 にクランプされる', () => {
+  it('clamps simPaths to 50000 maximum', () => {
     const ep = makeBaseEffectiveParams({ simPaths: 100000 });
     expect(convertToLegacyParams(ep).simPaths).toBe(50000);
   });
 
-  it('simPaths が 1000 ちょうどの場合、そのまま通る', () => {
+  it('passes simPaths 1000 as-is', () => {
     const ep = makeBaseEffectiveParams({ simPaths: 1000 });
     expect(convertToLegacyParams(ep).simPaths).toBe(1000);
   });
 
-  it('simPaths が 50000 ちょうどの場合、そのまま通る', () => {
+  it('passes simPaths 50000 as-is', () => {
     const ep = makeBaseEffectiveParams({ simPaths: 50000 });
     expect(convertToLegacyParams(ep).simPaths).toBe(50000);
   });
@@ -147,21 +153,21 @@ describe('applyFactorChange', () => {
   // 実際のコードに合わせ、完全な有効パラメータオブジェクトを渡して破壊的変更をテストする
   // 注意: これらのテストは FACTORS の実際の scale と step に依存している。
   // 因子定義が変更された場合は期待値を見直す必要がある。
-  it('スケール 1e8 の因子（初期リスク資産）を正しく変換する', () => {
+  it('converts scale 1e8 factor correctly', () => {
     const factor = FACTORS.find(f => f.key === 'initial_risk_asset_jpy');
     const ep = makeBaseEffectiveParams({ initialRiskAsset: 100_000_000 });
     applyFactorChange(ep, factor, 1.2);
     expect(ep.initialRiskAsset).toBe(120_000_000);
   });
 
-  it('スケール 1 の因子（期待リターン）を正しく変換する', () => {
+  it('converts scale 1 factor correctly', () => {
     const factor = FACTORS.find(f => f.key === 'expected_return_pct');
     const ep = makeBaseEffectiveParams({ expectedReturn: 10.0 });
     applyFactorChange(ep, factor, 11.0);
     expect(ep.expectedReturn).toBe(11.0);
   });
 
-  it('スケール 1e4 の因子（初期現金バッファ）を正しく変換する', () => {
+  it('converts scale 1e4 factor correctly', () => {
     const factor = FACTORS.find(f => f.key === 'initial_cash_buffer_jpy');
     const ep = makeBaseEffectiveParams({ initialCashBuffer: 10_000_000 });
     applyFactorChange(ep, factor, 1500);
@@ -179,7 +185,29 @@ describe('getSuccessRateTargetDelta', () => {
     [85.0, 2.0],
     [70.0, 5.0],
     [0, 5.0],
-  ])('成功率 %.1f%% のとき改善幅は %.1f%%pt', (rate, expectedDelta) => {
+  ])('gets correct delta for success rate %s%%', (rate, expectedDelta) => {
     expect(getSuccessRateTargetDelta(rate)).toBe(expectedDelta);
+  });
+});
+
+// ===== REQ-4-8: target_asset_maintain_rate のテスト =====
+describe('extractMetrics - target_asset_maintain_rate', () => {
+  beforeEach(() => {
+    // 既存のモック設定をリセットしてから設定する
+    runSimulation.mockReset();
+    runSimulation.mockResolvedValue(makeDummySimResult({ targetAssetMaintainRate: 88.5 }));
+  });
+
+  it('includes target_asset_maintain_rate in extracted metrics', async () => {
+    AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
+    const result = await runAnalysis(vi.fn());
+    
+    // baseScenario の metrics に target_asset_maintain_rate が含まれる
+    expect(result.baseScenario.metrics).toHaveProperty('target_asset_maintain_rate');
+    expect(result.baseScenario.metrics.target_asset_maintain_rate).toBe(88.5);
+    
+    // 因子シナリオにも含まれる
+    const factorResults = result.perFactorResults.expected_return_pct;
+    expect(factorResults[0].metrics).toHaveProperty('target_asset_maintain_rate');
   });
 });

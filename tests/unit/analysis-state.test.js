@@ -22,18 +22,18 @@ beforeEach(() => {
   _resetStateForTest();
 });
 
-describe('FACTORS 定義', () => {
-  it('FACTORS は10個の因子を持つ', () => {
+describe('FACTORS definition', () => {
+  it('has 10 factors', () => {
     expect(FACTORS.length).toBe(10);
   });
 
-  it('各因子は必須プロパティを持つ', () => {
+  it('each factor has required properties', () => {
     for (const f of FACTORS) {
       expect(f).toHaveProperty('key');
-      expect(f).toHaveProperty('label');
-      expect(f).toHaveProperty('category');
+      expect(f).toHaveProperty('labelKey');
+      expect(f).toHaveProperty('categoryKey');
       expect(f).toHaveProperty('catClass');
-      expect(f).toHaveProperty('unit');
+      expect(f).toHaveProperty('unitKey');
       expect(f).toHaveProperty('step');
       expect(f).toHaveProperty('decimals');
       expect(f).toHaveProperty('scale');
@@ -46,46 +46,46 @@ describe('FACTORS 定義', () => {
 });
 
 describe('getAvailableFactors', () => {
-  it('CB と GR が両方 ON の場合、全10因子を返す', () => {
+  it('returns all 10 factors when CB and GR are ON', () => {
     setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true, guardrailToggle: true }));
     expect(getAvailableFactors().length).toBe(10);
   });
 
-  it('CB が OFF の場合、現金バッファ因子を除外する', () => {
+  it('excludes cash buffer factors when CB is OFF', () => {
     setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: false }));
     const keys = getAvailableFactors().map(f => f.key);
     expect(keys).not.toContain('drawdown_trigger_pct');
     expect(keys).not.toContain('replenish_pace_x_expense');
   });
 
-  it('GR が OFF の場合、ガードレール因子を除外する', () => {
+  it('excludes guardrail factors when GR is OFF', () => {
     setBaseContext({}, makeBaseEffectiveParams({ guardrailToggle: false }));
     const keys = getAvailableFactors().map(f => f.key);
     expect(keys).not.toContain('guardrail_trigger_pct');
     expect(keys).not.toContain('guardrail_reduction_pct');
   });
 
-  it('GR が ON の場合、ガードレール因子が含まれることを確認する', () => {
+  it('includes guardrail factors when GR is ON', () => {
     setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true, guardrailToggle: true }));
     const keys = getAvailableFactors().map(f => f.key);
     expect(keys).toContain('guardrail_trigger_pct');
     expect(keys).toContain('guardrail_reduction_pct');
   });
 
-  it('ベース条件未設定時は空配列を返す', () => {
+  it('returns empty array when base not set', () => {
     expect(getAvailableFactors()).toEqual([]);
   });
 });
 
 describe('setBaseContext', () => {
-  it('ベースパラメータを正しく設定する', () => {
+  it('sets base params correctly', () => {
     const ep = makeBaseEffectiveParams();
     setBaseContext({ source: 'test' }, ep);
     expect(getState().baseEffectiveParams).toEqual(ep);
     expect(getState().baseContext.source).toBe('test');
   });
 
-  it('条件変更時、利用不可になった因子を選択から外し、分析結果をクリアする', () => {
+  it('removes unavailable factors and clears results on condition change', () => {
     setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true }));
     setSelectedFactors(['drawdown_trigger_pct']);
     setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: false }));
@@ -93,7 +93,7 @@ describe('setBaseContext', () => {
     expect(getState().analysisResult).toBeNull();
   });
 
-  it('同一条件で再設定した場合、選択因子と分析結果を保持する', () => {
+  it('keeps selected factors and results when same condition is set again', () => {
     const ep = makeBaseEffectiveParams();
     setBaseContext({}, ep);
     const mockResult = makeAnalysisResult();
@@ -106,7 +106,7 @@ describe('setBaseContext', () => {
 });
 
 describe('setSelectedFactors', () => {
-  it('選択因子を設定し、分析結果をクリアする', () => {
+  it('sets selected factors and clears results', () => {
     setAnalysisResult(makeAnalysisResult());
     setSelectedFactors(['volatility_pct']);
     expect(getState().selectedFactors).toEqual(['volatility_pct']);
@@ -115,14 +115,14 @@ describe('setSelectedFactors', () => {
 });
 
 describe('setRunning', () => {
-  it('実行中フラグを設定する', () => {
+  it('sets running flag', () => {
     setRunning(true);
     expect(getState().isRunning).toBe(true);
     setRunning(false);
     expect(getState().isRunning).toBe(false);
   });
 
-  it('実行終了時にエラーメッセージをクリアする', () => {
+  it('clears error message when running ends', () => {
     setErrorMessage('some error');
     setRunning(false);
     expect(getState().errorMessage).toBeNull();
@@ -130,7 +130,7 @@ describe('setRunning', () => {
 });
 
 describe('setAnalysisResult', () => {
-  it('分析結果を設定し、実行中フラグを解除する', () => {
+  it('sets analysis result and clears running flag', () => {
     const result = makeAnalysisResult();
     setAnalysisResult(result);
     expect(getState().analysisResult).toEqual(result);
@@ -139,7 +139,7 @@ describe('setAnalysisResult', () => {
 });
 
 describe('setErrorMessage', () => {
-  it('エラーメッセージを設定し、実行中フラグを解除する', () => {
+  it('sets error message and clears running flag', () => {
     setErrorMessage('test error');
     expect(getState().errorMessage).toBe('test error');
     expect(getState().isRunning).toBe(false);
@@ -147,26 +147,26 @@ describe('setErrorMessage', () => {
 });
 
 describe('getFactorBaseValue', () => {
-  it('スケールを持つ因子のベース値をUI表示単位で返す', () => {
+  it('returns base value in UI units for scaled factor', () => {
     setBaseContext({}, makeBaseEffectiveParams({ initialRiskAsset: 200_000_000 }));
     expect(getFactorBaseValue('initial_risk_asset_jpy')).toBe(2.0);
   });
 
-  it('スケールが1の因子はそのまま返す', () => {
+  it('returns scale-1 factor as-is', () => {
     setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
     expect(getFactorBaseValue('expected_return_pct')).toBe(10.0);
   });
 
-  it('ベース条件未設定時は null を返す', () => {
+  it('returns null when base not set', () => {
     expect(getFactorBaseValue('expected_return_pct')).toBeNull();
   });
 
-  it('未定義の因子キーに対して null を返す', () => {
+  it('returns null for undefined factor key', () => {
     setBaseContext({}, makeBaseEffectiveParams());
     expect(getFactorBaseValue('non_existent_key')).toBeNull();
   });
 
-  it('有効な因子キーだがパラメータ未設定の場合は null を返す', () => {
+  it('returns null for valid key but unset param', () => {
     const ep = makeBaseEffectiveParams();
     delete ep.expectedReturn;
     setBaseContext({}, ep);
@@ -175,21 +175,21 @@ describe('getFactorBaseValue', () => {
 });
 
 describe('getGeneratedValues', () => {
-  it('基準値からステップ幅で5水準を生成する', () => {
+  it('generates 5 levels from base value with step', () => {
     setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
     expect(getGeneratedValues('expected_return_pct')).toEqual([8.0, 9.0, 10.0, 11.0, 12.0]);
   });
 });
 
 describe('getScenarioCount', () => {
-  it('選択因子数から総シナリオ数を計算する', () => {
+  it('calculates total scenarios from selected factors', () => {
     setSelectedFactors(['expected_return_pct', 'volatility_pct']);
     expect(getScenarioCount()).toBe(9);
   });
 });
 
 describe('_resetStateForTest', () => {
-  it('すべての状態を初期化する', () => {
+  it('resets all state', () => {
     setBaseContext({}, makeBaseEffectiveParams());
     setSelectedFactors(['dummy']);
     setAnalysisResult(makeAnalysisResult());

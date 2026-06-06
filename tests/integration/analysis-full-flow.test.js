@@ -19,7 +19,7 @@ vi.mock('../../js/analysis-output.js');
 
 const fixtureHtml = readFileSync('tests/fixtures/analysis-dom-snippet.html', 'utf-8');
 
-describe('分析タブ完全フロー（E2E代替）', () => {
+describe('Analysis tab full flow (E2E alternative)', () => {
   // jsdom 互換性: scrollIntoView をモック
   // jsdom にはネイティブ実装がないため、元の関数への復元は不要です。
   beforeAll(() => {
@@ -51,7 +51,7 @@ describe('分析タブ完全フロー（E2E代替）', () => {
     );
   });
 
-  it('因子選択→分析実行→比較表表示→ZIP出力→メトリック切替の一連の流れ', async () => {
+  it('full flow: select factor, run analysis, show compare table, ZIP output, toggle metric', async () => {
     // Step 1: 因子選択
     AS.setSelectedFactors(['expected_return_pct']);
     AUI.renderAnalysisTab();
