@@ -36,6 +36,9 @@ js/
 ├── analysis-runner.js   → tests/unit/analysis-runner.test.js
 ├── analysis-output.js   → tests/unit/analysis-output.test.js
 ├── analysis-ui.js       → tests/integration/analysis-ui.test.js
+├── comparison-state.js    → tests/unit/comparison-state.test.js
+├── comparison-runner.js   → tests/unit/comparison-runner.test.js
+├── comparison-ui.js       → tests/unit/comparison-ui.test.js
 ├── app.js               → (インテグレーションテストで間接的にカバー)
 ```
 
@@ -154,6 +157,13 @@ CI環境ではローカルより遅い可能性があるため、必要に応じ
   v1.8.3の固定シード実行結果と現在の実装の出力を比較
 - **目的**: コア計算ロジックのリファクタリング時に、結果が変化していないことを保証
 - **参照データの生成方法**: `tests/fixtures/generate-reference.js` をブラウザDevToolsで実行
+
+### 4.5 比較タブのテスト (`tests/unit/comparison-*.test.js`, `tests/integration/comparison-ui.test.js`)
+
+- **状態管理** (`comparison-state.js`): シナリオ追加・削除・複製・移動、共通設定変更時の結果クリア、空配列時の移動処理など。
+- **実行ロジック** (`comparison-runner.js`): パラメータ変換（固定レート100円=1ドル含む）、逐次実行、エラーハンドリング、進捗コールバック干渉防止。
+- **UIヘルパー** (`comparison-ui.js`): 通貨変換（JPY ↔ USD）、英語モードのstep/min/max動的変換、逆変換整合性、非通貨パラメータの変換防止。
+- **結合テスト**: シナリオ追加/削除、実行ボタン、並び替え、条件付き表示（CB/GR OFF時の行非表示）、削除確認キャンセル、セレクトボックス変更時のNaN防止。
 
 ### 4.4 E2Eテストについて（非採用の理由）
 
