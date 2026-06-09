@@ -248,30 +248,6 @@ function convertCurrencyInputs(targetLang) {
     expenseInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function onLanguageChanged() {
-    applyTranslations();
-    updateDfPanel();
-    // 言語切り替え時に通貨入力値を変換
-    convertCurrencyInputs(getLanguage());
-    if (lastSimResult && lastExecutedParams) {
-        updateSummaryCard(lastSimResult, lastExecutedParams);
-    } else {
-        renderEmptySummaryCard(document.getElementById('cashBufferToggle')?.checked);
-    }
-    if (assetChart && lastSimResult) {
-        const isLog = document.getElementById('logScaleToggle')?.checked;
-        renderAssetChart(lastSimResult, isLog);
-        applyDownsideFocus(assetChart, document.getElementById('downsideFocusAsset')?.checked);
-    }
-    if (cashChart && lastSimResult) {
-        renderCashChart(lastSimResult);
-        applyDownsideFocus(cashChart, document.getElementById('downsideFocusCash')?.checked);
-    }
-    if (ddHistChart && lastSimResult) renderDdCdfChart(lastSimResult);
-    if (uwHistChart && lastSimResult) renderUwCdfChart(lastSimResult);
-    import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab());
-    updateActiveLangButton();
-}
 
 function setupLangSwitcher() {
     document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -1605,7 +1581,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     setupHybridInputs();
     setupLangSwitcher();
-    document.addEventListener('languageChanged', onLanguageChanged);
+    document.addEventListener('languageChanged', () => {
+        applyTranslations();
+        updateDfPanel();
+        // 言語切り替え時に通貨入力値を変換
+        convertCurrencyInputs(getLanguage());
+        if (lastSimResult && lastExecutedParams) {
+            updateSummaryCard(lastSimResult, lastExecutedParams);
+        } else {
+            renderEmptySummaryCard(document.getElementById('cashBufferToggle')?.checked);
+        }
+        if (assetChart && lastSimResult) {
+            const isLog = document.getElementById('logScaleToggle')?.checked;
+            renderAssetChart(lastSimResult, isLog);
+            applyDownsideFocus(assetChart, document.getElementById('downsideFocusAsset')?.checked);
+        }
+        if (cashChart && lastSimResult) {
+            renderCashChart(lastSimResult);
+            applyDownsideFocus(cashChart, document.getElementById('downsideFocusCash')?.checked);
+        }
+        if (ddHistChart && lastSimResult) renderDdCdfChart(lastSimResult);
+        if (uwHistChart && lastSimResult) renderUwCdfChart(lastSimResult);
+        import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab());
+        // 比較タブが開いている場合は再描画
+        import('./comparison-ui.js').then(CUI => {
+            const compTab = document.getElementById('comparisonTab');
+            if (compTab && !compTab.classList.contains('hidden')) {
+                CUI.renderComparisonTab();
+            }
+        }).catch(() => {});
+        updateActiveLangButton();
+    });
     document.getElementById('runBtn').addEventListener('click', runMain);
     document.getElementById('logScaleToggle').addEventListener('change', onScaleToggle);
 
@@ -1813,42 +1819,67 @@ document.addEventListener('DOMContentLoaded', () => {
     // URLクエリパラメータの自動設定
     applyQueryParams(runMain);
 
-    // ========== 分析タブ切替 (v2.0.0) ==========
+    // ========== タブ切り替え (v2.2.0 比較タブ追加) ==========
     const simTabBtn = document.getElementById('simTabBtn');
     const analysisTabBtn = document.getElementById('analysisTabBtn');
+    const comparisonTabBtn = document.getElementById('comparisonTabBtn');
     const simulationTab = document.getElementById('simulationTab');
     const analysisTabContent = document.getElementById('analysisTab');
-    if (simTabBtn && analysisTabBtn) {
-        simTabBtn.addEventListener('click', () => {
-            simTabBtn.classList.add('active');
-            simTabBtn.setAttribute('aria-selected', 'true');
-            // Bug #44: アクティブ時のテキスト色を設定
-            simTabBtn.classList.add('text-indigo-300');
-            simTabBtn.classList.remove('text-slate-400');
+    const comparisonTabContent = document.getElementById('comparisonTab');
 
-            analysisTabBtn.classList.remove('active');
-            analysisTabBtn.setAttribute('aria-selected', 'false');
-            analysisTabBtn.classList.add('text-slate-400');
-            analysisTabBtn.classList.remove('text-indigo-300');
-
-            simulationTab.classList.remove('hidden');
-            analysisTabContent.classList.add('hidden');
+    // 統一的なタブ切り替え関数（他のタブを確実に非表示にする）
+    function switchTab(activeBtn, activeContent) {
+        // 全タブボタンを非アクティブ化
+        [simTabBtn, analysisTabBtn, comparisonTabBtn].filter(Boolean).forEach(btn => {
+            btn.classList.remove('active', 'text-indigo-300');
+            btn.classList.add('text-slate-400');
+            btn.setAttribute('aria-selected', 'false');
         });
+        // 全タブコンテンツを非表示
+        [simulationTab, analysisTabContent, comparisonTabContent].filter(Boolean).forEach(content => {
+            content.classList.add('hidden');
+        });
+        // 指定タブのみアクティブ化
+        if (activeBtn) {
+            activeBtn.classList.add('active', 'text-indigo-300');
+            activeBtn.classList.remove('text-slate-400');
+            activeBtn.setAttribute('aria-selected', 'true');
+        }
+        if (activeContent) {
+            activeContent.classList.remove('hidden');
+        }
+    }
+
+    if (simTabBtn) {
+        simTabBtn.addEventListener('click', () => {
+            switchTab(simTabBtn, simulationTab);
+        });
+    }
+    if (analysisTabBtn) {
         analysisTabBtn.addEventListener('click', () => {
-            analysisTabBtn.classList.add('active');
-            analysisTabBtn.setAttribute('aria-selected', 'true');
-            // Bug #44: アクティブ時のテキスト色を設定
-            analysisTabBtn.classList.add('text-indigo-300');
-            analysisTabBtn.classList.remove('text-slate-400');
-
-            simTabBtn.classList.remove('active');
-            simTabBtn.setAttribute('aria-selected', 'false');
-            simTabBtn.classList.add('text-slate-400');
-            simTabBtn.classList.remove('text-indigo-300');
-
-            simulationTab.classList.add('hidden');
-            analysisTabContent.classList.remove('hidden');
+            switchTab(analysisTabBtn, analysisTabContent);
             syncBaseToAnalysis();
+        });
+    }
+    if (comparisonTabBtn) {
+        comparisonTabBtn.addEventListener('click', () => {
+            switchTab(comparisonTabBtn, comparisonTabContent);
+            // 比較タブを初めて開いたとき、またはすでに初期化済みの場合は再描画
+            import('./comparison-ui.js').then(CUI => {
+                if (!comparisonTabContent.dataset.initialized) {
+                    // 初回：現在のシミュレーションパラメータで初期化
+                    import('./params-accessor.js').then(PA => {
+                        import('./comparison-state.js').then(CS => {
+                            const simParams = PA.getCurrentSimParams();
+                            const inputs = CS.createInputsFromSimParams(simParams);
+                            CUI.initComparisonTab(inputs);
+                            comparisonTabContent.dataset.initialized = 'true';
+                        });
+                    });
+                } else {
+                    CUI.renderComparisonTab();
+                }
+            }).catch(e => console.error('comparison-ui load error', e));
         });
     }
     import('./analysis-ui.js').then(AUI => { AUI.setupAnalysisEventDelegation(); })

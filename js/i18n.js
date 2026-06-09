@@ -246,7 +246,31 @@ export const TRANSLATIONS = {
     "unit.paths": "回",
     "chart.probability": "発生確率",
     "capture.emptyValue": "-",
-    "capture.emptyModel": "-"
+    "capture.emptyModel": "-",
+    "summary.successRate.tooltip": "シミュレーション全体のうち、期間中に一度も資産が枯渇しなかった割合です。",
+    "analysis.compare.headers.worst10MaxDd.tooltip": "全シミュレーション結果の下位10%における最大ドローダウン（総資産の過去最高値からの最大下落率）です。",
+    "tab.comparison": "比較",
+    "comparison.addScenario": "＋ シナリオ追加",
+    "comparison.runAll": "▶ すべて実行",
+    "comparison.running": "実行中... {0}/{1}",
+    "comparison.parameter": "パラメータ",
+    "comparison.scenarioDefaultName": "シナリオ {0}",
+    "comparison.duplicateName": "{0} のコピー",
+    "comparison.maxScenarios": "シナリオは最大10件までです。",
+    "comparison.deleteScenario": "シナリオを削除",
+    "comparison.scenarioName": "シナリオ名（クリックで編集）",
+    "comparison.moveLeft": "左に移動",
+    "comparison.moveRight": "右に移動",
+    "comparison.overwriteFromSim": "シミュレーションタブの現在値で上書き",
+    "comparison.displayConditionNote": "行の表示/非表示はシナリオ1の設定に連動します。",
+    "comparison.auto": "自動",
+    "comparison.manual": "固定",
+    "comparison.fixed": "固定",
+    "comparison.variable": "変動(AR-1)",
+    "comparison.finalMedian.tooltip": "シミュレーション終了時の総資産の中央値（50%タイル）です。",
+    "comparison.median_max_uw": "最長停滞期間 中央値",
+    "comparison.medianMaxUw.tooltip": "全シミュレーションパスの最長停滞期間（最高値を更新できない期間）の中央値です。",
+    "comparison.moveHint": "←→ ボタンでシナリオの順序を入れ替えられます。"
   }
 };
 
@@ -256,7 +280,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* テスト環境では document が特殊な場合がある */ }
-  return '2.1.0'; // フォールバック（実際の最新バージョンに合わせる）
+  return '2.2.0'; // フォールバック（実際の最新バージョンに合わせる）
 }
 const APP_VERSION = getAppVersion();
 
@@ -553,7 +577,31 @@ TRANSLATIONS.en = {
   "unit.paths": "trials",
   "chart.probability": "Probability",
   "capture.emptyValue": "-",
-  "capture.emptyModel": "-"
+  "capture.emptyModel": "-",
+  "summary.successRate.tooltip": "Percentage of simulation paths that did not deplete assets during the entire period.",
+  "analysis.compare.headers.worst10MaxDd.tooltip": "Maximum drawdown (largest drop from peak) at the 10th percentile of all simulation results.",
+  "tab.comparison": "Compare",
+  "comparison.addScenario": "+ Add Scenario",
+  "comparison.runAll": "▶ Run All",
+  "comparison.running": "Running... {0}/{1}",
+  "comparison.parameter": "Parameter",
+  "comparison.scenarioDefaultName": "Scenario {0}",
+  "comparison.duplicateName": "Copy of {0}",
+  "comparison.maxScenarios": "Maximum 10 scenarios allowed.",
+  "comparison.deleteScenario": "Delete scenario",
+  "comparison.scenarioName": "Scenario name (click to edit)",
+  "comparison.moveLeft": "Move left",
+  "comparison.moveRight": "Move right",
+  "comparison.overwriteFromSim": "Overwrite from Simulation tab",
+  "comparison.displayConditionNote": "Row visibility follows Scenario 1 settings.",
+  "comparison.auto": "Auto",
+  "comparison.manual": "Fixed",
+  "comparison.fixed": "Fixed",
+  "comparison.variable": "Variable (AR-1)",
+  "comparison.finalMedian.tooltip": "Median total assets (50th percentile) at the end of the simulation.",
+  "comparison.median_max_uw": "Median Longest Underwater",
+  "comparison.medianMaxUw.tooltip": "Median of the longest underwater period (time unable to reach a new high) across all simulation paths.",
+  "comparison.moveHint": "Use ← → buttons to reorder scenarios."
 };
 
 let currentLang = (() => {
