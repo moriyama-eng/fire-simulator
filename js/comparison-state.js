@@ -52,7 +52,8 @@ export function createScenario(inputs, name) {
 }
 
 export function initScenarios(initialInputs, t) {
-    const defaultName = t ? t('comparison.scenarioDefaultName', [1]) : 'Scenario 1';
+    // 言語に関わらず "Scenario 1" に統一（多言語混在を防止）
+    const defaultName = 'Scenario 1';
     scenarios = [createScenario(initialInputs, defaultName)];
 }
 
@@ -90,7 +91,8 @@ export function addScenario(inputs, t) {
         if (t) alert(t('comparison.maxScenarios'));
         return false;
     }
-    const newName = t ? t('comparison.scenarioDefaultName', [scenarios.length + 1]) : `Scenario ${scenarios.length + 1}`;
+    // 言語に関わらず "Scenario X" に統一（多言語混在を防止）
+    const newName = `Scenario ${scenarios.length + 1}`;
     scenarios.push(createScenario(inputs, newName));
     return true;
 }
@@ -109,7 +111,8 @@ export function duplicateScenario(id, t) {
     }
     const original = scenarios.find(s => s.id === id);
     if (!original) return false;
-    const newName = t ? t('comparison.duplicateName', [original.name]) : `Copy of ${original.name}`;
+    // 言語に関わらず "Copy of X" 形式に統一（多言語混在を防止）
+    const newName = `Copy of ${original.name}`;
     scenarios.push(createScenario(original.inputs, newName));
     return true;
 }

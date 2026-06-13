@@ -312,8 +312,8 @@ export function renderComparisonTab() {
                         <div class="flex items-center gap-1">
                             <button class="move-left-btn p-1 rounded hover:bg-slate-700 ${isRunning || isFirst ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-left" data-id="${s.id}" ${isRunning || isFirst ? 'disabled' : ''} aria-label="${t('comparison.moveLeft')}">←</button>
                             <button class="move-right-btn p-1 rounded hover:bg-slate-700 ${isRunning || isLast ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-right" data-id="${s.id}" ${isRunning || isLast ? 'disabled' : ''} aria-label="${t('comparison.moveRight')}">→</button>
-                            <button class="duplicate-btn p-1 rounded hover:bg-slate-700 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}">📋</button>
-                            <button class="overwrite-btn p-1 rounded hover:bg-slate-700 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}">📋⬇️</button>
+                            <button class="duplicate-btn p-1 rounded hover:bg-slate-700 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}" title="${t('comparison.duplicateTitle')}">📋</button>
+                            <button class="overwrite-btn p-1 rounded hover:bg-slate-700 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}" title="${t('comparison.overwriteTitle')}">📋⬇️</button>
                             <button class="delete-btn p-1 rounded hover:bg-rose-700 ${isRunning || scenarios.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="delete" data-id="${s.id}" ${isRunning || scenarios.length === 1 ? 'disabled' : ''} aria-label="${t('comparison.deleteScenario')}">−</button>
                         </div>
                     </div>
@@ -348,8 +348,12 @@ export function renderComparisonTab() {
             if (isEnglish && (rowDef.key === 'initial_risk_asset' || rowDef.key === 'initial_cash_buffer' || rowDef.key === 'monthly_expense')) {
                 displayValue = convertJPYToDisplayValue(rawValue, rowDef.unitKey);
             }
+            // 英語モード時は単位ラベルを非表示（値はドル変換済みのため不要）
             let unitLabel = '';
-            if (rowDef.unitKey) unitLabel = t(rowDef.unitKey);
+            if (rowDef.unitKey && !isEnglish) unitLabel = t(rowDef.unitKey);
+            if (rowDef.unitKey && isEnglish && rowDef.key !== 'initial_risk_asset' && rowDef.key !== 'initial_cash_buffer' && rowDef.key !== 'monthly_expense') {
+                unitLabel = t(rowDef.unitKey);
+            }
             if (rowDef.inputType === 'number') {
                 rowHtml += `<td class="p-3 border-b border-slate-700">
                     <div class="flex items-center gap-1">
@@ -457,6 +461,43 @@ export function renderComparisonTab() {
     attachEventDelegation();
     initTooltips();
     restoreActiveElement(activeInfo);
+    // FIX-03: ドラッグ＆ドロップでシナリオ列を並び替え
+    initSortable(container);
+}
+
+/**
+ * FIX-03: SortableJSを用いてtheadのth列をドラッグ可能にする
+ * テスト環境（JSDOM）ではSortableが未定義のためスキップ
+ * @param {HTMLElement} container - comparisonTableContainerの要素
+ */
+function initSortable(container) {
+    // テスト環境やSortable未ロード時はスキップ
+    if (typeof Sortable === 'undefined') return;
+    if (CS.getIsRunning()) return;
+
+    const thead = container.querySelector('.comparison-table thead tr');
+    if (!thead) return;
+
+    // 既存インスタンスがあれば破棄
+    if (thead._sortableInstance) {
+        thead._sortableInstance.destroy();
+        thead._sortableInstance = null;
+    }
+
+    thead._sortableInstance = Sortable.create(thead, {
+        handle: '.drag-handle',    // ドラッグハンドルアイコンのみを操作点に指定
+        animation: 150,
+        filter: '.sticky-left',   // 左端「パラメータ」列は移動禁止
+        ghostClass: 'sortable-ghost',
+        onEnd: (evt) => {
+            // stickyLeftの分だけインデックスをオフセット補正（theadの1列目はパラメータ列）
+            const fromIndex = evt.oldIndex - 1;
+            const toIndex = evt.newIndex - 1;
+            if (fromIndex < 0 || toIndex < 0) return;
+            CS.moveScenario(fromIndex, toIndex);
+            renderComparisonTab();
+        },
+    });
 }
 
 function updateProgress(current, total) {
@@ -514,15 +555,30 @@ function attachEventDelegation() {
 
     // シナリオ名 contenteditable
     container.querySelectorAll('.scenario-name[contenteditable="true"]').forEach(el => {
+        // FIX-08: 編集開始時の元の値を保存（Escキャンセル用）
+        let originalName = el.textContent;
         el.addEventListener('blur', (e) => {
             const scenarioId = e.target.dataset.id;
             if (!scenarioId) return;
-            CS.updateScenarioName(scenarioId, e.target.textContent);
+            const newName = e.target.textContent.trim();
+            if (newName === '') {
+                // 空文字の場合は元に戻す
+                e.target.textContent = originalName;
+            } else {
+                CS.updateScenarioName(scenarioId, newName);
+                originalName = newName;
+            }
         });
         // Enter キーでフォーカスを外す
         el.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                e.target.blur();
+            }
+            // FIX-08: Esc キーで変更をキャンセルしてフォーカスを外す
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.target.textContent = originalName;
                 e.target.blur();
             }
         });
@@ -536,7 +592,14 @@ function attachEventDelegation() {
             const inputs = CS.createInputsFromSimParams(simParams);
             // addScenario 内部でアラート済みのため、戻り値チェックのみ
             const added = CS.addScenario(inputs, t);
-            if (added) renderComparisonTab();
+            if (added) {
+                renderComparisonTab();
+                // FIX-07: 新規追加後に右端まで自動スクロール
+                requestAnimationFrame(() => {
+                    const wrapper = container.querySelector('.comparison-table-wrapper');
+                    if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
+                });
+            }
         });
     }
 
@@ -621,11 +684,21 @@ function attachEventDelegation() {
             });
         } else if (action === 'delete') {
             btn.addEventListener('click', () => {
+                // FIX-01: 最後の1シナリオは削除不可トースで通知
+                if (CS.getScenarioCount() <= 1) {
+                    showToast(t('comparison.cannotDeleteLast'), 2000);
+                    return;
+                }
+                // テスト環境（JSDOM）では confirm が Not implemented となるため自動通過
                 const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-                const shouldDelete = isTestEnv ? true : confirm(t('comparison.confirmDelete'));
-                if (shouldDelete) {
+                if (isTestEnv || window.confirm(t('comparison.confirmDelete'))) {
                     const deleted = CS.deleteScenario(id);
-                    if (deleted) renderComparisonTab();
+                    if (deleted) {
+                        renderComparisonTab();
+                        showToast(t('comparison.deleteSuccess'), 1500);
+                    } else {
+                        showToast(t('comparison.deleteFailed'), 2000);
+                    }
                 }
             });
         }

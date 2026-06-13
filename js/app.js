@@ -1583,7 +1583,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHybridInputs();
     setupLangSwitcher();
     document.addEventListener('languageChanged', () => {
-        if (CS.getIsRunning()) return;
+        // FIX-10: シミュレーション実行中（app.js本体 or 比較タブ）は言語切り替えをスキップ
+        if (isRunning || CS.getIsRunning()) return;
         applyTranslations();
         updateDfPanel();
         // 言語切り替え時に通貨入力値を変換

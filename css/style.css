@@ -375,14 +375,16 @@ input[type="number"]::-webkit-inner-spin-button {
     font-weight: 500;
 }
 
+/* FIX-06: 複数シナリオのバーを横並びに表示 */
 .bar-stack {
     display: flex;
-    flex-direction: column;
-    gap: 1px;
+    flex-direction: row;
+    gap: 2px;
+    align-items: flex-end;
 }
 
 .bar-track {
-    width: 100%;
+    flex: 1;
     height: 7px;
     background: rgba(255, 255, 255, 0.07);
     border-radius: 3px;
@@ -607,6 +609,14 @@ input[type="number"]::-webkit-inner-spin-button {
     background: rgba(30, 41, 59, 0.8);
     font-weight: 600;
     font-size: 0.75rem;
+}
+
+/* FIX-04: テーブルheaderを垂直スクロール時に固定 */
+.comparison-table thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(30, 41, 59, 0.95);
 }
 
 /* 左端パラメータ列を横スクロール時に固定 */

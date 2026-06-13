@@ -272,7 +272,12 @@ export const TRANSLATIONS = {
     "comparison.medianMaxUw.tooltip": "全シミュレーションパスの最長停滞期間（最高値を更新できない期間）の中央値です。",
     "comparison.moveHint": "←→ ボタンでシナリオの順序を入れ替えられます。",
     "comparison.confirmDelete": "このシナリオを削除してもよろしいですか？",
-    "comparison.overwriteSuccess": "シナリオを上書きしました"
+    "comparison.overwriteSuccess": "シナリオを上書きしました",
+    "comparison.cannotDeleteLast": "最後の1シナリオは削除できません",
+    "comparison.deleteSuccess": "シナリオを削除しました",
+    "comparison.deleteFailed": "シナリオの削除に失敗しました",
+    "comparison.duplicateTitle": "シナリオを複製",
+    "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き"
   }
 };
 
@@ -605,7 +610,12 @@ TRANSLATIONS.en = {
   "comparison.medianMaxUw.tooltip": "Median of the longest underwater period (time unable to reach a new high) across all simulation paths.",
   "comparison.moveHint": "Use ← → buttons to reorder scenarios.",
   "comparison.confirmDelete": "Are you sure you want to delete this scenario?",
-  "comparison.overwriteSuccess": "Scenario overwritten"
+  "comparison.overwriteSuccess": "Scenario overwritten",
+  "comparison.cannotDeleteLast": "Cannot delete the last scenario",
+  "comparison.deleteSuccess": "Scenario deleted",
+  "comparison.deleteFailed": "Failed to delete scenario",
+  "comparison.duplicateTitle": "Duplicate scenario",
+  "comparison.overwriteTitle": "Overwrite from Simulation tab"
 };
 
 let currentLang = (() => {
