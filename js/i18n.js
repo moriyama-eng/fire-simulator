@@ -270,7 +270,9 @@ export const TRANSLATIONS = {
     "comparison.finalMedian.tooltip": "シミュレーション終了時の総資産の中央値（50%タイル）です。",
     "comparison.median_max_uw": "最長停滞期間 中央値",
     "comparison.medianMaxUw.tooltip": "全シミュレーションパスの最長停滞期間（最高値を更新できない期間）の中央値です。",
-    "comparison.moveHint": "←→ ボタンでシナリオの順序を入れ替えられます。"
+    "comparison.moveHint": "←→ ボタンでシナリオの順序を入れ替えられます。",
+    "comparison.confirmDelete": "このシナリオを削除してもよろしいですか？",
+    "comparison.overwriteSuccess": "シナリオを上書きしました"
   }
 };
 
@@ -601,7 +603,9 @@ TRANSLATIONS.en = {
   "comparison.finalMedian.tooltip": "Median total assets (50th percentile) at the end of the simulation.",
   "comparison.median_max_uw": "Median Longest Underwater",
   "comparison.medianMaxUw.tooltip": "Median of the longest underwater period (time unable to reach a new high) across all simulation paths.",
-  "comparison.moveHint": "Use ← → buttons to reorder scenarios."
+  "comparison.moveHint": "Use ← → buttons to reorder scenarios.",
+  "comparison.confirmDelete": "Are you sure you want to delete this scenario?",
+  "comparison.overwriteSuccess": "Scenario overwritten"
 };
 
 let currentLang = (() => {

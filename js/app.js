@@ -5,6 +5,7 @@ import { getIsResultDirty, markInputChanged as coreMarkInputChanged, markResultC
 import { transposeFlat, aggregateResultsProduction } from './core/aggregation.js';
 import { runSimulation, setProgressCallback } from './simulation-engine.js';
 import { t, setLanguage, getLanguage, formatCurrency, formatPercent, formatDate, formatYears, formatNumber } from './i18n.js';
+import * as CS from './comparison-state.js';
 
 // ====================================================================
 // グローバル状態管理
@@ -1582,6 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHybridInputs();
     setupLangSwitcher();
     document.addEventListener('languageChanged', () => {
+        if (CS.getIsRunning()) return;
         applyTranslations();
         updateDfPanel();
         // 言語切り替え時に通貨入力値を変換

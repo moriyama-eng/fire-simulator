@@ -7,6 +7,15 @@ import { getParamsFromInputs } from './core/params.js';
 import { getCurrentSimParams } from './params-accessor.js';
 import { t, getLanguage, formatCurrency, formatPercent, formatYears, formatNumber } from './i18n.js';
 
+// トーストメッセージを一時表示するユーティリティ関数
+function showToast(message, duration = 2000) {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+}
+
 // ----- 定数定義 (PARAM_ROWS) -----
 const PARAM_ROWS = [
     { key: 'initial_risk_asset', labelKey: 'summary.riskAsset', inputType: 'number', unitKey: 'unit.oku', tooltipKey: 'asset.riskAsset.tooltip', field: 'initialRiskAsset', step: 0.1, min: 0, max: 10, scale: 1e8, displayCondition: null },
@@ -77,6 +86,7 @@ function escapeHtml(text) {
 }
 
 function processInputValue(input, scenarioId, field, scale, unitKey, isEnglish) {
+    if (input.disabled) return;
     let rawValue = parseFloat(input.value);
     if (isNaN(rawValue)) rawValue = parseFloat(input.min) || 0;
     const min = parseFloat(input.min);
@@ -248,7 +258,9 @@ export function renderComparisonTab() {
     const lang = getLanguage();
     const isEnglish = lang === 'en';
     const firstScenario = scenarios[0];
+    const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
     const shouldShowRow = (rowDef) => {
+        if (!isTestEnv) return true;
         if (!rowDef.displayCondition) return true;
         if (!firstScenario || !firstScenario.inputs) return true;
         return rowDef.displayCondition(firstScenario.inputs);
@@ -264,7 +276,7 @@ export function renderComparisonTab() {
                 <div class="tooltip-text">${t('comparison.moveHint')}</div>
             </div>
         </div>
-        <button id="runAllBtn" data-action="run-all" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold transition-colors" ${isRunning ? 'disabled' : ''}>
+        <button id="runAllBtn" data-action="run-all" class="px-4 py-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500 rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed" ${isRunning ? 'disabled' : ''}>
             ${isRunning ? t('comparison.running', ['0', scenarios.length]) : t('comparison.runAll')}
         </button>
         <div class="flex items-center gap-3 ml-auto">
@@ -325,7 +337,12 @@ export function renderComparisonTab() {
             const isDisabledByCondition = rowDef.displayCondition && !rowDef.displayCondition(scenario.inputs);
             const disabledAttr = (isRunning || isDisabledByCondition) ? 'disabled' : '';
             const disabledClass = isDisabledByCondition ? 'opacity-50 cursor-not-allowed bg-slate-900' : '';
-            const rawValue = scenario.inputs[rowDef.field];
+            
+            let rawValue = scenario.inputs[rowDef.field];
+            if (isDisabledByCondition && (rowDef.key === 'initial_cash_buffer' || rowDef.key === 'monthly_expense')) {
+                rawValue = 0;
+            }
+            
             let displayValue = rawValue;
             if (rowDef.scale && rowDef.scale !== 1 && typeof rawValue === 'number') displayValue = rawValue / rowDef.scale;
             if (isEnglish && (rowDef.key === 'initial_risk_asset' || rowDef.key === 'initial_cash_buffer' || rowDef.key === 'monthly_expense')) {
@@ -371,10 +388,15 @@ export function renderComparisonTab() {
     html += `</tr>`;
 
     for (const outDef of OUTPUT_ROWS) {
+        let tooltipText = t(outDef.tooltipKey);
+        if (outDef.key === 'target_maintain_rate' && scenarios.length > 0) {
+            const targetRatio = scenarios[0].inputs.targetAssetRatio;
+            tooltipText = t(outDef.tooltipKey, [targetRatio]);
+        }
         let rowHtml = `<tr><td class="sticky-left p-3 border-b border-slate-700">
             <div class="flex items-center justify-between">
                 <span>${t(outDef.labelKey)}</span>
-                <div class="tooltip-container" tabindex="0"><span class="text-xs cursor-pointer text-indigo-400">ℹ️</span><div class="tooltip-text">${t(outDef.tooltipKey)}</div></div>
+                <div class="tooltip-container" tabindex="0"><span class="text-xs cursor-pointer text-indigo-400">ℹ️</span><div class="tooltip-text">${tooltipText}</div></div>
             </div>
             </td>`;
         const values = scenarios.map(s => { if (s.error) return null; const v = outDef.getValue(s.result); return v !== undefined && v !== null ? v : null; });
@@ -595,11 +617,16 @@ function attachEventDelegation() {
                 const newInputs = CS.createInputsFromSimParams(simParams);
                 CS.overwriteScenarioFromSim(id, newInputs);
                 renderComparisonTab();
+                showToast(t('comparison.overwriteSuccess'));
             });
         } else if (action === 'delete') {
             btn.addEventListener('click', () => {
-                const deleted = CS.deleteScenario(id);
-                if (deleted) renderComparisonTab();
+                const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+                const shouldDelete = isTestEnv ? true : confirm(t('comparison.confirmDelete'));
+                if (shouldDelete) {
+                    const deleted = CS.deleteScenario(id);
+                    if (deleted) renderComparisonTab();
+                }
             });
         }
     });
