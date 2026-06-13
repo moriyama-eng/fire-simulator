@@ -385,8 +385,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .bar-track {
     flex: 1;
-    height: 7px;
-    background: rgba(255, 255, 255, 0.07);
+    height: 12px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -397,8 +397,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .bar-fill.positive, .dd-bar-fill.positive { background: #10b981; }
-.bar-fill.negative, .dd-bar-fill.negative { background: #f43f5e; }
-.bar-fill.base, .dd-bar-fill.base { background: #6366f1; }
+.bar-fill.negative, .dd-bar-fill.negative { background: #ef4444; }
+.bar-fill.base, .dd-bar-fill.base { background: #818cf8; }
 
 .bar-value {
     font-size: 0.68rem;

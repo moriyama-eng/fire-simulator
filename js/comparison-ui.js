@@ -458,7 +458,7 @@ export function renderComparisonTab() {
         });
     });
 
-    attachEventDelegation();
+    setupEventDelegation();
     initTooltips();
     restoreActiveElement(activeInfo);
     // FIX-03: ドラッグ＆ドロップでシナリオ列を並び替え
@@ -509,104 +509,33 @@ function updateProgress(current, total) {
     }
 }
 
-function attachEventDelegation() {
+function setupEventDelegation() {
     const container = document.getElementById('comparisonTableContainer');
-    if (!container) return;
+    if (!container || container._delegationSetup) return;
+    container._delegationSetup = true;
 
-    // 数値・セレクト入力
-    container.querySelectorAll('.scenario-input').forEach(el => {
-        el.addEventListener('change', (e) => {
-            const scenarioId = e.target.dataset.id;
-            const field = e.target.dataset.field;
-            if (!scenarioId || !field) return;
-            const lang = getLanguage();
-            const isEnglish = lang === 'en';
+    // クリックイベントの委譲（ボタン関連）
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn || btn.disabled) return;
 
-            if (e.target.tagName === 'SELECT') {
-                // セレクトボックスは文字列値をそのまま保存（parseFloat 禁止）
-                CS.updateScenarioInput(scenarioId, field, e.target.value);
-                // returnModel / inflationModel / tDfMode 変更時はテーブル全体再描画
-                if (['returnModel', 'inflationModel', 'tDfMode', 'cashBufferEnabled', 'guardrailEnabled'].includes(field)) {
-                    renderComparisonTab();
-                } else {
-                    updateResultCellsForScenario(scenarioId);
-                }
-            } else {
-                // number 型入力
-                const rowDef = PARAM_ROWS.find(r => r.field === field);
-                const scale = parseFloat(e.target.dataset.scale) || 1;
-                const unitKey = e.target.dataset.unitKey || '';
-                processInputValue(e.target, scenarioId, field, scale, unitKey, isEnglish);
-            }
-        });
-    });
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        const isRunning = CS.getIsRunning();
+        if (isRunning) return;
 
-    // チェックボックス（cashBufferEnabled / guardrailEnabled）
-    container.querySelectorAll('.scenario-checkbox').forEach(el => {
-        el.addEventListener('change', (e) => {
-            const scenarioId = e.target.dataset.id;
-            const field = e.target.dataset.field;
-            if (!scenarioId || !field) return;
-            CS.updateScenarioInput(scenarioId, field, e.target.checked);
-            // チェックボックス変更は条件付き表示行に影響するため全体再描画
-            renderComparisonTab();
-        });
-    });
-
-    // シナリオ名 contenteditable
-    container.querySelectorAll('.scenario-name[contenteditable="true"]').forEach(el => {
-        // FIX-08: 編集開始時の元の値を保存（Escキャンセル用）
-        let originalName = el.textContent;
-        el.addEventListener('blur', (e) => {
-            const scenarioId = e.target.dataset.id;
-            if (!scenarioId) return;
-            const newName = e.target.textContent.trim();
-            if (newName === '') {
-                // 空文字の場合は元に戻す
-                e.target.textContent = originalName;
-            } else {
-                CS.updateScenarioName(scenarioId, newName);
-                originalName = newName;
-            }
-        });
-        // Enter キーでフォーカスを外す
-        el.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.target.blur();
-            }
-            // FIX-08: Esc キーで変更をキャンセルしてフォーカスを外す
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.target.textContent = originalName;
-                e.target.blur();
-            }
-        });
-    });
-
-    // ヘッダーボタン（追加・実行・シード・パス）
-    const addBtn = container.querySelector('#addScenarioBtn[data-action="add"]');
-    if (addBtn) {
-        addBtn.addEventListener('click', () => {
+        if (action === 'add') {
             const simParams = getCurrentSimParams();
             const inputs = CS.createInputsFromSimParams(simParams);
-            // addScenario 内部でアラート済みのため、戻り値チェックのみ
             const added = CS.addScenario(inputs, t);
             if (added) {
                 renderComparisonTab();
-                // FIX-07: 新規追加後に右端まで自動スクロール
                 requestAnimationFrame(() => {
                     const wrapper = container.querySelector('.comparison-table-wrapper');
                     if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
                 });
             }
-        });
-    }
-
-    const runAllBtn = container.querySelector('#runAllBtn[data-action="run-all"]');
-    if (runAllBtn) {
-        runAllBtn.addEventListener('click', () => {
-            if (CS.getIsRunning()) return;
+        } else if (action === 'run-all') {
             // 編集中のシナリオ名を確定
             const editingEl = document.querySelector('.scenario-name[contenteditable="true"]:focus');
             if (editingEl) {
@@ -616,91 +545,141 @@ function attachEventDelegation() {
             runAllScenarios(
                 (current, total) => updateProgress(current, total),
                 (scenarioId, result) => {
-                    // 個別完了時はテーブル全体を再描画して結果を反映
                     renderComparisonTab();
                 },
                 () => {
-                    // 全完了
                     renderComparisonTab();
                 },
                 (scenarioId, errorMsg) => {
                     renderComparisonTab();
                 }
             );
-            // 実行開始直後にUIを更新
             renderComparisonTab();
-        });
-    }
+        } else if (action === 'move-left' || action === 'move-right') {
+            const scenarios = CS.getScenarios();
+            const fromIndex = scenarios.findIndex(s => s.id === id);
+            if (fromIndex === -1) return;
+            const toIndex = action === 'move-left' ? fromIndex - 1 : fromIndex + 1;
+            CS.moveScenario(fromIndex, toIndex);
+            renderComparisonTab();
+        } else if (action === 'duplicate') {
+            const duplicated = CS.duplicateScenario(id, t);
+            if (duplicated) renderComparisonTab();
+        } else if (action === 'overwrite') {
+            const simParams = getCurrentSimParams();
+            const newInputs = CS.createInputsFromSimParams(simParams);
+            CS.overwriteScenarioFromSim(id, newInputs);
+            renderComparisonTab();
+            showToast(t('comparison.overwriteSuccess'));
+        } else if (action === 'delete') {
+            if (CS.getScenarioCount() <= 1) {
+                showToast(t('comparison.cannotDeleteLast'), 2000);
+                return;
+            }
+            const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+            if (isTestEnv || window.confirm(t('comparison.confirmDelete'))) {
+                const deleted = CS.deleteScenario(id);
+                if (deleted) {
+                    renderComparisonTab();
+                    showToast(t('comparison.deleteSuccess'), 1500);
+                } else {
+                    showToast(t('comparison.deleteFailed'), 2000);
+                }
+            }
+        }
+    });
 
-    const seedInput = container.querySelector('#commonSeedInput');
-    if (seedInput) {
-        seedInput.addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10);
+    // チェンジイベントの委譲（数値入力・セレクト・チェックボックス）
+    container.addEventListener('change', (e) => {
+        const isRunning = CS.getIsRunning();
+        if (isRunning) return;
+
+        const target = e.target;
+
+        if (target.id === 'commonSeedInput') {
+            const val = parseInt(target.value, 10);
             if (!isNaN(val)) {
                 CS.setCommonSeed(val);
                 renderComparisonTab();
             }
-        });
-    }
+            return;
+        }
 
-    const pathsInput = container.querySelector('#commonPathsInput');
-    if (pathsInput) {
-        pathsInput.addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10);
+        if (target.id === 'commonPathsInput') {
+            const val = parseInt(target.value, 10);
             if (!isNaN(val)) {
                 CS.setCommonPaths(val);
                 renderComparisonTab();
             }
-        });
-    }
+            return;
+        }
 
-    // シナリオ操作ボタン（移動・複製・上書き・削除）のイベント委譲
-    container.querySelectorAll('[data-action]').forEach(btn => {
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-        if (!id) return;
+        if (target.classList.contains('scenario-input')) {
+            const scenarioId = target.dataset.id;
+            const field = target.dataset.field;
+            if (!scenarioId || !field) return;
+            const lang = getLanguage();
+            const isEnglish = lang === 'en';
 
-        if (action === 'move-left' || action === 'move-right') {
-            btn.addEventListener('click', () => {
-                const scenarios = CS.getScenarios();
-                const fromIndex = scenarios.findIndex(s => s.id === id);
-                if (fromIndex === -1) return;
-                const toIndex = action === 'move-left' ? fromIndex - 1 : fromIndex + 1;
-                CS.moveScenario(fromIndex, toIndex);
-                renderComparisonTab();
-            });
-        } else if (action === 'duplicate') {
-            btn.addEventListener('click', () => {
-                const duplicated = CS.duplicateScenario(id, t);
-                if (duplicated) renderComparisonTab();
-            });
-        } else if (action === 'overwrite') {
-            btn.addEventListener('click', () => {
-                const simParams = getCurrentSimParams();
-                const newInputs = CS.createInputsFromSimParams(simParams);
-                CS.overwriteScenarioFromSim(id, newInputs);
-                renderComparisonTab();
-                showToast(t('comparison.overwriteSuccess'));
-            });
-        } else if (action === 'delete') {
-            btn.addEventListener('click', () => {
-                // FIX-01: 最後の1シナリオは削除不可トースで通知
-                if (CS.getScenarioCount() <= 1) {
-                    showToast(t('comparison.cannotDeleteLast'), 2000);
-                    return;
+            if (target.tagName === 'SELECT') {
+                CS.updateScenarioInput(scenarioId, field, target.value);
+                if (['returnModel', 'inflationModel', 'tDfMode', 'cashBufferEnabled', 'guardrailEnabled'].includes(field)) {
+                    renderComparisonTab();
+                } else {
+                    updateResultCellsForScenario(scenarioId);
                 }
-                // テスト環境（JSDOM）では confirm が Not implemented となるため自動通過
-                const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-                if (isTestEnv || window.confirm(t('comparison.confirmDelete'))) {
-                    const deleted = CS.deleteScenario(id);
-                    if (deleted) {
-                        renderComparisonTab();
-                        showToast(t('comparison.deleteSuccess'), 1500);
-                    } else {
-                        showToast(t('comparison.deleteFailed'), 2000);
-                    }
-                }
-            });
+            } else {
+                const scale = parseFloat(target.dataset.scale) || 1;
+                const unitKey = target.dataset.unitKey || '';
+                processInputValue(target, scenarioId, field, scale, unitKey, isEnglish);
+            }
+            return;
+        }
+
+        if (target.classList.contains('scenario-checkbox')) {
+            const scenarioId = target.dataset.id;
+            const field = target.dataset.field;
+            if (!scenarioId || !field) return;
+            CS.updateScenarioInput(scenarioId, field, target.checked);
+            renderComparisonTab();
+            return;
+        }
+    }, true);
+
+    // フォーカスイン・フォーカスアウト・キーダウンイベントの委譲（シナリオ名の contenteditable 用）
+    container.addEventListener('focusin', (e) => {
+        if (e.target.classList.contains('scenario-name')) {
+            e.target._originalName = e.target.textContent;
+        }
+    });
+
+    container.addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('scenario-name')) {
+            const scenarioId = e.target.dataset.id;
+            if (!scenarioId) return;
+            const newName = e.target.textContent.trim();
+            const originalName = e.target._originalName || '';
+            if (newName === '') {
+                e.target.textContent = originalName;
+            } else {
+                CS.updateScenarioName(scenarioId, newName);
+                e.target._originalName = newName;
+            }
+        }
+    });
+
+    container.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('scenario-name')) {
+            const originalName = e.target._originalName || '';
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.target.textContent = originalName;
+                e.target.blur();
+            }
         }
     });
 }
@@ -711,5 +690,6 @@ function attachEventDelegation() {
  */
 export function initComparisonTab(initialInputs) {
     CS.initScenarios(initialInputs, t);
+    setupEventDelegation();
     renderComparisonTab();
 }
