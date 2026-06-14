@@ -3,7 +3,7 @@
 
 import * as CS from './comparison-state.js';
 import { runAllScenarios } from './comparison-runner.js';
-import { getParamsFromInputs } from './core/params.js';
+import { getParamsFromInputs, calcAutoDf } from './core/params.js';
 import { getCurrentSimParams } from './params-accessor.js';
 import { t, getLanguage, formatCurrency, formatPercent, formatYears, formatNumber } from './i18n.js';
 
@@ -25,13 +25,13 @@ const PARAM_ROWS = [
     { key: 'expected_return', labelKey: 'market.expectedReturn', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.expectedReturn.tooltip', field: 'expectedReturn', step: 1.0, min: 0, max: 50, scale: 1, displayCondition: null },
     { key: 'volatility', labelKey: 'market.volatility', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.volatility.tooltip', field: 'volatility', step: 1.0, min: 0, max: 80, scale: 1, displayCondition: null },
     { key: 'inflation_rate', labelKey: 'market.inflation', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.inflation.tooltip', field: 'inflationRate', step: 0.5, min: 0, max: 15, scale: 1, displayCondition: null },
-    { key: 'sim_years', labelKey: 'sim.years', inputType: 'number', unitKey: 'unit.years', tooltipKey: 'sim.years.tooltip', field: 'simYears', step: 5, min: 5, max: 60, scale: 1, displayCondition: null },
     { key: 'return_model', labelKey: 'market.modelLabel', inputType: 'select', options: ['log-normal', 'log-t'], tooltipKey: 'market.modelTooltip', field: 'returnModel', displayCondition: null },
     { key: 't_df', labelKey: 'market.dfLabel', inputType: 'select', options: ['auto', 'manual'], tooltipKey: 'market.dfTooltip', field: 'tDfMode', displayCondition: null },
     { key: 't_df_manual', labelKey: 'market.dfManual', inputType: 'number', unitKey: '', tooltipKey: 'market.dfTooltip', field: 'tDfManual', step: 0.1, min: 2.5, max: 30, scale: 1, displayCondition: (inputs) => inputs.tDfMode === 'manual' },
     { key: 'inflation_model', labelKey: 'market.inflationModelLabel', inputType: 'select', options: ['fixed', 'ar1'], tooltipKey: 'market.inflationModelTooltip', field: 'inflationModel', displayCondition: null },
     { key: 'inf_vol', labelKey: 'market.inflationVol', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.inflationVol.tooltip', field: 'infVol', step: 0.5, min: 0, max: 10, scale: 1, displayCondition: (inputs) => inputs.inflationModel === 'ar1' },
     { key: 'inf_ar', labelKey: 'market.inflationAr', inputType: 'number', unitKey: '', tooltipKey: 'market.inflationAr.tooltip', field: 'infAr', step: 0.1, min: 0, max: 1.0, scale: 1, displayCondition: (inputs) => inputs.inflationModel === 'ar1' },
+    { key: 'sim_years', labelKey: 'sim.years', inputType: 'number', unitKey: 'unit.years', tooltipKey: 'sim.years.tooltip', field: 'simYears', step: 5, min: 5, max: 60, scale: 1, displayCondition: null },
     { key: 'cash_buffer_enabled', labelKey: 'cb.title', inputType: 'checkbox', tooltipKey: 'cb.ddTrigger.tooltip', field: 'cashBufferEnabled', displayCondition: null },
     { key: 'drawdown_trigger', labelKey: 'cb.ddTrigger', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'cb.ddTrigger.tooltip', field: 'drawdownTrigger', step: 5.0, min: -100, max: 0, scale: 1, displayCondition: (inputs) => inputs.cashBufferEnabled },
     { key: 'drawdown_replenish', labelKey: 'cb.ddReplenish', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'cb.ddReplenish.tooltip', field: 'drawdownReplenish', step: 1.0, min: -100, max: 0, scale: 1, displayCondition: (inputs) => inputs.cashBufferEnabled },
@@ -269,15 +269,6 @@ export function renderComparisonTab() {
     const hasPending = scenarios.some(s => !s.result || s.error);
 
     let html = `<div class="comparison-controls flex flex-wrap items-center gap-4 mb-4">
-        <div class="flex items-center gap-2">
-            <button id="addScenarioBtn" data-action="add" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-bold transition-colors" ${isRunning ? 'disabled' : ''}>
-                ${t('comparison.addScenario')}
-            </button>
-            <div class="tooltip-container" tabindex="0">
-                <span class="text-xs cursor-pointer text-indigo-400">ℹ️</span>
-                <div class="tooltip-text">${t('comparison.moveHint')}</div>
-            </div>
-        </div>
         <button id="runAllBtn" data-action="run-all" class="px-4 py-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500 rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed" ${isRunning ? 'disabled' : ''}>
             ${isRunning ? t('comparison.running', ['0', scenarios.length]) : t('comparison.runAll')}
         </button>
@@ -314,41 +305,50 @@ export function renderComparisonTab() {
         const pendingClass = isPending ? 'pending-col' : '';
         html += `
                 <th class="scenario-header min-w-[200px] p-3 bg-slate-800/50 border-b border-slate-700 ${pendingClass}" scope="col" data-scenario-id="${s.id}">
-                    <div class="flex items-center gap-1 justify-between">
-                        <span class="drag-handle text-slate-500 ${isRunning ? 'opacity-50' : ''}">⋮⋮</span>
+                    <div class="flex items-center gap-2 justify-center mb-2">
+                        <span class="drag-handle text-slate-500 ${isRunning ? 'opacity-50' : ''} cursor-grab" title="${t('comparison.moveHint')}">⋮⋮</span>
                         <span class="scenario-name font-bold text-indigo-300 editable" contenteditable="${!isRunning}" data-field="name" data-id="${s.id}" aria-label="${t('comparison.scenarioName')}">${escapeHtml(s.name)}</span>
-                        <div class="flex items-center gap-1">
-                            <button class="move-left-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isFirst ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-left" data-id="${s.id}" ${isRunning || isFirst ? 'disabled' : ''} aria-label="${t('comparison.moveLeft')}">
-                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
-                                </svg>
-                            </button>
-                            <button class="move-right-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isLast ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-right" data-id="${s.id}" ${isRunning || isLast ? 'disabled' : ''} aria-label="${t('comparison.moveRight')}">
-                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                </svg>
-                            </button>
-                            <button class="duplicate-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}" title="${t('comparison.duplicateTitle')}">
-                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                                </svg>
-                            </button>
-                            <button class="overwrite-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}" title="${t('comparison.overwriteTitle')}">
-                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm7 4a1 1 0 10-2 0v2.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 10-1.414-1.414l-.293.293V9z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            <button class="delete-btn p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors ${isRunning || scenarios.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="delete" data-id="${s.id}" ${isRunning || scenarios.length === 1 ? 'disabled' : ''} aria-label="${t('comparison.deleteScenario')}">
-                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
+                    </div>
+                    <div class="scenario-header-btn-group">
+                        <button class="move-left-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isFirst ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-left" data-id="${s.id}" ${isRunning || isFirst ? 'disabled' : ''} aria-label="${t('comparison.moveLeft')}" title="${t('comparison.moveLeft')}">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                        <button class="move-right-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isLast ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-right" data-id="${s.id}" ${isRunning || isLast ? 'disabled' : ''} aria-label="${t('comparison.moveRight')}" title="${t('comparison.moveRight')}">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                        <button class="duplicate-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}" title="${t('comparison.duplicateTitle')}">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                            </svg>
+                        </button>
+                        <button class="overwrite-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}" title="${t('comparison.overwriteTitle')}">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm7 4a1 1 0 10-2 0v2.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 10-1.414-1.414l-.293.293V9z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <button class="delete-btn p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors ${isRunning || scenarios.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="delete" data-id="${s.id}" ${isRunning || scenarios.length === 1 ? 'disabled' : ''} aria-label="${t('comparison.deleteScenario')}" title="${t('comparison.deleteScenario')}">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
                     </div>
                 </th>`;
     }
+    html += `
+                <th class="add-column bg-slate-800/20 border-b border-slate-700 p-3" scope="col">
+                    <button id="addScenarioBtn" data-action="add" class="w-8 h-8 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 rounded-full text-white font-bold transition-colors shadow-md shadow-indigo-500/20 mx-auto" ${isRunning || scenarios.length >= 10 ? 'disabled' : ''} title="${t('comparison.addScenario')}">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </th>`;
+
     html += `</tr></thead><tbody>`;
 
     for (const rowDef of PARAM_ROWS) {
@@ -357,6 +357,23 @@ export function renderComparisonTab() {
         const step = bounds.step;
         const min = bounds.min;
         const max = bounds.max;
+
+        let sectionHeaderHtml = '';
+        if (rowDef.key === 'initial_risk_asset') {
+            sectionHeaderHtml = `<tr class="section-header-row"><td colspan="${scenarios.length + 2}">${t('comparison.section.assets')}</td></tr>`;
+        } else if (rowDef.key === 'expected_return') {
+            sectionHeaderHtml = `<tr class="section-header-row"><td colspan="${scenarios.length + 2}">${t('market.title')}</td></tr>`;
+        } else if (rowDef.key === 'sim_years') {
+            sectionHeaderHtml = `<tr class="section-header-row"><td colspan="${scenarios.length + 2}">${t('sim.title')}</td></tr>`;
+        } else if (rowDef.key === 'cash_buffer_enabled') {
+            sectionHeaderHtml = `<tr class="section-header-row"><td colspan="${scenarios.length + 2}">${t('cb.title')}</td></tr>`;
+        } else if (rowDef.key === 'guardrail_enabled') {
+            sectionHeaderHtml = `<tr class="section-header-row"><td colspan="${scenarios.length + 2}">${t('gr.title')}</td></tr>`;
+        }
+        if (sectionHeaderHtml) {
+            html += sectionHeaderHtml;
+        }
+
         let rowHtml = `<tr><td class="sticky-left p-3 border-b border-slate-700">
             <div class="flex items-center justify-between">
                 <span class="font-medium">${t(rowDef.labelKey)}</span>
@@ -380,7 +397,13 @@ export function renderComparisonTab() {
             if (isEnglish && (rowDef.key === 'initial_risk_asset' || rowDef.key === 'initial_cash_buffer' || rowDef.key === 'monthly_expense')) {
                 displayValue = convertJPYToDisplayValue(rawValue, rowDef.unitKey);
             }
-            // 英語モード時は単位ラベルを非表示（値はドル変換済みのため不要）
+
+            let autoIndicator = '';
+            if (rowDef.key === 't_df_manual' && scenario.inputs.tDfMode === 'auto') {
+                displayValue = calcAutoDf(scenario.inputs.volatility).toFixed(1);
+                autoIndicator = t('comparison.autoIndicator');
+            }
+
             let unitLabel = '';
             if (rowDef.unitKey && !isEnglish) unitLabel = t(rowDef.unitKey);
             if (rowDef.unitKey && isEnglish && rowDef.key !== 'initial_risk_asset' && rowDef.key !== 'initial_cash_buffer' && rowDef.key !== 'monthly_expense') {
@@ -392,6 +415,7 @@ export function renderComparisonTab() {
                         <input type="number" value="${displayValue}" step="${step}" min="${min}" max="${max}"
                             data-id="${scenario.id}" data-field="${rowDef.field}" data-scale="${rowDef.scale || 1}" data-unit-key="${rowDef.unitKey || ''}"
                             class="scenario-input w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 ${disabledClass}" ${disabledAttr}>
+                        ${autoIndicator ? `<span class="text-xs text-slate-400 whitespace-nowrap">${autoIndicator}</span>` : ''}
                         ${unitLabel ? `<span class="text-xs text-slate-400 whitespace-nowrap">${unitLabel}</span>` : ''}
                     </div>
                    </td>`;
@@ -410,21 +434,28 @@ export function renderComparisonTab() {
             } else if (rowDef.inputType === 'checkbox') {
                 const isChecked = scenario.inputs[rowDef.field];
                 rowHtml += `<td class="p-3 border-b border-slate-700 text-center ${pendingClass}">
-                    <input type="checkbox" data-id="${scenario.id}" data-field="${rowDef.field}" class="scenario-checkbox" ${isChecked ? 'checked' : ''} ${disabledAttr}>
+                    <div class="flex justify-center items-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" data-id="${scenario.id}" data-field="${rowDef.field}" class="scenario-checkbox sr-only peer" ${isChecked ? 'checked' : ''} ${disabledAttr}>
+                            <div class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-indigo-600"></div>
+                            <div class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5"></div>
+                        </label>
+                    </div>
                    </td>`;
             }
         }
+        rowHtml += `<td class="add-column border-b border-slate-700 bg-slate-900/10"></td>`;
         rowHtml += `</tr>`;
         html += rowHtml;
     }
 
-    // 出力セクションの開始行
     html += `<tr class="bg-slate-800/30" data-section="output-header"><td class="sticky-left p-3 font-bold">${t('summary.title')}</td>`;
     for (let i = 0; i < scenarios.length; i++) {
         const isPending = !scenarios[i].result || scenarios[i].error;
         const pendingClass = isPending ? 'pending-col' : '';
         html += `<td class="p-3 text-center text-xs text-slate-400 ${pendingClass}"></td>`;
     }
+    html += `<td class="add-column p-3 text-center bg-slate-800/10"></td>`;
     html += `</tr>`;
 
     for (const outDef of OUTPUT_ROWS) {
@@ -452,6 +483,7 @@ export function renderComparisonTab() {
                 rowHtml += `<td class="p-3 border-b border-slate-700 text-right font-semibold text-indigo-100 ${pendingClass}">${formatted}</td>`;
             }
         }
+        rowHtml += `<td class="add-column border-b border-slate-700 bg-slate-900/10"></td>`;
         rowHtml += `</tr>`;
         html += rowHtml;
     }
@@ -585,15 +617,12 @@ function setupEventDelegation() {
                 showToast(t('comparison.cannotDeleteLast'), 2000);
                 return;
             }
-            const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-            if (isTestEnv || window.confirm(t('comparison.confirmDelete'))) {
-                const deleted = CS.deleteScenario(id);
-                if (deleted) {
-                    renderComparisonTab();
-                    showToast(t('comparison.deleteSuccess'), 1500);
-                } else {
-                    showToast(t('comparison.deleteFailed'), 2000);
-                }
+            const deleted = CS.deleteScenario(id);
+            if (deleted) {
+                renderComparisonTab();
+                showToast(t('comparison.deleteSuccess'), 1500);
+            } else {
+                showToast(t('comparison.deleteFailed'), 2000);
             }
         }
     });
