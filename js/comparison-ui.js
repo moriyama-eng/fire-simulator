@@ -26,8 +26,8 @@ const PARAM_ROWS = [
     { key: 'volatility', labelKey: 'market.volatility', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.volatility.tooltip', field: 'volatility', step: 1.0, min: 0, max: 80, scale: 1, displayCondition: null },
     { key: 'inflation_rate', labelKey: 'market.inflation', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.inflation.tooltip', field: 'inflationRate', step: 0.5, min: 0, max: 15, scale: 1, displayCondition: null },
     { key: 'return_model', labelKey: 'market.modelLabel', inputType: 'select', options: ['log-normal', 'log-t'], tooltipKey: 'market.modelTooltip', field: 'returnModel', displayCondition: null },
-    { key: 't_df', labelKey: 'market.dfLabel', inputType: 'select', options: ['auto', 'manual'], tooltipKey: 'market.dfTooltip', field: 'tDfMode', displayCondition: null },
-    { key: 't_df_manual', labelKey: 'market.dfManual', inputType: 'number', unitKey: '', tooltipKey: 'market.dfTooltip', field: 'tDfManual', step: 0.1, min: 2.5, max: 30, scale: 1, displayCondition: (inputs) => inputs.tDfMode === 'manual' },
+    { key: 't_df', labelKey: 'comparison.dfLabel', inputType: 'select', options: ['auto', 'manual'], tooltipKey: 'market.dfTooltip', field: 'tDfMode', displayCondition: null },
+    { key: 't_df_manual', labelKey: 'comparison.dfValue', inputType: 'number', unitKey: '', tooltipKey: 'market.dfTooltip', field: 'tDfManual', step: 0.1, min: 2.5, max: 30, scale: 1, displayCondition: (inputs) => inputs.tDfMode === 'manual' },
     { key: 'inflation_model', labelKey: 'market.inflationModelLabel', inputType: 'select', options: ['fixed', 'ar1'], tooltipKey: 'market.inflationModelTooltip', field: 'inflationModel', displayCondition: null },
     { key: 'inf_vol', labelKey: 'market.inflationVol', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'market.inflationVol.tooltip', field: 'infVol', step: 0.5, min: 0, max: 10, scale: 1, displayCondition: (inputs) => inputs.inflationModel === 'ar1' },
     { key: 'inf_ar', labelKey: 'market.inflationAr', inputType: 'number', unitKey: '', tooltipKey: 'market.inflationAr.tooltip', field: 'infAr', step: 0.1, min: 0, max: 1.0, scale: 1, displayCondition: (inputs) => inputs.inflationModel === 'ar1' },
@@ -304,7 +304,7 @@ export function renderComparisonTab() {
         const isPending = !s.result || s.error;
         const pendingClass = isPending ? 'pending-col' : '';
         html += `
-                <th class="scenario-header min-w-[200px] p-3 bg-slate-800/50 border-b border-slate-700 ${pendingClass}" scope="col" data-scenario-id="${s.id}">
+                <th class="scenario-header min-w-[200px] p-3 bg-slate-800 border-b border-slate-700 ${pendingClass}" scope="col" data-scenario-id="${s.id}">
                     <div class="flex items-center gap-2 justify-center mb-2">
                         <span class="drag-handle text-slate-500 ${isRunning ? 'opacity-50' : ''} cursor-grab" title="${t('comparison.moveHint')}">⋮⋮</span>
                         <span class="scenario-name font-bold text-indigo-300 editable" contenteditable="${!isRunning}" data-field="name" data-id="${s.id}" aria-label="${t('comparison.scenarioName')}">${escapeHtml(s.name)}</span>
@@ -381,7 +381,12 @@ export function renderComparisonTab() {
             </div>
          </td>`;
         for (const scenario of scenarios) {
-            const isDisabledByCondition = rowDef.displayCondition && !rowDef.displayCondition(scenario.inputs);
+            let isDisabledByCondition = rowDef.displayCondition && !rowDef.displayCondition(scenario.inputs);
+            if (scenario.inputs.returnModel !== 'log-t') {
+                if (rowDef.key === 't_df' || rowDef.key === 't_df_manual') {
+                    isDisabledByCondition = true;
+                }
+            }
             const disabledAttr = (isRunning || isDisabledByCondition) ? 'disabled' : '';
             const disabledClass = isDisabledByCondition ? 'opacity-50 cursor-not-allowed bg-slate-900' : '';
             const isPending = !scenario.result || scenario.error;
@@ -449,14 +454,7 @@ export function renderComparisonTab() {
         html += rowHtml;
     }
 
-    html += `<tr class="bg-slate-800/30" data-section="output-header"><td class="sticky-left p-3 font-bold">${t('summary.title')}</td>`;
-    for (let i = 0; i < scenarios.length; i++) {
-        const isPending = !scenarios[i].result || scenarios[i].error;
-        const pendingClass = isPending ? 'pending-col' : '';
-        html += `<td class="p-3 text-center text-xs text-slate-400 ${pendingClass}"></td>`;
-    }
-    html += `<td class="add-column p-3 text-center bg-slate-800/10"></td>`;
-    html += `</tr>`;
+    html += `<tr class="section-header-row" data-section="output-header"><td colspan="${scenarios.length + 2}">${t('summary.title')}</td></tr>`;
 
     for (const outDef of OUTPUT_ROWS) {
         let tooltipText = t(outDef.tooltipKey);
@@ -528,7 +526,7 @@ function initSortable(container) {
     thead._sortableInstance = Sortable.create(thead, {
         handle: '.drag-handle',    // ドラッグハンドルアイコンのみを操作点に指定
         animation: 150,
-        filter: '.sticky-left',   // 左端「パラメータ」列は移動禁止
+        filter: '.sticky-left, .add-column',   // 左端「パラメータ」列と右端「追加」列は移動禁止
         ghostClass: 'sortable-ghost',
         onEnd: (evt) => {
             // stickyLeftの分だけインデックスをオフセット補正（theadの1列目はパラメータ列）

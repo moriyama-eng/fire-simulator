@@ -149,6 +149,8 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "comparison.deleteFailed": "シナリオの削除に失敗しました",
   "comparison.deleteScenario": "シナリオを削除",
   "comparison.deleteSuccess": "シナリオを削除しました",
+  "comparison.dfLabel": "t分布自由度モデル",
+  "comparison.dfValue": "t分布自由度設定値",
   "comparison.displayConditionNote": "行の表示/非表示はシナリオ1の設定に連動します。",
   "comparison.duplicateName": "{0} のコピー",
   "comparison.duplicateTitle": "シナリオを複製",

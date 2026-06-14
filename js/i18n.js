@@ -280,7 +280,9 @@ export const TRANSLATIONS = {
     "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き",
     "comparison.pendingExecution": "未実行のシナリオがあります。シミュレーションを実行してください。",
     "comparison.section.assets": "初期総資産設定",
-    "comparison.autoIndicator": "(自動)"
+    "comparison.autoIndicator": "(自動)",
+    "comparison.dfLabel": "t分布自由度モデル",
+    "comparison.dfValue": "t分布自由度設定値"
   }
 };
 
@@ -621,7 +623,9 @@ TRANSLATIONS.en = {
   "comparison.overwriteTitle": "Overwrite from Simulation tab",
   "comparison.pendingExecution": "Some scenarios are not executed. Please run the simulation.",
   "comparison.section.assets": "Initial Assets",
-  "comparison.autoIndicator": "(Auto)"
+  "comparison.autoIndicator": "(Auto)",
+  "comparison.dfLabel": "t-distribution df model",
+  "comparison.dfValue": "t-distribution df value"
 };
 
 let currentLang = (() => {

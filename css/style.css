@@ -606,7 +606,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .comparison-table th {
-    background: rgba(30, 41, 59, 0.8);
+    background: rgba(30, 41, 59, 1);
     font-weight: 600;
     font-size: 0.75rem;
 }
@@ -616,7 +616,7 @@ input[type="number"]::-webkit-inner-spin-button {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(30, 41, 59, 1);
 }
 
 /* 左端パラメータ列を横スクロール時に固定 */
@@ -624,10 +624,11 @@ input[type="number"]::-webkit-inner-spin-button {
     position: sticky;
     left: 0;
     z-index: 10;
-    background: rgba(15, 23, 42, 0.98);
+    background: rgba(15, 23, 42, 1);
     border-right: 1px solid rgba(100, 116, 139, 0.4);
-    min-width: 160px;
-    max-width: 240px;
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
     white-space: normal;
     word-break: break-word;
 }
@@ -637,7 +638,7 @@ input[type="number"]::-webkit-inner-spin-button {
     top: 0;
     left: 0;
     z-index: 30;
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(30, 41, 59, 1);
 }
 
 /* シナリオ名の contenteditable */
@@ -706,12 +707,7 @@ input[type="number"]::-webkit-inner-spin-button {
     row-gap: 0.5rem;
 }
 
-/* 出力セクションヘッダー行 */
-.comparison-table tr[data-section="output-header"] td {
-    font-weight: 700;
-    color: #a5b4fc;
-    background: rgba(99, 102, 241, 0.1);
-}
+
 
 /* ドラッグハンドル */
 .drag-handle {
@@ -723,6 +719,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .drag-handle:active {
     cursor: grabbing;
+}
+
+/* 比較タブのテーブル幅をコンテンツ幅に制限 */
+.comparison-table {
+    width: max-content !important;
 }
 
 /* 比較タブのシナリオ列の幅を固定 */
@@ -761,7 +762,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* 中間見出し（カテゴリ区切り行）のスタイル */
 .comparison-table tr.section-header-row {
-    background: rgba(30, 41, 59, 0.8) !important;
+    background: rgba(30, 41, 59, 1) !important;
 }
 
 .comparison-table tr.section-header-row td {
