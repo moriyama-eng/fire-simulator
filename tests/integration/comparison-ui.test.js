@@ -56,7 +56,7 @@ describe('comparison-ui integration', () => {
         seedInput.dispatchEvent(new Event('change'));
         // data-section="output-header" の次の行の2つ目のセル（最初のシナリオの結果）
         const resultCell = document.querySelector('tbody tr[data-section="output-header"] ~ tr td:nth-child(2)');
-        expect(resultCell.textContent.trim()).toBe('-');
+        expect(resultCell.textContent.trim()).toBe('');
     });
 
     it('「すべて実行」ボタンがシミュレーションを呼び出す', async () => {

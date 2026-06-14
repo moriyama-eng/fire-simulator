@@ -277,7 +277,8 @@ export const TRANSLATIONS = {
     "comparison.deleteSuccess": "シナリオを削除しました",
     "comparison.deleteFailed": "シナリオの削除に失敗しました",
     "comparison.duplicateTitle": "シナリオを複製",
-    "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き"
+    "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き",
+    "comparison.pendingExecution": "未実行のシナリオがあります。シミュレーションを実行してください。"
   }
 };
 
@@ -615,7 +616,8 @@ TRANSLATIONS.en = {
   "comparison.deleteSuccess": "Scenario deleted",
   "comparison.deleteFailed": "Failed to delete scenario",
   "comparison.duplicateTitle": "Duplicate scenario",
-  "comparison.overwriteTitle": "Overwrite from Simulation tab"
+  "comparison.overwriteTitle": "Overwrite from Simulation tab",
+  "comparison.pendingExecution": "Some scenarios are not executed. Please run the simulation."
 };
 
 let currentLang = (() => {

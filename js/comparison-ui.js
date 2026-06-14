@@ -266,6 +266,8 @@ export function renderComparisonTab() {
         return rowDef.displayCondition(firstScenario.inputs);
     };
 
+    const hasPending = scenarios.some(s => !s.result || s.error);
+
     let html = `<div class="comparison-controls flex flex-wrap items-center gap-4 mb-4">
         <div class="flex items-center gap-2">
             <button id="addScenarioBtn" data-action="add" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-bold transition-colors" ${isRunning ? 'disabled' : ''}>
@@ -279,6 +281,10 @@ export function renderComparisonTab() {
         <button id="runAllBtn" data-action="run-all" class="px-4 py-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right transition-all duration-500 rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed" ${isRunning ? 'disabled' : ''}>
             ${isRunning ? t('comparison.running', ['0', scenarios.length]) : t('comparison.runAll')}
         </button>
+        ${hasPending ? `
+        <div class="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold select-none">
+            ${t('comparison.pendingExecution')}
+        </div>` : ''}
         <div class="flex items-center gap-3 ml-auto">
             <div class="flex items-center gap-2">
                 <label class="text-xs text-slate-300">${t('seed.label')}</label>
@@ -304,17 +310,41 @@ export function renderComparisonTab() {
         const s = scenarios[i];
         const isFirst = i === 0;
         const isLast = i === scenarios.length - 1;
+        const isPending = !s.result || s.error;
+        const pendingClass = isPending ? 'pending-col' : '';
         html += `
-                <th class="scenario-header min-w-[200px] p-3 bg-slate-800/50 border-b border-slate-700" scope="col" data-scenario-id="${s.id}">
+                <th class="scenario-header min-w-[200px] p-3 bg-slate-800/50 border-b border-slate-700 ${pendingClass}" scope="col" data-scenario-id="${s.id}">
                     <div class="flex items-center gap-1 justify-between">
                         <span class="drag-handle text-slate-500 ${isRunning ? 'opacity-50' : ''}">⋮⋮</span>
                         <span class="scenario-name font-bold text-indigo-300 editable" contenteditable="${!isRunning}" data-field="name" data-id="${s.id}" aria-label="${t('comparison.scenarioName')}">${escapeHtml(s.name)}</span>
                         <div class="flex items-center gap-1">
-                            <button class="move-left-btn p-1 rounded hover:bg-slate-700 ${isRunning || isFirst ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-left" data-id="${s.id}" ${isRunning || isFirst ? 'disabled' : ''} aria-label="${t('comparison.moveLeft')}">←</button>
-                            <button class="move-right-btn p-1 rounded hover:bg-slate-700 ${isRunning || isLast ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-right" data-id="${s.id}" ${isRunning || isLast ? 'disabled' : ''} aria-label="${t('comparison.moveRight')}">→</button>
-                            <button class="duplicate-btn p-1 rounded hover:bg-slate-700 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}" title="${t('comparison.duplicateTitle')}">📋</button>
-                            <button class="overwrite-btn p-1 rounded hover:bg-slate-700 ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}" title="${t('comparison.overwriteTitle')}">📋⬇️</button>
-                            <button class="delete-btn p-1 rounded hover:bg-rose-700 ${isRunning || scenarios.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="delete" data-id="${s.id}" ${isRunning || scenarios.length === 1 ? 'disabled' : ''} aria-label="${t('comparison.deleteScenario')}">−</button>
+                            <button class="move-left-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isFirst ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-left" data-id="${s.id}" ${isRunning || isFirst ? 'disabled' : ''} aria-label="${t('comparison.moveLeft')}">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <button class="move-right-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isLast ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-right" data-id="${s.id}" ${isRunning || isLast ? 'disabled' : ''} aria-label="${t('comparison.moveRight')}">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <button class="duplicate-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}" title="${t('comparison.duplicateTitle')}">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                                </svg>
+                            </button>
+                            <button class="overwrite-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}" title="${t('comparison.overwriteTitle')}">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm7 4a1 1 0 10-2 0v2.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 10-1.414-1.414l-.293.293V9z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <button class="delete-btn p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors ${isRunning || scenarios.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="delete" data-id="${s.id}" ${isRunning || scenarios.length === 1 ? 'disabled' : ''} aria-label="${t('comparison.deleteScenario')}">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </th>`;
@@ -337,6 +367,8 @@ export function renderComparisonTab() {
             const isDisabledByCondition = rowDef.displayCondition && !rowDef.displayCondition(scenario.inputs);
             const disabledAttr = (isRunning || isDisabledByCondition) ? 'disabled' : '';
             const disabledClass = isDisabledByCondition ? 'opacity-50 cursor-not-allowed bg-slate-900' : '';
+            const isPending = !scenario.result || scenario.error;
+            const pendingClass = isPending ? 'pending-col' : '';
             
             let rawValue = scenario.inputs[rowDef.field];
             if (isDisabledByCondition && (rowDef.key === 'initial_cash_buffer' || rowDef.key === 'monthly_expense')) {
@@ -355,7 +387,7 @@ export function renderComparisonTab() {
                 unitLabel = t(rowDef.unitKey);
             }
             if (rowDef.inputType === 'number') {
-                rowHtml += `<td class="p-3 border-b border-slate-700">
+                rowHtml += `<td class="p-3 border-b border-slate-700 ${pendingClass}">
                     <div class="flex items-center gap-1">
                         <input type="number" value="${displayValue}" step="${step}" min="${min}" max="${max}"
                             data-id="${scenario.id}" data-field="${rowDef.field}" data-scale="${rowDef.scale || 1}" data-unit-key="${rowDef.unitKey || ''}"
@@ -365,7 +397,7 @@ export function renderComparisonTab() {
                    </td>`;
             } else if (rowDef.inputType === 'select') {
                 const currentVal = scenario.inputs[rowDef.field];
-                rowHtml += `<td class="p-3 border-b border-slate-700">
+                rowHtml += `<td class="p-3 border-b border-slate-700 ${pendingClass}">
                     <select data-id="${scenario.id}" data-field="${rowDef.field}" class="scenario-input w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 ${disabledClass}" ${disabledAttr}>`;
                 for (const opt of rowDef.options) {
                     let optLabel = opt;
@@ -377,7 +409,7 @@ export function renderComparisonTab() {
                 rowHtml += `</select></td>`;
             } else if (rowDef.inputType === 'checkbox') {
                 const isChecked = scenario.inputs[rowDef.field];
-                rowHtml += `<td class="p-3 border-b border-slate-700 text-center">
+                rowHtml += `<td class="p-3 border-b border-slate-700 text-center ${pendingClass}">
                     <input type="checkbox" data-id="${scenario.id}" data-field="${rowDef.field}" class="scenario-checkbox" ${isChecked ? 'checked' : ''} ${disabledAttr}>
                    </td>`;
             }
@@ -388,7 +420,11 @@ export function renderComparisonTab() {
 
     // 出力セクションの開始行
     html += `<tr class="bg-slate-800/30" data-section="output-header"><td class="sticky-left p-3 font-bold">${t('summary.title')}</td>`;
-    for (let i = 0; i < scenarios.length; i++) html += `<td class="p-3 text-center text-xs text-slate-400">-</td>`;
+    for (let i = 0; i < scenarios.length; i++) {
+        const isPending = !scenarios[i].result || scenarios[i].error;
+        const pendingClass = isPending ? 'pending-col' : '';
+        html += `<td class="p-3 text-center text-xs text-slate-400 ${pendingClass}"></td>`;
+    }
     html += `</tr>`;
 
     for (const outDef of OUTPUT_ROWS) {
@@ -404,43 +440,16 @@ export function renderComparisonTab() {
             </div>
             </td>`;
         const values = scenarios.map(s => { if (s.error) return null; const v = outDef.getValue(s.result); return v !== undefined && v !== null ? v : null; });
-        const validValues = values.filter(v => v !== null).map(v => parseFloat(v));
-        let normalized = [];
-        if (validValues.length > 1 && !outDef.isPercentage) {
-            const minAll = Math.min(...validValues);
-            const maxAll = Math.max(...validValues);
-            const range = maxAll - minAll;
-            if (range > 0) {
-                const isLowerBetter = outDef.isLowerBetter === true;
-                normalized = values.map(v => {
-                    if (v === null) return undefined;
-                    let pct = (parseFloat(v) - minAll) / range * 100;
-                    if (isLowerBetter) pct = 100 - pct;
-                    return Math.min(100, Math.max(0, pct));
-                });
-            } else {
-                normalized = values.map(v => v !== null ? 50 : undefined);
-            }
-        }
         for (let i = 0; i < scenarios.length; i++) {
             const s = scenarios[i];
             const val = values[i];
-            if (s.error) {
-                rowHtml += `<td class="p-3 border-b border-slate-700 text-center text-rose-400">${t('error.simulationFailed')}</td>`;
-            } else if (val === null) {
-                rowHtml += `<td class="p-3 border-b border-slate-700 text-center text-slate-500">-</td>`;
+            const isPending = !s.result || s.error;
+            const pendingClass = isPending ? 'pending-col' : '';
+            if (s.error || val === null) {
+                rowHtml += `<td class="p-3 border-b border-slate-700 text-right ${pendingClass}"></td>`;
             } else {
                 const formatted = outDef.format(val);
-                if (normalized[i] !== undefined) {
-                    rowHtml += `<td class="p-3 border-b border-slate-700">
-                        <div class="bar-stack">
-                            <div class="bar-track"><div class="bar-fill positive" style="width: ${normalized[i]}%"></div></div>
-                            <span class="bar-value">${formatted}</span>
-                        </div>
-                    </td>`;
-                } else {
-                    rowHtml += `<td class="p-3 border-b border-slate-700 text-right">${formatted}</td>`;
-                }
+                rowHtml += `<td class="p-3 border-b border-slate-700 text-right font-semibold text-indigo-100 ${pendingClass}">${formatted}</td>`;
             }
         }
         rowHtml += `</tr>`;

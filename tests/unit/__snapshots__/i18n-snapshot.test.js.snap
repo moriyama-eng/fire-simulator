@@ -164,6 +164,7 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "comparison.overwriteSuccess": "シナリオを上書きしました",
   "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き",
   "comparison.parameter": "パラメータ",
+  "comparison.pendingExecution": "未実行のシナリオがあります。シミュレーションを実行してください。",
   "comparison.runAll": "▶ すべて実行",
   "comparison.running": "実行中... {0}/{1}",
   "comparison.scenarioDefaultName": "シナリオ {0}",
