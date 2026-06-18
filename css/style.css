@@ -735,8 +735,13 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* 未実行シナリオ列のグレーアウト */
-.comparison-table .pending-col {
+.comparison-table td.pending-col {
     background: rgba(15, 23, 42, 0.45) !important;
+}
+.comparison-table th.pending-col {
+    background: rgba(30, 41, 59, 1) !important;
+}
+.comparison-table .pending-col {
     color: rgba(226, 232, 240, 0.4) !important;
     border-color: rgba(100, 116, 139, 0.15) !important;
 }
