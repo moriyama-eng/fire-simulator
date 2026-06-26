@@ -700,32 +700,28 @@
 
                     <!-- シミュレーションシード設定 -->
                     <div class="glass-card glow-border rounded-xl p-4 mb-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="text-xs font-semibold text-slate-300" data-i18n="seed.label">乱数シード値</label>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.fixed">固定</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="seedToggle" class="sr-only peer" checked>
-                                    <div
-                                        class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600">
-                                    </div>
-                                    <div
-                                        class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5">
-                                    </div>
-                                </label>
-                                <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.random">ランダム</span>
-                                <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
-                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text" data-i18n-html="seed.tooltip">
-                                        乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現されたシミュレーション結果が得られます。<br>「Xにポスト」、「同条件の別タブを開く」、「解析結果のURLリンクをコピー」で共有されるURLには、実行時のシード値が自動的に含まれます。シード値を揃えることで、条件変更による差分を純粋に比較できます。
+                        <div class="flex flex-col gap-1 mb-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-300" data-i18n="seed.label">乱数シード値</label>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.fixed">固定</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="seedToggle" class="sr-only peer" checked>
+                                        <div class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600"></div>
+                                        <div class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5"></div>
+                                    </label>
+                                    <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.random">ランダム</span>
+                                    <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
+                                        <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                        <div class="tooltip-text" data-i18n-html="seed.tooltip">
+                                            乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現されたシミュレーション結果が得られます。<br>「Xにポスト」、「同条件の別タブを開く」、「解析結果のURLリンクをコピー」で共有されるURLには、実行時のシード値が自動的に含まれます。シード値を揃えることで、条件変更による差分を純粋に比較できます。
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div id="seedInputWrapper"
-                            class="opacity-50 pointer-events-none transition-opacity duration-300">
-                            <input type="number" id="seedNum" value="123456" min="1" max="99999999"
-                                class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 text-center font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                            <div id="seedInputWrapper" class="opacity-50 pointer-events-none transition-opacity duration-300">
+                                <input type="number" id="seedNum" value="123456" min="1" max="99999999" class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 text-center font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                            </div>
                         </div>
                     </div>
 

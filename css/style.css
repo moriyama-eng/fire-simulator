@@ -626,11 +626,20 @@ input[type="number"]::-webkit-inner-spin-button {
     z-index: 10;
     background: rgba(15, 23, 42, 1);
     border-right: 1px solid rgba(100, 116, 139, 0.4);
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
-    white-space: normal;
+    width: 140px !important;          /* 200px → 140px */
+    min-width: 140px !important;
+    max-width: 160px !important;      /* 若干の可変性を持たせる */
+    white-space: normal;              /* 折り返し許可 */
     word-break: break-word;
+    font-size: 0.7rem;                /* スマホでも収まるよう微調整 */
+    padding: 0.5rem 0.4rem;           /* パディング縮小 */
+}
+
+/* ツールチップアイコンをテキストとインライン表示 */
+.sticky-left .tooltip-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
 }
 
 .comparison-table thead .sticky-left {
@@ -643,17 +652,18 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* シナリオ名の contenteditable */
 .scenario-name {
-    display: inline-block;
-    min-width: 80px;
-    max-width: 160px;
-    padding: 2px 4px;
-    border-radius: 3px;
-    border: 1px solid transparent;
-    outline: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-word;
+  display: inline-block;
+  min-width: 80px;
+  max-width: 160px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  outline: none;
+  white-space: normal;          /* 折り返し許可 */
+  word-break: break-word;       /* 長い単語も折り返す */
+  overflow: visible;            /* 省略記号を除去 */
+  text-overflow: clip;          /* 省略記号を除去 */
+  line-height: 1.4;
 }
 
 .scenario-name[contenteditable="true"] {
@@ -771,6 +781,11 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .comparison-table tr.section-header-row td {
+    position: sticky;
+    left: 0;
+    z-index: 15;                    /* 通常の固定セル(z-index:10)より前面 */
+    background: rgba(30, 41, 59, 1) !important; /* 背景を不透明にして重なりを隠す */
+    border-right: 1px solid rgba(100, 116, 139, 0.2);
     color: rgba(165, 180, 252, 0.95) !important;
     font-weight: 700 !important;
     font-size: 0.75rem !important;
@@ -779,3 +794,76 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: 0.5rem 0.75rem !important;
     border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
 }
+
+/* プルダウンメニュー */
+.action-menu-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.action-menu-trigger {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.action-menu-trigger:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+.action-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 150px;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    z-index: 50;
+    padding: 4px 0;
+    display: flex;
+    flex-direction: column;
+}
+.action-dropdown.hidden {
+    display: none;
+}
+.dropdown-item {
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    text-align: left;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    min-height: 44px; /* スマホタッチ領域確保 */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dropdown-item:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+.dropdown-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.dropdown-item:disabled:hover {
+    background: transparent;
+}
+
+/* スクロールバーを太くしてタップしやすく */
+.comparison-table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.comparison-table-wrapper::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.3);
+}
+.comparison-table-wrapper::-webkit-scrollbar-thumb {
+    background: #6366f1;
+    border-radius: 4px;
+}
+

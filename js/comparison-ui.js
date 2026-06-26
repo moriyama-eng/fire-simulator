@@ -309,34 +309,22 @@ export function renderComparisonTab() {
                         <span class="drag-handle text-slate-500 ${isRunning ? 'opacity-50' : ''} cursor-grab" title="${t('comparison.moveHint')}">⋮⋮</span>
                         <span class="scenario-name font-bold text-indigo-300 editable" contenteditable="${!isRunning}" data-field="name" data-id="${s.id}" aria-label="${t('comparison.scenarioName')}">${escapeHtml(s.name)}</span>
                     </div>
-                    <div class="scenario-header-btn-group">
-                        <button class="move-left-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isFirst ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-left" data-id="${s.id}" ${isRunning || isFirst ? 'disabled' : ''} aria-label="${t('comparison.moveLeft')}" title="${t('comparison.moveLeft')}">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                    <div class="action-menu-wrapper mt-2 flex justify-center" data-id="${s.id}">
+                        <button class="action-menu-trigger p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors" data-id="${s.id}" aria-haspopup="true" aria-expanded="false" ${isRunning ? 'disabled' : ''} title="${t('comparison.scenarioName')}">
+                            <span class="sr-only">シナリオ操作メニュー</span>
+                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="5" r="2" />
+                                <circle cx="12" cy="12" r="2" />
+                                <circle cx="12" cy="19" r="2" />
                             </svg>
                         </button>
-                        <button class="move-right-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning || isLast ? 'opacity-50 cursor-not-allowed' : ''}" data-action="move-right" data-id="${s.id}" ${isRunning || isLast ? 'disabled' : ''} aria-label="${t('comparison.moveRight')}" title="${t('comparison.moveRight')}">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                            </svg>
-                        </button>
-                        <button class="duplicate-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="duplicate" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.duplicateName', [''])}" title="${t('comparison.duplicateTitle')}">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                            </svg>
-                        </button>
-                        <button class="overwrite-btn p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" data-action="overwrite" data-id="${s.id}" ${isRunning ? 'disabled' : ''} aria-label="${t('comparison.overwriteFromSim')}" title="${t('comparison.overwriteTitle')}">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm7 4a1 1 0 10-2 0v2.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 10-1.414-1.414l-.293.293V9z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <button class="delete-btn p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors ${isRunning || scenarios.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="delete" data-id="${s.id}" ${isRunning || scenarios.length === 1 ? 'disabled' : ''} aria-label="${t('comparison.deleteScenario')}" title="${t('comparison.deleteScenario')}">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
+                        <div class="action-dropdown hidden" data-id="${s.id}" role="menu">
+                            <button class="dropdown-item" data-action="move-left" data-id="${s.id}" role="menuitem" ${isRunning || isFirst ? 'disabled' : ''}>← ${t('comparison.moveLeft')}</button>
+                            <button class="dropdown-item" data-action="move-right" data-id="${s.id}" role="menuitem" ${isRunning || isLast ? 'disabled' : ''}>→ ${t('comparison.moveRight')}</button>
+                            <button class="dropdown-item" data-action="duplicate" data-id="${s.id}" role="menuitem" ${isRunning ? 'disabled' : ''}>📋 ${t('comparison.duplicateTitle')}</button>
+                            <button class="dropdown-item" data-action="overwrite" data-id="${s.id}" role="menuitem" ${isRunning ? 'disabled' : ''}>🔄 ${t('comparison.overwriteFromSim')}</button>
+                            <button class="dropdown-item text-rose-400 hover:bg-rose-950/40" data-action="delete" data-id="${s.id}" role="menuitem" ${isRunning || scenarios.length === 1 ? 'disabled' : ''}>🗑️ ${t('comparison.deleteScenario')}</button>
+                        </div>
                     </div>
                 </th>`;
     }
@@ -548,69 +536,34 @@ function updateProgress(current, total) {
     }
 }
 
-function setupEventDelegation() {
-    const container = document.getElementById('comparisonTableContainer');
-    if (!container || container._delegationSetup) return;
-    container._delegationSetup = true;
-
-    // クリックイベントの委譲（ボタン関連）
-    container.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action]');
-        if (!btn || btn.disabled) return;
-
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-        const isRunning = CS.getIsRunning();
-        if (isRunning) return;
-
-        if (action === 'add') {
-            const simParams = getCurrentSimParams();
-            const inputs = CS.createInputsFromSimParams(simParams);
-            const added = CS.addScenario(inputs, t);
-            if (added) {
-                renderComparisonTab();
-                requestAnimationFrame(() => {
-                    const wrapper = container.querySelector('.comparison-table-wrapper');
-                    if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
-                });
-            }
-        } else if (action === 'run-all') {
-            // 編集中のシナリオ名を確定
-            const editingEl = document.querySelector('.scenario-name[contenteditable="true"]:focus');
-            if (editingEl) {
-                CS.updateScenarioName(editingEl.dataset.id, editingEl.textContent);
-                editingEl.blur();
-            }
-            runAllScenarios(
-                (current, total) => updateProgress(current, total),
-                (scenarioId, result) => {
-                    renderComparisonTab();
-                },
-                () => {
-                    renderComparisonTab();
-                },
-                (scenarioId, errorMsg) => {
-                    renderComparisonTab();
-                }
-            );
-            renderComparisonTab();
-        } else if (action === 'move-left' || action === 'move-right') {
+// シナリオ操作を一元処理する関数
+function handleScenarioAction(action, id) {
+    if (CS.getIsRunning()) return;
+    switch (action) {
+        case 'move-left':
+        case 'move-right': {
             const scenarios = CS.getScenarios();
             const fromIndex = scenarios.findIndex(s => s.id === id);
             if (fromIndex === -1) return;
             const toIndex = action === 'move-left' ? fromIndex - 1 : fromIndex + 1;
             CS.moveScenario(fromIndex, toIndex);
             renderComparisonTab();
-        } else if (action === 'duplicate') {
+            break;
+        }
+        case 'duplicate': {
             const duplicated = CS.duplicateScenario(id, t);
             if (duplicated) renderComparisonTab();
-        } else if (action === 'overwrite') {
+            break;
+        }
+        case 'overwrite': {
             const simParams = getCurrentSimParams();
             const newInputs = CS.createInputsFromSimParams(simParams);
             CS.overwriteScenarioFromSim(id, newInputs);
             renderComparisonTab();
             showToast(t('comparison.overwriteSuccess'));
-        } else if (action === 'delete') {
+            break;
+        }
+        case 'delete': {
             if (CS.getScenarioCount() <= 1) {
                 showToast(t('comparison.cannotDeleteLast'), 2000);
                 return;
@@ -622,6 +575,96 @@ function setupEventDelegation() {
             } else {
                 showToast(t('comparison.deleteFailed'), 2000);
             }
+            break;
+        }
+    }
+}
+
+function setupEventDelegation() {
+    const container = document.getElementById('comparisonTableContainer');
+    if (!container || container._delegationSetup) return;
+    container._delegationSetup = true;
+
+    // クリックイベントの委譲（ボタン関連 - 主にadd, run-all等、またはDropdownトリガー、Dropdownアイテム）
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        const isRunning = CS.getIsRunning();
+
+        if (btn && !btn.disabled && !isRunning) {
+            const action = btn.dataset.action;
+            if (action === 'add') {
+                const simParams = getCurrentSimParams();
+                const inputs = CS.createInputsFromSimParams(simParams);
+                const added = CS.addScenario(inputs, t);
+                if (added) {
+                    renderComparisonTab();
+                    requestAnimationFrame(() => {
+                        const wrapper = container.querySelector('.comparison-table-wrapper');
+                        if (wrapper) wrapper.scrollLeft = wrapper.scrollWidth;
+                    });
+                }
+            } else if (action === 'run-all') {
+                // 編集中のシナリオ名を確定
+                const editingEl = document.querySelector('.scenario-name[contenteditable="true"]:focus');
+                if (editingEl) {
+                    CS.updateScenarioName(editingEl.dataset.id, editingEl.textContent);
+                    editingEl.blur();
+                }
+                runAllScenarios(
+                    (current, total) => updateProgress(current, total),
+                    (scenarioId, result) => {
+                        renderComparisonTab();
+                    },
+                    () => {
+                        renderComparisonTab();
+                    },
+                    (scenarioId, errorMsg) => {
+                        renderComparisonTab();
+                    }
+                );
+                renderComparisonTab();
+            }
+        }
+
+        // プルダウントリガーのクリック（開閉）
+        const trigger = e.target.closest('.action-menu-trigger');
+        if (trigger && !trigger.disabled && !isRunning) {
+            e.stopPropagation();
+            const wrapper = trigger.closest('.action-menu-wrapper');
+            const dropdown = wrapper.querySelector('.action-dropdown');
+            // 既に開いている他のメニューを閉じる
+            document.querySelectorAll('.action-dropdown:not(.hidden)').forEach(el => {
+                if (el !== dropdown) el.classList.add('hidden');
+            });
+            dropdown.classList.toggle('hidden');
+            trigger.setAttribute('aria-expanded', !dropdown.classList.contains('hidden'));
+        }
+
+        // ドロップダウン項目のクリック
+        const item = e.target.closest('.dropdown-item');
+        if (item && !item.disabled && !isRunning) {
+            e.stopPropagation();
+            const action = item.dataset.action;
+            const id = item.dataset.id;
+            
+            // ドロップダウンを閉じる
+            const dropdown = item.closest('.action-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            const trigger = item.closest('.action-menu-wrapper').querySelector('.action-menu-trigger');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+
+            handleScenarioAction(action, id);
+        }
+    });
+
+    // メニュー外クリックで閉じる（document に委譲）
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.action-menu-wrapper')) {
+            document.querySelectorAll('.action-dropdown:not(.hidden)').forEach(el => {
+                el.classList.add('hidden');
+                const trigger = el.closest('.action-menu-wrapper').querySelector('.action-menu-trigger');
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            });
         }
     });
 
