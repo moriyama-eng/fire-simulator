@@ -19,7 +19,7 @@ describe('buildSimulationUrl', () => {
     });
 });
 
-// ===== REQ-3-6: targetAssetRatio (tar) パラメータのテスト =====
+// ===== targetAssetRatio (tar) パラメータのテスト =====
 describe('buildSimulationUrl - targetAssetRatio (tar)', () => {
     const sampleParamsWithTar = {
         ...sampleParams,

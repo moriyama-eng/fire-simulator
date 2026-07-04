@@ -21,7 +21,7 @@ export const DEFAULTS = Object.freeze({
     infAr: 0.5,
     simDfNum: 4.0,
     seedNum: 123456,
-    targetAssetRatio: 1.0
+    targetAssetRatio: 100.0
 });
 
 export function safeNumber(val, fallback) {
@@ -62,7 +62,7 @@ export function getParamsFromInputs(inputs) {
         volatility: raw('volatilityNum'),
         inflationRate: raw('inflationRateNum'),
         simYears: raw('simYearsNum'),
-        simPaths: Math.max(1000, Math.min(50000, Math.round(raw('simPathsNum')))),
+        simPaths: Math.max(5000, Math.min(50000, Math.round(raw('simPathsNum')))),
         cashBufferToggle: inputs.cashBufferToggle,
         drawdownTrigger: Math.min(0, raw('drawdownTriggerNum')),
         drawdownReplenish: Math.min(0, raw('drawdownReplenishNum')),

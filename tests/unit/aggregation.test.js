@@ -9,7 +9,7 @@ describe('transposeFlat', () => {
     });
 });
 
-// ===== REQ-1-6: 目標資産維持確率のテスト =====
+// ===== 目標資産維持確率のテスト =====
 import { aggregateResultsProduction } from '../../js/core/aggregation.js';
 
 describe('aggregateResultsProduction - targetAssetMaintainRate', () => {

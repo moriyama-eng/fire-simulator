@@ -1,5 +1,5 @@
 // js/analysis-ui.js
-// 分析タブ v2.0.0 UI 制御
+// 分析タブ UI 制御
 
 import * as AS from './analysis-state.js';
 import { setProgressCallback, getProgressCallback } from './simulation-engine.js';
@@ -414,17 +414,6 @@ function renderCompareCards() {
         // H2 / L2 水準のメトリック値を取得
         const rPlus2 = augmentedRes.find(r => r.level === 2)?.metrics;
         const rMinus2 = augmentedRes.find(r => r.level === -2)?.metrics;
-        const barClassFromTrend = (level, valPlus2, valMinus2, isBase) => {
-            if (isBase) return 'base';
-            const trend = valPlus2 - valMinus2;
-            if (Math.abs(trend) < 1e-12) return level > 0 ? 'positive' : 'negative';
-            return (level * trend > 0) ? 'positive' : 'negative';
-        };
-        const getMetricColorClasses = (barClass) => {
-            if (barClass === 'positive') return { bar: 'positive', text: 'text-emerald-400' };
-            if (barClass === 'negative') return { bar: 'negative', text: 'text-rose-400' };
-            return { bar: 'base', text: 'text-indigo-300' };
-        };
         html += `<div class="glass-card compare-card rounded-xl">`;
         html += `<div class="compare-header-row">
             <div class="text-center">${t(`analysis.factors.${factor.key}`)}</div>
@@ -442,16 +431,6 @@ function renderCompareCards() {
             const m = r.metrics;
             const isBase = level === 0;
 
-            const successBarClass = barClassFromTrend(level, rPlus2.success_rate_pct, rMinus2.success_rate_pct, isBase);
-            const p10BarClass = barClassFromTrend(level, rPlus2.final_p10_jpy, rMinus2.final_p10_jpy, isBase);
-            const ddBarClass = barClassFromTrend(level, rPlus2.worst10_max_dd, rMinus2.worst10_max_dd, isBase);
-            const successColors = getMetricColorClasses(successBarClass);
-            const p10Colors = getMetricColorClasses(p10BarClass);
-            const ddColors = getMetricColorClasses(ddBarClass);
-
-            const successWidth = Math.max(0, Math.min(100, ((m.success_rate_pct - 70) / (100 - 70)) * 100)).toFixed(0);
-            const p10Width = (m.final_p10_jpy / maxP10 * 100).toFixed(0);
-            const ddAbsWidth = (Math.abs(m.worst10_max_dd) / maxAbsDD * 100).toFixed(0);
             const ddPercent = (m.worst10_max_dd * 100).toFixed(1);
 
             html += `<div class="compare-row">`;
@@ -465,18 +444,9 @@ function renderCompareCards() {
                 <span class="setting-value">${fmtFactorVal(factor, val)}${unitSuffix}</span>
                 ${isBase ? `<span class="base-badge">${t('analysis.compare.badge')}</span>` : ''}
             </div>`;
-            html += `<div class="bar-stack">
-                <div class="bar-track"><div class="bar-fill ${successColors.bar}" style="width:${successWidth}%"></div></div>
-                <span class="bar-value ${successColors.text}">${m.success_rate_pct.toFixed(1)}%</span>
-            </div>`;
-            html += `<div class="bar-stack">
-                <div class="bar-track"><div class="bar-fill ${p10Colors.bar}" style="width:${p10Width}%"></div></div>
-                <span class="bar-value ${p10Colors.text}">${formatCurrency(m.final_p10_jpy, '億円')}</span>
-            </div>`;
-            html += `<div class="bar-stack">
-                <div class="dd-bar-track"><div class="dd-bar-fill ${ddColors.bar}" style="width:${ddAbsWidth}%"></div></div>
-                <span class="bar-value text-right ${ddColors.text}">${ddPercent}%</span>
-            </div>`;
+            html += `<div class="bar-value text-center text-indigo-100">${m.success_rate_pct.toFixed(1)}%</div>`;
+            html += `<div class="bar-value text-center text-indigo-100">${formatCurrency(m.final_p10_jpy, '億円')}</div>`;
+            html += `<div class="bar-value text-center text-indigo-100">${ddPercent}%</div>`;
             html += `</div>`;
         }
         html += `</div>`;

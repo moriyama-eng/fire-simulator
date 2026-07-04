@@ -1,6 +1,6 @@
 export const TRANSLATIONS = {
   ja: {
-    "header.title": "FIRE モンテカルロ・シミュレータ v{VERSION}",
+    "header.title": "FIRE モンテカルロ・シミュレータ",
     "header.description": "モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。",
     "asset.title": "資産設定",
     "asset.riskAsset": "初期リスク資産",
@@ -49,7 +49,7 @@ export const TRANSLATIONS = {
     "cb.ddTrigger": "ドローダウン閾値（取崩し判定）",
     "cb.ddTrigger.tooltip": "総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>",
     "cb.ddReplenish": "ドローダウン閾値（補充終了）",
-    "cb.ddReplenish.tooltip": "ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われます。</span><br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われます。</span>",
+    "cb.ddReplenish.tooltip": "ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われます。</span>",
     "cb.replenishPace": "補充ペース（月間取崩し額比）",
     "cb.replenishPace.tooltip": "補充モード中、毎月リスク資産から現金バッファへ補填する額を指定します。「月間取崩し額」に対する倍率です。<br>",
     "gr.title": "支出ガードレール設定",
@@ -84,7 +84,7 @@ export const TRANSLATIONS = {
     "summary.finalMedian": "最終総資産 中央値",
     "summary.notExecuted": "未実行",
     "summary.targetMaintainRate": "目標資産維持確率",
-    "summary.targetMaintainRate.tooltip": "終了時に初期総資産の{0}%以上を維持できる確率（※インフレ調整なしの名目値）",
+    "summary.targetMaintainRate.tooltip": "終了時に初期総資産の指定割合以上を維持できる確率（※インフレ調整なしの名目値）",
     "summary.riskAsset": "初期リスク資産",
     "summary.cashBuffer": "初期現金バッファ",
     "summary.expense": "初期月間取崩し額",
@@ -246,7 +246,43 @@ export const TRANSLATIONS = {
     "unit.paths": "回",
     "chart.probability": "発生確率",
     "capture.emptyValue": "-",
-    "capture.emptyModel": "-"
+    "capture.emptyModel": "-",
+    "summary.successRate.tooltip": "シミュレーション全体のうち、期間中に一度も資産が枯渇しなかった割合です。",
+    "analysis.compare.headers.worst10MaxDd.tooltip": "全シミュレーション結果の下位10%における最大ドローダウン（総資産の過去最高値からの最大下落率）です。",
+    "tab.comparison": "比較",
+    "comparison.addScenario": "＋ シナリオ追加",
+    "comparison.runAll": "▶ すべて実行",
+    "comparison.running": "実行中... {0}/{1}",
+    "comparison.parameter": "パラメータ",
+    "comparison.maxScenarios": "シナリオは最大10件までです。",
+    "comparison.deleteScenario": "シナリオを削除",
+    "comparison.scenarioName": "シナリオ名（クリックで編集）",
+    "comparison.moveLeft": "左に移動",
+    "comparison.moveRight": "右に移動",
+    "comparison.overwriteFromSim": "シミュレーションタブの現在値で上書き",
+    "comparison.displayConditionNote": "行の表示/非表示はシナリオ1の設定に連動します。",
+    "comparison.auto": "自動",
+    "comparison.manual": "固定",
+    "comparison.fixed": "固定",
+    "comparison.variable": "変動(AR-1)",
+    "comparison.finalMedian.tooltip": "シミュレーション終了時の総資産の中央値（50%タイル）です。",
+    "comparison.median_max_uw": "最長停滞期間 中央値",
+    "comparison.medianMaxUw.tooltip": "全シミュレーションパスの最長停滞期間（最高値を更新できない期間）の中央値です。",
+    "comparison.confirmDelete": "このシナリオを削除してもよろしいですか？",
+    "comparison.overwriteSuccess": "シナリオを上書きしました",
+    "comparison.cannotDeleteLast": "最後の1シナリオは削除できません",
+    "comparison.deleteSuccess": "シナリオを削除しました",
+    "comparison.deleteFailed": "シナリオの削除に失敗しました",
+    "comparison.duplicateTitle": "シナリオを複製",
+    "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き",
+    "comparison.pendingExecution": "未実行のシナリオがあります。シミュレーションを実行してください。",
+    "comparison.section.assets": "初期総資産設定",
+    "comparison.autoIndicator": "(自動)",
+    "comparison.dfLabel": "t分布自由度モデル",
+    "comparison.dfValue": "t分布自由度設定値",
+    "comparison.addSuccess": "シナリオを追加しました。",
+    "comparison.duplicateSuccess": "シナリオを複製しました。",
+    "comparison.moveHintText": "<svg style=\"display:inline-block;vertical-align:middle;margin-right:3px\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z\"/></svg>ドラッグまたは各列 ⋮ メニューボタンから並び替え"
   }
 };
 
@@ -256,7 +292,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* テスト環境では document が特殊な場合がある */ }
-  return '2.1.0'; // フォールバック（実際の最新バージョンに合わせる）
+  return '2.2.0'; // フォールバック（実際の最新バージョンに合わせる）
 }
 const APP_VERSION = getAppVersion();
 
@@ -308,7 +344,7 @@ TRANSLATIONS.en = {
   "analysis.category.buffer": "Cash Buffer",
   "analysis.category.guardrail": "Guardrail",
   // ===== 主要UI =====
-  "header.title": "FIRE Monte Carlo Simulator v{VERSION}",
+  "header.title": "FIRE Monte Carlo Simulator",
   "asset.title": "Asset Settings",
   "asset.riskAsset": "Initial risk assets",
   "asset.riskAsset.tooltip": "Total amount of risk assets (stocks, investments) at the start of the simulation.<br>If the total asset drawdown falls below the drawdown threshold, monthly withdrawals are taken from risk assets.",
@@ -391,7 +427,7 @@ TRANSLATIONS.en = {
   "summary.finalMedian": "Final Assets (Median)",
   "summary.notExecuted": "Not executed",
   "summary.targetMaintainRate": "Target Asset Maintenance Rate",
-  "summary.targetMaintainRate.tooltip": "Probability of maintaining at least {0}% of initial total assets at the end (nominal value, not inflation-adjusted)",
+  "summary.targetMaintainRate.tooltip": "Probability of maintaining at least the target percentage of initial total assets at the end (nominal value, not inflation-adjusted)",
   "summary.riskAsset": "Initial risk assets",
   "summary.cashBuffer": "Initial cash buffer",
   "summary.expense": "Initial monthly withdrawal",
@@ -553,7 +589,43 @@ TRANSLATIONS.en = {
   "unit.paths": "trials",
   "chart.probability": "Probability",
   "capture.emptyValue": "-",
-  "capture.emptyModel": "-"
+  "capture.emptyModel": "-",
+  "summary.successRate.tooltip": "Percentage of simulation paths that did not deplete assets during the entire period.",
+  "analysis.compare.headers.worst10MaxDd.tooltip": "Maximum drawdown (largest drop from peak) at the 10th percentile of all simulation results.",
+  "tab.comparison": "Comparison",
+  "comparison.addScenario": "+ Add Scenario",
+  "comparison.runAll": "▶ Run All",
+  "comparison.running": "Running... {0}/{1}",
+  "comparison.parameter": "Parameter",
+  "comparison.maxScenarios": "Maximum 10 scenarios allowed.",
+  "comparison.deleteScenario": "Delete scenario",
+  "comparison.scenarioName": "Scenario name (click to edit)",
+  "comparison.moveLeft": "Move left",
+  "comparison.moveRight": "Move right",
+  "comparison.overwriteFromSim": "Overwrite from Simulation tab",
+  "comparison.displayConditionNote": "Row visibility follows Scenario 1 settings.",
+  "comparison.auto": "Auto",
+  "comparison.manual": "Fixed",
+  "comparison.fixed": "Fixed",
+  "comparison.variable": "Variable (AR-1)",
+  "comparison.finalMedian.tooltip": "Median total assets (50th percentile) at the end of the simulation.",
+  "comparison.median_max_uw": "Median Longest Underwater",
+  "comparison.medianMaxUw.tooltip": "Median of the longest underwater period (time unable to reach a new high) across all simulation paths.",
+  "comparison.confirmDelete": "Are you sure you want to delete this scenario?",
+  "comparison.overwriteSuccess": "Scenario overwritten",
+  "comparison.cannotDeleteLast": "Cannot delete the last scenario",
+  "comparison.deleteSuccess": "Scenario deleted",
+  "comparison.deleteFailed": "Failed to delete scenario",
+  "comparison.duplicateTitle": "Duplicate scenario",
+  "comparison.overwriteTitle": "Overwrite from Simulation tab",
+  "comparison.pendingExecution": "Some scenarios are not executed. Please run the simulation.",
+  "comparison.section.assets": "Initial Assets",
+  "comparison.autoIndicator": "(Auto)",
+  "comparison.dfLabel": "t-distribution df model",
+  "comparison.dfValue": "t-distribution df value",
+  "comparison.addSuccess": "Scenario added.",
+  "comparison.duplicateSuccess": "Scenario duplicated.",
+  "comparison.moveHintText": "<svg style=\"display:inline-block;vertical-align:middle;margin-right:3px\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z\"/></svg>Drag or use each column's \u22ee menu to reorder"
 };
 
 let currentLang = (() => {

@@ -41,6 +41,9 @@ const defaultInputs = {
 describe('Reproducibility', () => {
     it('matches reference data with fixed seed 123456', () => {
         const params = getParamsFromInputs(defaultInputs);
+        // reference-results.json は paths=1000 で生成されたため、
+        // getParamsFromInputs のクランプ（5000）を上書きして 1000 に戻す
+        params.simPaths = 1000;
         const seed = params.seedNum;
         const finalValues = [];
         let bankruptCount = 0;

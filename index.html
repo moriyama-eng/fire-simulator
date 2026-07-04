@@ -4,13 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="header.title">FIRE モンテカルロ・シミュレータ v2.1.0</title>
-    <meta name="app-version" content="2.1.0">
+    <title data-i18n="header.title">FIRE モンテカルロ・シミュレータ</title>
+    <meta name="app-version" content="2.2.0">
     <meta name="description" content="リスク資産と現金バッファを用いたモンテカルロ・シミュレーションで、FIRE達成確率を算出します。">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FIX-03: SortableJS - 比較タブのドラッグ＆ドロップ列並び替え用 -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -64,6 +66,9 @@
             <button id="analysisTabBtn"
                 class="tab-btn px-6 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent"
                 aria-selected="false" data-i18n="tab.analysis">分析</button>
+            <button id="comparisonTabBtn"
+                class="tab-btn px-6 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent"
+                aria-selected="false" data-i18n="tab.comparison">比較</button>
         </div>
     </div>
 
@@ -695,32 +700,28 @@
 
                     <!-- シミュレーションシード設定 -->
                     <div class="glass-card glow-border rounded-xl p-4 mb-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="text-xs font-semibold text-slate-300" data-i18n="seed.label">乱数シード値</label>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.fixed">固定</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="seedToggle" class="sr-only peer" checked>
-                                    <div
-                                        class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600">
-                                    </div>
-                                    <div
-                                        class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5">
-                                    </div>
-                                </label>
-                                <span class="text-[10px] text-slate-300 font-medium" data-i18n="seed.random">ランダム</span>
-                                <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
-                                    <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
-                                    <div class="tooltip-text" data-i18n-html="seed.tooltip">
-                                        乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現されたシミュレーション結果が得られます。<br>「Xにポスト」、「同条件の別タブを開く」、「解析結果のURLリンクをコピー」で共有されるURLには、実行時のシード値が自動的に含まれます。シード値を揃えることで、条件変更による差分を純粋に比較できます。
+                        <div class="flex flex-col gap-1 mb-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-300" data-i18n="seed.label">乱数シード値</label>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs text-slate-300 font-medium" data-i18n="seed.fixed">固定</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="seedToggle" class="sr-only peer" checked>
+                                        <div class="toggle-bg w-7 h-3.5 bg-slate-600 rounded-full peer peer-checked:bg-purple-600"></div>
+                                        <div class="toggle-dot absolute left-[2px] top-[2px] w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5"></div>
+                                    </label>
+                                    <span class="text-xs text-slate-300 font-medium" data-i18n="seed.random">ランダム</span>
+                                    <div class="tooltip-container tooltip-right-align ml-1" tabindex="0">
+                                        <span class="text-xs cursor-pointer text-indigo-400 hover:text-indigo-300">ℹ️</span>
+                                        <div class="tooltip-text" data-i18n-html="seed.tooltip">
+                                            乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現されたシミュレーション結果が得られます。<br>「Xにポスト」、「同条件の別タブを開く」、「解析結果のURLリンクをコピー」で共有されるURLには、実行時のシード値が自動的に含まれます。シード値を揃えることで、条件変更による差分を純粋に比較できます。
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div id="seedInputWrapper"
-                            class="opacity-50 pointer-events-none transition-opacity duration-300">
-                            <input type="number" id="seedNum" value="123456" min="1" max="99999999"
-                                class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 text-center font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                            <div id="seedInputWrapper" class="opacity-50 pointer-events-none transition-opacity duration-300">
+                                <input type="number" id="seedNum" value="123456" min="1" max="99999999" class="w-full bg-slate-800/60 border border-slate-600/50 rounded-lg px-3 py-2 text-sm text-slate-200 text-center font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                            </div>
                         </div>
                     </div>
 
@@ -1080,6 +1081,13 @@
         </div>
     </div>
 
+    <!-- 比較タブ (v2.2.0) -->
+    <div id="comparisonTab" class="tab-content hidden max-w-7xl mx-auto px-4 sm:px-8 pb-24">
+        <div id="comparisonTableContainer" class="glass-card rounded-2xl p-5 mt-6">
+            <!-- comparison-ui.js によって動的に生成される -->
+        </div>
+    </div>
+
     <!-- 外部JS読み込み -->
     <script type="module" src="js/app.js"></script>
 
@@ -1088,7 +1096,7 @@
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2" data-i18n="footer.title">FIRE モンテカルロ・シミュレータ
             </p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v2.1.0</span>
+                <span>v2.2.0</span>
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -1255,7 +1263,7 @@
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
                 <span id="capFooterUrl" class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/
-                    | v2.1.0</span>
+                    | v2.2.0</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">

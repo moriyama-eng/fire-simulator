@@ -375,16 +375,18 @@ input[type="number"]::-webkit-inner-spin-button {
     font-weight: 500;
 }
 
+/* FIX-06: 複数シナリオのバーを横並びに表示 */
 .bar-stack {
     display: flex;
-    flex-direction: column;
-    gap: 1px;
+    flex-direction: row;
+    gap: 2px;
+    align-items: flex-end;
 }
 
 .bar-track {
-    width: 100%;
-    height: 7px;
-    background: rgba(255, 255, 255, 0.07);
+    flex: 1;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -395,8 +397,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .bar-fill.positive, .dd-bar-fill.positive { background: #10b981; }
-.bar-fill.negative, .dd-bar-fill.negative { background: #f43f5e; }
-.bar-fill.base, .dd-bar-fill.base { background: #6366f1; }
+.bar-fill.negative, .dd-bar-fill.negative { background: #ef4444; }
+.bar-fill.base, .dd-bar-fill.base { background: #818cf8; }
 
 .bar-value {
     font-size: 0.68rem;
@@ -577,3 +579,300 @@ input[type="number"]::-webkit-inner-spin-button {
 #captureContainer h1 { font-size: 44px; }
 #captureContainer h2 { font-size: 34px; }
 #captureContainer h3 { font-size: 28px; }
+
+/* ========== 比較タブ (v2.2.0) ========== */
+.comparison-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.5rem;
+}
+
+.comparison-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.8rem;
+    table-layout: auto;
+}
+
+.comparison-table th,
+.comparison-table td {
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    padding: 0.5rem 0.75rem;
+    white-space: normal;
+    word-break: break-word;
+    vertical-align: middle;
+}
+
+.comparison-table th {
+    background: rgba(30, 41, 59, 1);
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* FIX-04: テーブルheaderを垂直スクロール時に固定 */
+.comparison-table thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(30, 41, 59, 1);
+}
+
+/* 左端パラメータ列を横スクロール時に固定 */
+.comparison-table .sticky-left {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: rgba(15, 23, 42, 1);
+    border-right: 1px solid rgba(100, 116, 139, 0.4);
+    width: 140px !important;          /* 200px → 140px */
+    min-width: 140px !important;
+    max-width: 160px !important;      /* 若干の可変性を持たせる */
+    white-space: normal;              /* 折り返し許可 */
+    word-break: break-word;
+    font-size: 0.7rem;                /* スマホでも収まるよう微調整 */
+    padding: 0.5rem 0.4rem;           /* パディング縮小 */
+}
+
+/* ツールチップアイコンをテキストとインライン表示 */
+.sticky-left .tooltip-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+}
+
+.comparison-table thead .sticky-left {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    background: rgba(30, 41, 59, 1);
+}
+
+/* シナリオ名の contenteditable */
+.scenario-name {
+  display: inline-block;
+  min-width: 80px;
+  max-width: 160px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  outline: none;
+  white-space: normal;          /* 折り返し許可 */
+  word-break: break-word;       /* 長い単語も折り返す */
+  overflow: visible;            /* 省略記号を除去 */
+  text-overflow: clip;          /* 省略記号を除去 */
+  line-height: 1.4;
+}
+
+.scenario-name[contenteditable="true"] {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.1);
+    cursor: text;
+}
+
+.scenario-name[contenteditable="true"]:focus {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* シナリオ用インプット */
+.scenario-input {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 4px;
+    color: #e2e8f0;
+    padding: 3px 6px;
+    font-size: 0.8rem;
+    width: 100%;
+    min-width: 80px;
+    transition: border-color 0.15s ease;
+}
+
+.scenario-input:focus {
+    border-color: #818cf8;
+    outline: none;
+}
+
+.scenario-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 境界値クランプ時のフィードバックアニメーション */
+@keyframes clamp-pulse {
+    0% { border-color: #f59e0b; }
+    100% { border-color: rgba(100, 116, 139, 0.3); }
+}
+
+.clamp-feedback {
+    animation: clamp-pulse 0.3s ease-out;
+}
+
+/* 比較コントロールエリア */
+.comparison-controls {
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+}
+
+
+
+/* ドラッグハンドル */
+.drag-handle {
+    cursor: grab;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* 比較タブのテーブル幅をコンテンツ幅に制限 */
+.comparison-table {
+    width: max-content !important;
+}
+
+/* 比較タブのシナリオ列の幅を固定 */
+.comparison-table td:not(.sticky-left):not(.add-column),
+.comparison-table th:not(.sticky-left):not(.add-column) {
+    width: 140px !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+}
+
+/* 未実行シナリオ列のグレーアウト */
+.comparison-table td.pending-col {
+    background: rgba(15, 23, 42, 0.45) !important;
+}
+.comparison-table th.pending-col {
+    background: rgba(30, 41, 59, 1) !important;
+}
+.comparison-table .pending-col {
+    color: rgba(226, 232, 240, 0.4) !important;
+    border-color: rgba(100, 116, 139, 0.15) !important;
+}
+
+/* 比較タブのヘッダーボタン2段化用レイアウト */
+.scenario-header-btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 0.375rem;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* 列追加用のダミー列の幅固定 */
+.comparison-table .add-column {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    text-align: center;
+}
+
+/* 中間見出し（カテゴリ区切り行）のスタイル */
+.comparison-table tr.section-header-row {
+    background: rgba(30, 41, 59, 1) !important;
+}
+
+.comparison-table tr.section-header-row td {
+    position: sticky;
+    left: 0;
+    z-index: 15;                    /* 通常の固定セル(z-index:10)より前面 */
+    background: rgba(30, 41, 59, 1) !important; /* 背景を不透明にして重なりを隠す */
+    border-right: 1px solid rgba(100, 116, 139, 0.2);
+    color: rgba(165, 180, 252, 0.95) !important;
+    font-weight: 700 !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase;
+    padding: 0.5rem 0.75rem !important;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
+    text-align: left;   /* テキスト左寄せで固定表示を実現 */
+}
+
+.comparison-table tr.section-header-row td .section-header-title {
+    position: sticky;
+    left: 0.75rem;      /* tdのpadding-left(0.75rem)と同じ位置に固定 */
+    display: inline-block;
+}
+
+/* プルダウンメニュー */
+.action-menu-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.action-menu-trigger {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.action-menu-trigger:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+.action-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 150px;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    z-index: 50;
+    padding: 4px 0;
+    display: flex;
+    flex-direction: column;
+}
+.action-dropdown.hidden {
+    display: none;
+}
+.dropdown-item {
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    text-align: left;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    min-height: 44px; /* スマホタッチ領域確保 */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dropdown-item:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+.dropdown-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.dropdown-item:disabled:hover {
+    background: transparent;
+}
+
+/* スクロールバーを太くしてタップしやすく */
+.comparison-table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.comparison-table-wrapper::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.3);
+}
+.comparison-table-wrapper::-webkit-scrollbar-thumb {
+    background: #6366f1;
+    border-radius: 4px;
+}
+
