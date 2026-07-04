@@ -1,5 +1,5 @@
 // js/analysis-state.js
-// 分析タブ v2.0.0 状態管理
+// 分析タブ 状態管理
 
 // ----- 因子定義 -----
 // paramKey は baseEffectiveParams（app.js で生成）内のプロパティ名と厳密に一致させること。

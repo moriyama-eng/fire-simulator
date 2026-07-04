@@ -128,9 +128,9 @@ describe('convertToLegacyParams', () => {
     expect(convertToLegacyParams(makeBaseEffectiveParams({ modelType: 'log-normal' })).useTDistribution).toBe(false);
   });
 
-  it('clamps simPaths to 1000 minimum', () => {
+  it('clamps simPaths to 5000 minimum', () => {
     const ep = makeBaseEffectiveParams({ simPaths: 500 });
-    expect(convertToLegacyParams(ep).simPaths).toBe(1000);
+    expect(convertToLegacyParams(ep).simPaths).toBe(5000);
   });
 
   it('clamps simPaths to 50000 maximum', () => {
@@ -138,9 +138,9 @@ describe('convertToLegacyParams', () => {
     expect(convertToLegacyParams(ep).simPaths).toBe(50000);
   });
 
-  it('passes simPaths 1000 as-is', () => {
-    const ep = makeBaseEffectiveParams({ simPaths: 1000 });
-    expect(convertToLegacyParams(ep).simPaths).toBe(1000);
+  it('passes simPaths 5000 as-is', () => {
+    const ep = makeBaseEffectiveParams({ simPaths: 5000 });
+    expect(convertToLegacyParams(ep).simPaths).toBe(5000);
   });
 
   it('passes simPaths 50000 as-is', () => {
@@ -190,7 +190,7 @@ describe('getSuccessRateTargetDelta', () => {
   });
 });
 
-// ===== REQ-4-8: target_asset_maintain_rate のテスト =====
+// ===== target_asset_maintain_rate のテスト =====
 describe('extractMetrics - target_asset_maintain_rate', () => {
   beforeEach(() => {
     // 既存のモック設定をリセットしてから設定する

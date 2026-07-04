@@ -1,5 +1,5 @@
 // js/analysis-runner.js
-// 分析タブ v2.0.0 シナリオ生成・実行
+// 分析タブ シナリオ生成・実行
 
 import * as AS from './analysis-state.js';
 import { runSimulation } from './simulation-engine.js';
@@ -34,7 +34,7 @@ export function convertToLegacyParams(ep) {
         volatility: ep.volatility,
         inflationRate: ep.inflationRate,
         simYears: ep.simYears,
-        simPaths: Math.max(1000, Math.min(50000, ep.simPaths)),
+        simPaths: Math.max(5000, Math.min(50000, ep.simPaths)),
         cashBufferToggle: ep.cashBufferToggle ?? false,
         drawdownTrigger: ep.drawdownTrigger ?? 0,
         drawdownReplenish: ep.drawdownReplenish ?? 0,
@@ -82,7 +82,15 @@ export async function runAnalysis(onProgress) {
             applyFactorChange(modifiedEp, factor, baseValue + factor.step * level);
             const leg = convertToLegacyParams(modifiedEp);
             const res = await runSimulation(leg, pcts);
-            results.push({ level, metrics: extractMetrics(res) });
+            // 変更後の表示値を計算（scale で割って UI 単位に戻す）
+            const rawValue = modifiedEp[factor.paramKey];
+            const displayValue = rawValue / (factor.scale || 1);
+            results.push({
+                level,
+                metrics: extractMetrics(res),
+                modifiedEp: { ...modifiedEp },
+                modifiedValue: displayValue
+            });
             current++;
             if (onProgress) onProgress({ done: current, total: totalScenarios });
         }

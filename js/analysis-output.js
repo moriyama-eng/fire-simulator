@@ -5,6 +5,13 @@
 
 import * as AS from './analysis-state.js';
 
+// metaタグからアプリバージョンを動的取得
+const getAppVersion = () => {
+    const meta = document.querySelector('meta[name="app-version"]');
+    return meta ? meta.content : '2.2.0'; // フォールバックは現バージョン
+};
+
+
 export async function generateAndDownloadZip() {
   const result = AS.getAnalysisResult();
   if (!result) throw new Error('error.noResult');
@@ -46,7 +53,7 @@ export async function generateAndDownloadZip() {
     scenario: {
       id: 'base', isBase: true,
       factorKey: '', levelCode: '', valueAfterChange: '',
-      effectiveParams: {}
+      effectiveParams: AS.getState().baseEffectiveParams ?? {}
     },
     simResult: {
       successRate: baseMetrics.success_rate_pct,
@@ -80,7 +87,7 @@ export async function generateAndDownloadZip() {
           factor_key: factorKey,
           factor_label: factorLabel,
           level_code: levelCode,
-          value_after_change: '',
+          value_after_change: scenario.modifiedValue ?? '',
           value_unit: unit,
           success_rate_pct: m.success_rate_pct,
           final_median_jpy: m.final_median_jpy,
@@ -102,7 +109,7 @@ export async function generateAndDownloadZip() {
           factor_key: factorKey,
           factor_label: factorLabel,
           level_code: levelCode,
-          value_after_change: '',
+          value_after_change: scenario.modifiedValue ?? '',
           value_unit: unit,
           delta_success_rate_pt: m.success_rate_pct - baseMetrics.success_rate_pct,
           delta_final_median_jpy: m.final_median_jpy - baseMetrics.final_median_jpy,
@@ -120,8 +127,8 @@ export async function generateAndDownloadZip() {
             id: scenarioId, isBase: false,
             factorKey: factorKey,
             levelCode: levelCode,
-            valueAfterChange: '',
-            effectiveParams: {}
+            valueAfterChange: scenario.modifiedValue ?? '',
+            effectiveParams: scenario.modifiedEp ?? {}
           },
           simResult: {
             successRate: m.success_rate_pct,
@@ -169,7 +176,7 @@ export async function generateAndDownloadZip() {
   for (const entry of metadataEntries) {
     const jsonContent = JSON.stringify({
       schema_version: '1.0.0',
-      tool_version: '2.0.0',
+      tool_version: getAppVersion(),
       analysis_run_id: analysisRunId,
       scenario_id: entry.scenario.id,
       is_base: entry.scenario.isBase,

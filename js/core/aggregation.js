@@ -80,7 +80,7 @@ export function aggregateResultsProduction({
     let medianPIdx = percentiles.indexOf(50);
     if (medianPIdx === -1) medianPIdx = Math.floor(percentiles.length / 2);
 
-    // 目標資産維持確率の計算（REQ-1-5）
+    // 目標資産維持確率の計算
     // targetAssetThreshold = 初期総資産 × targetAssetRatio
     // 最終月（インデックス dataLen-1）の総資産が閾値以上か判定
     // 注意: successRate の計算式は変更しない（別指標として追加）

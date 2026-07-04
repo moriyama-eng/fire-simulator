@@ -182,7 +182,7 @@ describe('generateAndDownloadZip - download', () => {
   });
 });
 
-// ===== REQ-4-9: target_asset_maintain_rate のCSV/JSON出力テスト =====
+// ===== target_asset_maintain_rate のCSV/JSON出力テスト =====
 describe('generateAndDownloadZip - target_asset_maintain_rate', () => {
   it('includes target_asset_maintain_rate in summary.csv header and data', async () => {
     await generateAndDownloadZip();

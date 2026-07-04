@@ -9,7 +9,7 @@ describe('calcAutoDf', () => {
     it('does not go below lower bound of 2.5', () => { expect(calcAutoDf(80)).toBe(3.0); });
 });
 
-// ===== REQ-1-8: targetAssetRatio のデフォルト値テスト =====
+// ===== targetAssetRatio のデフォルト値テスト =====
 import { getParamsFromInputs, DEFAULTS } from '../../js/core/params.js';
 
 describe('getParamsFromInputs - targetAssetRatio fallback', () => {
