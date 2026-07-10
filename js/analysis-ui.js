@@ -81,7 +81,7 @@ function renderBaseCard() {
             <p>${t('summary.expense')}: ${formatCurrency(bp.monthlyExpense, '万円')}</p>
             <p>${t('summary.returnVol')}: ${bp.expectedReturn.toFixed(1)}% / ${bp.volatility.toFixed(1)}%</p>
             <p>${t('summary.inflation')}: ${bp.inflationRate.toFixed(1)}%</p>
-            <p>${t('summary.simSettings')}: ${formatYears(bp.simYears)} / ${formatNumber(bp.simPaths)} ${t('unit.times')}</p>
+            <p>${t('summary.simSettings')}: ${formatYears(bp.simYears)} / ${formatNumber(bp.simPaths)} ${t('unit.paths')}</p>
             <p>${t('summary.model.label')}: ${bp.modelType === 'log-t' ? t('summary.model.logt') : t('summary.model.lognormal')}</p>
             <p>${t('summary.cbSettings')}: ${bp.cashBufferToggle ? t('cb.on') : t('cb.off')} | ${t('gr.title')}: ${bp.guardrailToggle ? t('gr.on') : t('gr.off')}</p>
             <p>${t('summary.seed')}: ${bp.seed}</p>
@@ -409,11 +409,26 @@ function renderCompareCards() {
     for (const key of selected) {
         const factor = AS.FACTORS.find(f => f.key === key);
         const res = result.perFactorResults[key];
-        // 基準水準のデータを手動で注入（-2〜2の5水準を表示するため）
+        // 基準水準（level:0）を手動で追加
         const augmentedRes = [...res, { level: 0, metrics: baseMetrics }];
-        // H2 / L2 水準のメトリック値を取得
+        // H2 / L2 水準のメトリックを取得（トレンド判定用）
         const rPlus2 = augmentedRes.find(r => r.level === 2)?.metrics;
         const rMinus2 = augmentedRes.find(r => r.level === -2)?.metrics;
+
+        // ---- ヘルパー関数（v2.1.0 そのまま） ----
+        const barClassFromTrend = (level, valPlus2, valMinus2, isBase) => {
+            if (isBase) return 'base';
+            const trend = valPlus2 - valMinus2;
+            if (Math.abs(trend) < 1e-12) return level > 0 ? 'positive' : 'negative';
+            return (level * trend > 0) ? 'positive' : 'negative';
+        };
+        const getMetricColorClasses = (barClass) => {
+            if (barClass === 'positive') return { bar: 'positive', text: 'text-emerald-400' };
+            if (barClass === 'negative') return { bar: 'negative', text: 'text-rose-400' };
+            return { bar: 'base', text: 'text-indigo-300' };
+        };
+
+        // ---- HTML 生成（v2.1.0 完全再現） ----
         html += `<div class="glass-card compare-card rounded-xl">`;
         html += `<div class="compare-header-row">
             <div class="text-center">${t(`analysis.factors.${factor.key}`)}</div>
@@ -431,10 +446,22 @@ function renderCompareCards() {
             const m = r.metrics;
             const isBase = level === 0;
 
+            // 各メトリックのバークラスと色を算出
+            const successBarClass = barClassFromTrend(level, rPlus2?.success_rate_pct, rMinus2?.success_rate_pct, isBase);
+            const p10BarClass = barClassFromTrend(level, rPlus2?.final_p10_jpy, rMinus2?.final_p10_jpy, isBase);
+            const ddBarClass = barClassFromTrend(level, rPlus2?.worst10_max_dd, rMinus2?.worst10_max_dd, isBase);
+            const successColors = getMetricColorClasses(successBarClass);
+            const p10Colors = getMetricColorClasses(p10BarClass);
+            const ddColors = getMetricColorClasses(ddBarClass);
+
+            // バーの幅（v2.1.0 の計算式を厳守）
+            const successWidth = Math.max(0, Math.min(100, ((m.success_rate_pct - 70) / (100 - 70)) * 100)).toFixed(0);
+            const p10Width = (m.final_p10_jpy / maxP10 * 100).toFixed(0);
+            const ddAbsWidth = (Math.abs(m.worst10_max_dd) / maxAbsDD * 100).toFixed(0);
             const ddPercent = (m.worst10_max_dd * 100).toFixed(1);
 
             html += `<div class="compare-row">`;
-            // 因子値表示の単位条件分岐
+            // ---- 因子値表示（既存のロジックを維持。下記は v2.1.0 の実装例） ----
             const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
             const isEnglish = getLanguage() === 'en';
             const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
@@ -444,9 +471,21 @@ function renderCompareCards() {
                 <span class="setting-value">${fmtFactorVal(factor, val)}${unitSuffix}</span>
                 ${isBase ? `<span class="base-badge">${t('analysis.compare.badge')}</span>` : ''}
             </div>`;
-            html += `<div class="bar-value text-center text-indigo-100">${m.success_rate_pct.toFixed(1)}%</div>`;
-            html += `<div class="bar-value text-center text-indigo-100">${formatCurrency(m.final_p10_jpy, '億円')}</div>`;
-            html += `<div class="bar-value text-center text-indigo-100">${ddPercent}%</div>`;
+            // ---- 成功率バー ----
+            html += `<div class="bar-stack">
+                <div class="bar-track"><div class="bar-fill ${successColors.bar}" style="width:${successWidth}%"></div></div>
+                <span class="bar-value ${successColors.text}">${m.success_rate_pct.toFixed(1)}%</span>
+            </div>`;
+            // ---- 最終資産10%タイル バー ----
+            html += `<div class="bar-stack">
+                <div class="bar-track"><div class="bar-fill ${p10Colors.bar}" style="width:${p10Width}%"></div></div>
+                <span class="bar-value ${p10Colors.text}">${formatCurrency(m.final_p10_jpy, '億円')}</span>
+            </div>`;
+            // ---- 最大DD 10%タイル バー（DD用のトラッククラスに注意） ----
+            html += `<div class="bar-stack">
+                <div class="dd-bar-track"><div class="dd-bar-fill ${ddColors.bar}" style="width:${ddAbsWidth}%"></div></div>
+                <span class="bar-value text-right ${ddColors.text}">${ddPercent}%</span>
+            </div>`;
             html += `</div>`;
         }
         html += `</div>`;

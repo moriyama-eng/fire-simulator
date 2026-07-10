@@ -1,0 +1,5 @@
+{
+  "_comment": "v2.3.0 参照データ（新指標用）。seed=123456, paths=1000, 他デフォルト値",
+  "belowInitMaxPeriods": 360,
+  "consecutiveSellMaxPeriods": 324
+}

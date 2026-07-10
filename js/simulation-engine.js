@@ -70,6 +70,9 @@ export async function runSimulation(params, userPercentiles) {
     const mergedDds = new Float32Array(simPaths * dataLen);
     const maxDdPerPath = new Float32Array(simPaths);
     const maxUwPerPath = new Float32Array(simPaths);
+    // v2.3.0: 新指標バッファのマージ用配列
+    const belowInitPeriods = new Float32Array(simPaths);
+    const consecutiveSellPeriods = new Float32Array(simPaths);
     let bankruptCount = 0, globalPathIndex = 0;
 
     for (const res of results) {
@@ -80,6 +83,9 @@ export async function runSimulation(params, userPercentiles) {
         mergedDds.set(new Float32Array(res.ddsBuffer), offset);
         maxDdPerPath.set(new Float32Array(res.maxDdsBuffer), globalPathIndex);
         maxUwPerPath.set(new Float32Array(res.maxUwsBuffer), globalPathIndex);
+        // v2.3.0: 新指標バッファをマージ
+        belowInitPeriods.set(new Float32Array(res.belowInitPeriodsBuffer), globalPathIndex);
+        consecutiveSellPeriods.set(new Float32Array(res.consecutiveSellPeriodsBuffer), globalPathIndex);
         bankruptCount += res.bankruptCount;
         globalPathIndex += pathsCountInWorker;
     }
@@ -93,6 +99,8 @@ export async function runSimulation(params, userPercentiles) {
         cashesBuffer: mergedCashes.buffer,
         ddsBuffer: mergedDds.buffer,
         maxDdPerPath, maxUwPerPath,
+        belowInitPeriods,          // v2.3.0: 新指標（パスごとの割れ最長継続期間）
+        consecutiveSellPeriods,    // v2.3.0: 新指標（パスごとの連続売却最長期間）
         simPaths, dataLen, percentiles: userPercentiles, bankruptCount,
         targetAssetRatio: params.targetAssetRatio,
         initialTotalAssets: initialTotalAssets,

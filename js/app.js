@@ -14,6 +14,8 @@ let assetChart = null;
 let cashChart = null;
 let ddHistChart = null;
 let uwHistChart = null;
+let belowInitChart = null;  // v2.3.0: 初期総資産割れ継続期間グラフ
+let sellChart = null;       // v2.3.0: リスク資産連続売却期間グラフ
 let lastSimResult = null;
 let isRunning = false;
 let isResultDirty = false;  // 入力変更後未実行状態フラグ
@@ -148,6 +150,40 @@ function initTooltips() {
         trigger.addEventListener('focusin', mouseEnterHandler);
         trigger.addEventListener('focusout', mouseLeaveHandler);
     });
+}
+
+// ====================================================================
+// カスタムツールチップポジショナー（CCDFグラフ用）
+// ポイントの真上（スペース不足時は真下）に配置し、ポイントを覆わない
+// ====================================================================
+const customTooltipPosition = function(items) {
+    const chart = this.chart;
+    const { top } = chart.chartArea;
+    const item = items[0];
+    if (!item) return { x: 0, y: 0 };
+
+    const x = item.element.x;
+    const y = item.element.y;
+
+    // Y軸のアライメント判定（上部余白が足りない場合のみ下側に配置）
+    let yAlignVal = 'bottom';
+    // ツールチップの概算高さ(約40px)+マージン(12px)を考慮して判定
+    if (y - 52 < top) {
+        yAlignVal = 'top';
+    }
+
+    // 座標自体はポイントそのものを返し、位置は caretPadding: 12 および xAlign/yAlign でChart.js標準機能に自動解決させる
+    return {
+        x: x,
+        y: y,
+        xAlign: 'center',
+        yAlign: yAlignVal
+    };
+};
+
+// テスト環境などでグローバルな Chart オブジェクトが存在しない場合のエラーを防ぐため、存在確認後に登録する
+if (typeof Chart !== 'undefined' && Chart.Tooltip && Chart.Tooltip.positioners) {
+    Chart.Tooltip.positioners.customTooltipPosition = customTooltipPosition;
 }
 
 // t分布自由度パネルの更新（i18n対応・モジュールレベル）
@@ -819,34 +855,22 @@ function renderCashChart(result) {
 
 function renderDdCdfChart(result) {
     const { maxDdPerPath, params } = result;
-
-    // 最大ドローダウン（マイナス値）の配列を昇順ソート
-    const sortedDd = Float32Array.from(maxDdPerPath).sort();
     const simPaths = params.simPaths;
 
-    // 同一X座標(-100%での破綻など)に対する「垂直な壁」の発生を防ぐため、Mapで一意化して最大の発生確率を残す
-    const pointsMap = new Map();
-    const step = Math.max(1, Math.floor(simPaths / 1000));
+    // 最大ドローダウン（マイナス値）を%換算し、制限と丸めを施して昇順ソート
+    const sortedDd = Float32Array.from(maxDdPerPath)
+        .map(v => {
+            let pct = v * 100;
+            if (pct < -100) pct = -100;
+            if (pct > 0) pct = 0;
+            return Math.round(pct * 10) / 10;
+        })
+        .sort();
 
-    for (let i = 0; i < simPaths; i += step) {
-        let pct = sortedDd[i] * 100;
-        if (pct < -100) pct = -100;
-        if (pct > 0) pct = 0;
-        // 小数第1位で丸めて一意化
-        pct = Math.round(pct * 10) / 10;
-        // 昇順イテレーションのため同XならY（累積確率）が上書きされて最大のものが残る
-        pointsMap.set(pct, (i + 1) / simPaths * 100);
-    }
-
-    // 横軸0% (縦軸100%) の点を強制的に追加してグラフが0%まで伸びるようにする
-    if (!pointsMap.has(0)) {
-        pointsMap.set(0, 100);
-    }
-
-    // Mapから配列に戻してXの昇順でソート（Mapは挿入順なので念のため再ソート）
-    const points = Array.from(pointsMap.entries())
-        .map(([x, y]) => ({ x, y }))
-        .sort((a, b) => a.x - b.x);
+    // buildCdfPoints で点生成
+    const rawPoints = buildCdfPoints(sortedDd, simPaths, 'cdf');
+    // 横軸が負の値なので、Xの昇順で再ソートする（先頭に追加された { x: 0, y: 100 } を末尾に持っていくため）
+    const points = rawPoints.sort((a, b) => a.x - b.x);
 
     const ctx = document.getElementById('ddHistCanvas').getContext('2d');
     if (ddHistChart) { ddHistChart.destroy(); }
@@ -871,6 +895,9 @@ function renderDdCdfChart(result) {
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 tooltip: {
+                    position: 'customTooltipPosition',
+                    caretSize: 0,
+                    caretPadding: 12,
                     bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
                     titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
                     callbacks: {
@@ -930,30 +957,7 @@ function renderUwCdfChart(result) {
     const sortedUw = Float32Array.from(maxUwPerPath).sort();
     const simPaths = params.simPaths;
 
-    const points = [];
-    // 横軸0年 (縦軸100%) の点を強制的に先頭に追加
-    points.push({ x: 0, y: 100 });
-
-    // UIの負荷軽減のための間引き幅（約1000点）
-    const step = Math.max(1, Math.floor(simPaths / 1000));
-
-    for (let i = 0; i < simPaths; i += step) {
-        let mo = sortedUw[i];
-        if (points.length > 0 && points[points.length - 1].x === mo) {
-            // 超過確率なので、同一月数の場合は「最初の登場（最も高いY）」が数学的に正しい P(X >= mo) となるため、Yは上書き「しない」
-        } else {
-            points.push({ x: mo, y: (simPaths - i) / simPaths * 100 });
-        }
-    }
-    // 最後の点（一番停滞期間が長かったケース）を確実に拾う
-    if ((simPaths - 1) % step !== 0) {
-        let mo = sortedUw[simPaths - 1];
-        if (points.length > 0 && points[points.length - 1].x === mo) {
-            // 同一X回避
-        } else {
-            points.push({ x: mo, y: 1 / simPaths * 100 });
-        }
-    }
+    const points = buildCdfPoints(sortedUw, simPaths);
 
     const ctx = document.getElementById('uwHistCanvas').getContext('2d');
     if (uwHistChart) { uwHistChart.destroy(); }
@@ -978,6 +982,9 @@ function renderUwCdfChart(result) {
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 tooltip: {
+                    position: 'customTooltipPosition',
+                    caretSize: 0,
+                    caretPadding: 12,
                     bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
                     titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
                     callbacks: {
@@ -1007,6 +1014,195 @@ function renderUwCdfChart(result) {
                         color: '#94a3b8',
                         font: { size: 13 },
                         stepSize: 60, // 5年(60ヵ月)刻みに統一
+                        callback: function (value) {
+                            return formatYears(value / 12);
+                        }
+                    },
+                    grid: { color: 'rgba(100,116,139,0.1)' }
+                },
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 13 },
+                        stepSize: 20,
+                        callback: function (value) { return value + "%"; }
+                    },
+                    grid: { color: 'rgba(100,116,139,0.1)' },
+                    title: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// ====================================================================
+// v2.3.0: 共通 CCDF 点生成ヘルパー（UI負荷軽減のための間引き付き）
+// ====================================================================
+function buildCdfPoints(sortedData, simPaths, mode = 'ccdf') {
+    const pointsMap = new Map();
+    for (let i = 0; i < sortedData.length; i++) {
+        const x = sortedData[i];
+        let y;
+        if (mode === 'cdf') {
+            // CDF: P(X <= x) → 後勝ち（最後の出現）で計算
+            y = (i + 1) / simPaths * 100;
+        } else {
+            // CCDF: P(X >= x) → 先勝ち（最初の出現）で計算
+            if (pointsMap.has(x)) continue;
+            y = (simPaths - i) / simPaths * 100;
+        }
+        pointsMap.set(x, y);
+    }
+    // 横軸 0 の点を追加（すべてのグラフで必要）
+    pointsMap.set(0, 100);
+    return Array.from(pointsMap.entries())
+        .map(([x, y]) => ({ x, y }))
+        .sort((a, b) => a.x - b.x);
+}
+
+// ====================================================================
+// v2.3.0: 初期総資産割れ 継続期間 CCDF グラフ描画
+// ====================================================================
+function renderBelowInitCdfChart(result) {
+    const { belowInitPeriods, params } = result;
+    const sorted = Float32Array.from(belowInitPeriods).sort();
+    const points = buildCdfPoints(sorted, params.simPaths);
+    const ctx = document.getElementById('belowInitChartCanvas').getContext('2d');
+    if (belowInitChart) { belowInitChart.destroy(); }
+    belowInitChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: t('chart.probability'),
+                data: points,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                tension: 0.1,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                tooltip: {
+                    position: 'customTooltipPosition',
+                    caretSize: 0,
+                    caretPadding: 12,
+                    bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
+                    titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
+                    callbacks: {
+                        title: () => t('chart.belowInit.title'),
+                        label: function (context) {
+                            const totalMo = Math.round(context.parsed.x);
+                            const y = Math.floor(totalMo / 12);
+                            const m = totalMo % 12;
+                            const periodStr = t('chart.tooltip.uwPeriod', [y, m]);
+                            return [
+                                t('chart.tooltip.belowInitLongerLabel', [periodStr]),
+                                t('chart.tooltip.probabilityLabel', [context.parsed.y.toFixed(1)])
+                            ];
+                        }
+                    }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: t('chart.belowInit.axisTitle'), color: '#94a3b8' },
+                    min: 0,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 13 },
+                        stepSize: 60, // 5年(60ヵ月)刻み
+                        callback: function (value) {
+                            return formatYears(value / 12);
+                        }
+                    },
+                    grid: { color: 'rgba(100,116,139,0.1)' }
+                },
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 13 },
+                        stepSize: 20,
+                        callback: function (value) { return value + "%"; }
+                    },
+                    grid: { color: 'rgba(100,116,139,0.1)' },
+                    title: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// ====================================================================
+// v2.3.0: リスク資産連続売却期間 CCDF グラフ描画
+// ====================================================================
+function renderConsecutiveSellCdfChart(result) {
+    const { consecutiveSellPeriods, params } = result;
+    const sorted = Float32Array.from(consecutiveSellPeriods).sort();
+    const points = buildCdfPoints(sorted, params.simPaths);
+    const ctx = document.getElementById('sellChartCanvas').getContext('2d');
+    if (sellChart) { sellChart.destroy(); }
+    sellChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: t('chart.probability'),
+                data: points,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                tension: 0.1,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                tooltip: {
+                    position: 'customTooltipPosition',
+                    caretSize: 0,
+                    caretPadding: 12,
+                    bodyFont: { family: "'Courier New', Courier, monospace", size: 12 },
+                    titleFont: { family: "'Inter', system-ui, sans-serif", size: 13 },
+                    callbacks: {
+                        title: () => t('chart.sell.title'),
+                        label: function (context) {
+                            const totalMo = Math.round(context.parsed.x);
+                            const y = Math.floor(totalMo / 12);
+                            const m = totalMo % 12;
+                            const periodStr = t('chart.tooltip.uwPeriod', [y, m]);
+                            return [
+                                t('chart.tooltip.sellLongerLabel', [periodStr]),
+                                t('chart.tooltip.probabilityLabel', [context.parsed.y.toFixed(1)])
+                            ];
+                        }
+                    }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: t('chart.sell.axisTitle'), color: '#94a3b8' },
+                    min: 0,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 13 },
+                        stepSize: 60, // 5年(60ヵ月)刻み
                         callback: function (value) {
                             return formatYears(value / 12);
                         }
@@ -1350,6 +1546,9 @@ async function runMain() {
         if (params.cashBufferToggle) renderCashChart(result);
         renderDdCdfChart(result);
         renderUwCdfChart(result);
+        // v2.3.0: 新指標グラフの描画
+        renderBelowInitCdfChart(result);
+        renderConsecutiveSellCdfChart(result);
         markResultClean(); // 共有ボタンの有効化
         updateSummaryCard(result, params);
         setTimeout(() => {
@@ -1605,6 +1804,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (ddHistChart && lastSimResult) renderDdCdfChart(lastSimResult);
         if (uwHistChart && lastSimResult) renderUwCdfChart(lastSimResult);
+        // v2.3.0: 新指標グラフの言語切り替え時再描画
+        if (belowInitChart && lastSimResult) renderBelowInitCdfChart(lastSimResult);
+        if (sellChart && lastSimResult) renderConsecutiveSellCdfChart(lastSimResult);
         import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab());
         // 比較タブが開いている場合は再描画
         import('./comparison-ui.js').then(CUI => {
@@ -1994,47 +2196,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function syncBaseToAnalysis() {
-        if (!lastSimResult || !lastExecutedParams) return;
-        const ep = convertToEffectiveParams(lastExecutedParams, lastSimResult);
-        import('./analysis-state.js').then(AS => {
-            AS.setBaseContext({ source: 'LAST_MAIN_RUN', effectiveParams: ep, summary: { successRatePct: lastSimResult.successRate, finalMedianJpy: lastSimResult.finalMedian, worst10MaxDdPct: lastSimResult.worst10MaxDd } }, ep);
-            import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab()).catch(e => console.error(e));
-        }).catch(e => console.error(e));
-    }
-    function syncBaseToAnalysisIfOpen() {
-        const tab = document.getElementById('analysisTab');
-        if (tab && !tab.classList.contains('hidden')) syncBaseToAnalysis();
-    }
-    function convertToEffectiveParams(params, simResult) {
-        return {
-            initialRiskAsset: params.initialRiskAsset,
-            initialCashBuffer: params.cashBufferToggle ? params.initialCashBuffer : 10_000_000,
-            monthlyExpense: params.monthlyExpense,
-            expectedReturn: params.expectedReturn,
-            volatility: params.volatility,
-            inflationRate: params.inflationRate,
-            simYears: params.simYears,
-            simPaths: params.simPaths,
-            seed: simResult?.usedSeed || params.seedNum,
-            modelType: params.useTDistribution ? 'log-t' : 'log-normal',
-            dfMode: params.simDfManual ? 'manual' : 'auto',
-            simDfNum: params.useTDistribution ? params.simDfNum : null,
-            usedDf: simResult?.usedDf || null,
-            inflationMode: params.useArInflation ? 'ar1' : 'fixed',
-            infVol: params.infVol,
-            infAr: params.infAr,
-            cashBufferToggle: params.cashBufferToggle,
-            drawdownTrigger: params.cashBufferToggle ? params.drawdownTrigger : -20.0,
-            drawdownReplenish: params.cashBufferToggle ? params.drawdownReplenish : -5.0,
-            replenishPace: params.cashBufferToggle ? params.replenishPace : 5.0,
-            guardrailToggle: params.guardrailToggle,
-            guardrailTrigger: params.guardrailToggle ? params.guardrailTrigger : -20.0,
-            guardrailRelease: params.guardrailToggle ? params.guardrailRelease : -15.0,
-            guardrailReduction: params.guardrailToggle ? params.guardrailReduction : -20.0,
-            useArInflation: params.useArInflation,
-            targetAssetRatio: params.targetAssetRatio,
-            percentiles: null,
-        };
-    }
 });
+
+function syncBaseToAnalysis() {
+    if (!lastSimResult || !lastExecutedParams) return;
+    const ep = convertToEffectiveParams(lastExecutedParams, lastSimResult);
+    import('./analysis-state.js').then(AS => {
+        AS.setBaseContext({ source: 'LAST_MAIN_RUN', effectiveParams: ep, summary: { successRatePct: lastSimResult.successRate, finalMedianJpy: lastSimResult.finalMedian, worst10MaxDdPct: lastSimResult.worst10MaxDd } }, ep);
+        import('./analysis-ui.js').then(AUI => AUI.renderAnalysisTab()).catch(e => console.error(e));
+    }).catch(e => console.error(e));
+}
+function syncBaseToAnalysisIfOpen() {
+    const tab = document.getElementById('analysisTab');
+    if (tab && !tab.classList.contains('hidden')) syncBaseToAnalysis();
+}
+function convertToEffectiveParams(params, simResult) {
+    return {
+        initialRiskAsset: params.initialRiskAsset,
+        initialCashBuffer: params.cashBufferToggle ? params.initialCashBuffer : 10_000_000,
+        monthlyExpense: params.monthlyExpense,
+        expectedReturn: params.expectedReturn,
+        volatility: params.volatility,
+        inflationRate: params.inflationRate,
+        simYears: params.simYears,
+        simPaths: params.simPaths,
+        seed: simResult?.usedSeed || params.seedNum,
+        modelType: params.useTDistribution ? 'log-t' : 'log-normal',
+        dfMode: params.simDfManual ? 'manual' : 'auto',
+        simDfNum: params.useTDistribution ? params.simDfNum : null,
+        usedDf: simResult?.usedDf || null,
+        inflationMode: params.useArInflation ? 'ar1' : 'fixed',
+        infVol: params.infVol,
+        infAr: params.infAr,
+        cashBufferToggle: params.cashBufferToggle,
+        drawdownTrigger: params.cashBufferToggle ? params.drawdownTrigger : -20.0,
+        drawdownReplenish: params.cashBufferToggle ? params.drawdownReplenish : -5.0,
+        replenishPace: params.cashBufferToggle ? params.replenishPace : 5.0,
+        guardrailToggle: params.guardrailToggle,
+        guardrailTrigger: params.guardrailToggle ? params.guardrailTrigger : -20.0,
+        guardrailRelease: params.guardrailToggle ? params.guardrailRelease : -15.0,
+        guardrailReduction: params.guardrailToggle ? params.guardrailReduction : -20.0,
+        useArInflation: params.useArInflation,
+        targetAssetRatio: params.targetAssetRatio,
+        percentiles: null,
+    };
+}
+
+export { buildCdfPoints };

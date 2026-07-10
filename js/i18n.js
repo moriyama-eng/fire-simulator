@@ -245,6 +245,15 @@ export const TRANSLATIONS = {
     "unit.multiplier": "倍",
     "unit.paths": "回",
     "chart.probability": "発生確率",
+    // v2.3.0: 新指標グラフ用キー
+    "chart.belowInit.title": "初期総資産割れ 継続期間 発生確率",
+    "chart.belowInit.tooltip": "総資産がシミュレーション開始時の初期総資産（リスク資産＋現金バッファ）を下回っている状態が、最長で何ヶ月継続するかの確率を表します。<br>初期総資産はインフレ調整を行わない名目値です。<br>例えばグラフ上で横軸が5年、縦軸が30%の場合、「初期総資産割れが5年以上継続する確率が30%ある」ことを意味します。<br>破綻（資産枯渇）したパスは、シミュレーション終了まで割れ状態が継続したものとしてカウントされます。<br>初期総資産と同額（===）になった月は「割れ状態が解消された」ものとみなし、カウントをリセットします。<br>※判定は月末（支出後）の総資産を基準に行われます。",
+    "chart.belowInit.axisTitle": "初期総資産割れ 継続期間",
+    "chart.sell.title": "初期総資産割れ時 リスク資産連続売却期間 発生確率",
+    "chart.sell.tooltip": "初期総資産割れが発生している期間中に、取崩し元としてリスク資産が連続して何ヶ月使われたかの確率を表します。<br>「リスク資産売却」とは、当月の取崩し（生活費の引き出し）においてリスク資産から資金を引き出したことを指します（市場変動による減少は含みません）。<br>補充モード中の取崩しも、実質的にはリスク資産の売却に該当するものとして扱います。<br>カウントは以下のいずれかが発生した月にリセットされます：① 総資産が初期総資産以上に回復した ② 現金バッファから取崩しを行った（または取崩し額が0円だった）<br>※ 補充モード中は、上記②の条件を適用せず、カウントを継続します。<br>例えばグラフ上で横軸が3年、縦軸が20%の場合、「リスク資産の連続売却が3年以上続く確率が20%ある」ことを意味します。<br>破綻（資産枯渇）したパスは、シミュレーション終了まで売却が継続したものとしてカウントされます。<br>※判定は月末（支出後）の総資産を基準に行われます。",
+    "chart.sell.axisTitle": "リスク資産連続売却期間",
+    "chart.tooltip.belowInitLongerLabel": "初期総資産割れが {0} 以上継続",
+    "chart.tooltip.sellLongerLabel": "リスク資産売却が {0} 以上継続",
     "capture.emptyValue": "-",
     "capture.emptyModel": "-",
     "summary.successRate.tooltip": "シミュレーション全体のうち、期間中に一度も資産が枯渇しなかった割合です。",
@@ -292,7 +301,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* テスト環境では document が特殊な場合がある */ }
-  return '2.2.0'; // フォールバック（実際の最新バージョンに合わせる）
+  return '2.3.0'; // フォールバック（実際の最新バージョンに合わせる）
 }
 const APP_VERSION = getAppVersion();
 
@@ -588,6 +597,15 @@ TRANSLATIONS.en = {
   "footer.title": "FIRE Monte Carlo Simulator",
   "unit.paths": "trials",
   "chart.probability": "Probability",
+  // v2.3.0: 新指標グラフ用キー（英語）
+  "chart.belowInit.title": "Duration Below Initial Assets Probability",
+  "chart.belowInit.tooltip": "Probability that the total assets remain below the initial total assets (risk assets + cash buffer) for a given number of months.<br>Initial total assets are nominal values and are <strong>not</strong> adjusted for inflation.<br>For example, if the x-axis is 5 years and the y-axis is 30%, it means there is a 30% chance that the assets will stay below the initial level for more than 5 years.<br>Paths that go bankrupt are counted as if the condition persists until the end of the simulation.<br>A month in which total assets are <strong>equal to</strong> the initial level (===) is considered a recovery, and the count is reset.<br>※ Decisions are based on end-of-month total assets (after withdrawal).",
+  "chart.belowInit.axisTitle": "Duration Below Initial Assets",
+  "chart.sell.title": "Consecutive Risk-Asset Sales While Below Initial Assets Probability",
+  "chart.sell.tooltip": "Probability that risk assets are used as the withdrawal source for a consecutive number of months while total assets are below the initial level.<br>\"Risk-asset sale\" means that the monthly withdrawal was funded by selling risk assets (market-driven decreases are not counted).<br>Withdrawals during replenishment mode are also treated as risk-asset sales for the purpose of this metric.<br>The count resets in any month when: ① Total assets recover to or above the initial level, or ② Withdrawal is taken from the cash buffer (or the withdrawal amount is zero).<br>※ During replenishment mode, condition ② is <strong>not applied</strong>, and the count continues.<br>For example, if the x-axis is 3 years and the y-axis is 20%, it means there is a 20% chance that risk assets will be sold for more than 3 consecutive years.<br>Paths that go bankrupt are counted as if sales continue until the end of the simulation.<br>※ Decisions are based on end-of-month total assets (after withdrawal).",
+  "chart.sell.axisTitle": "Consecutive Risk-Asset Sales Duration",
+  "chart.tooltip.belowInitLongerLabel": "Below-initial period longer than {0}",
+  "chart.tooltip.sellLongerLabel": "Risk-asset sales longer than {0}",
   "capture.emptyValue": "-",
   "capture.emptyModel": "-",
   "summary.successRate.tooltip": "Percentage of simulation paths that did not deplete assets during the entire period.",
@@ -628,12 +646,18 @@ TRANSLATIONS.en = {
   "comparison.moveHintText": "<svg style=\"display:inline-block;vertical-align:middle;margin-right:3px\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z\"/></svg>Drag or use each column's \u22ee menu to reorder"
 };
 
-let currentLang = (() => {
-  try { return localStorage.getItem('lang'); } catch (e) { return null; }
-})() || 'ja';
+if (typeof globalThis !== 'undefined' && globalThis.__currentLang === undefined) {
+  globalThis.__currentLang = (() => {
+    try { return localStorage.getItem('lang'); } catch (e) { return null; }
+  })() || 'ja';
+}
+
+function getCurrentLang() {
+  return typeof globalThis !== 'undefined' ? globalThis.__currentLang : 'ja';
+}
 
 export function t(key, placeholders = []) {
-  let text = TRANSLATIONS[currentLang]?.[key];
+  let text = TRANSLATIONS[getCurrentLang()]?.[key];
   // undefined または null の場合のみフォールバック（空文字は有効とする）
   if (text === undefined || text === null) {
     text = '[EN] ' + (TRANSLATIONS.ja[key] || key);
@@ -650,19 +674,21 @@ export function t(key, placeholders = []) {
 
 export function setLanguage(lang) {
   if (!['ja', 'en'].includes(lang)) return;
-  currentLang = lang;
+  if (typeof globalThis !== 'undefined') {
+    globalThis.__currentLang = lang;
+  }
   try { localStorage.setItem('lang', lang); } catch (e) { }
   document.dispatchEvent(new CustomEvent('languageChanged'));
 }
 
-export function getLanguage() { return currentLang; }
+export function getLanguage() { return getCurrentLang(); }
 export function getSupportedLanguages() { return ['ja', 'en']; }
 
 export function formatCurrency(valueInJPY, displayUnit) {
-  if (!isFinite(valueInJPY)) return currentLang === 'ja' ? '－' : 'N/A';
+  if (!isFinite(valueInJPY)) return getCurrentLang() === 'ja' ? '－' : 'N/A';
   if (valueInJPY < 0) return '-' + formatCurrency(-valueInJPY, displayUnit);
 
-  if (currentLang === 'ja') {
+  if (getCurrentLang() === 'ja') {
     if (displayUnit === '億円') {
       return (valueInJPY / 1e8).toLocaleString('ja-JP', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + '億円';
     }
@@ -705,16 +731,22 @@ export function formatPercent(value) {
 }
 
 export function formatDate(date) {
-  return date.toLocaleString(currentLang === 'ja' ? 'ja-JP' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleString(getCurrentLang() === 'ja' ? 'ja-JP' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatYears(years) {
-  return currentLang === 'ja' ? years + '年' : years + ' years';
+  return getCurrentLang() === 'ja' ? years + '年' : years + ' years';
 }
 
 export function formatNumber(value, unitKey) {
-  var formatted = currentLang === 'ja' ? value.toLocaleString('ja-JP') : value.toLocaleString('en-US');
+  var formatted = getCurrentLang() === 'ja' ? value.toLocaleString('ja-JP') : value.toLocaleString('en-US');
   if (!unitKey) return formatted;
   var unit = t(unitKey);
   return formatted + ' ' + unit;
 }
+
+if (typeof window !== 'undefined') {
+  window.__setLanguage = setLanguage;
+  window.__getLanguage = getLanguage;
+}
+
