@@ -93,6 +93,9 @@ export function makeDummySimResult(overrides = {}) {
     worst10MaxUw: overrides.worst10MaxUw ?? 310,
     maxDdPerPath: new Float32Array(1000),
     maxUwPerPath: new Float32Array(1000),
+    // v2.3.0: 新指標（デフォルトは全パス〸0）
+    belowInitPeriods: overrides.belowInitPeriods ?? new Float32Array(1000),
+    consecutiveSellPeriods: overrides.consecutiveSellPeriods ?? new Float32Array(1000),
     dataLen,
     usedSeed: overrides.usedSeed ?? 123456,
     modelType: overrides.modelType ?? 'log-t',

@@ -8,7 +8,7 @@ import * as AS from './analysis-state.js';
 // metaタグからアプリバージョンを動的取得
 const getAppVersion = () => {
     const meta = document.querySelector('meta[name="app-version"]');
-    return meta ? meta.content : '2.2.0'; // フォールバックは現バージョン
+    return meta ? meta.content : '2.3.0'; // フォールバックは現バージョン
 };
 
 

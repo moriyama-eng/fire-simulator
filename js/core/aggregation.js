@@ -19,7 +19,10 @@ export function transposeFlat(buffer, simPaths, dataLen) {
 // 総資産・現金・ドローダウンを1種類ずつ計算し、不要になった転置結果はGCに解放させる。
 export function aggregateResultsProduction({
     totalsBuffer, cashesBuffer, ddsBuffer,
-    maxDdPerPath, maxUwPerPath, simPaths, dataLen, percentiles, bankruptCount,
+    maxDdPerPath, maxUwPerPath,
+    belowInitPeriods,        // v2.3.0: パスごとの初期総資産割れ最長継続期間
+    consecutiveSellPeriods,  // v2.3.0: パスごとのリスク資産最長連続売却期間
+    simPaths, dataLen, percentiles, bankruptCount,
     targetAssetRatio,
     initialTotalAssets
 }) {
@@ -105,6 +108,8 @@ export function aggregateResultsProduction({
         worst10MaxDd, worst5MaxDd,
         medianMaxUw, worst10MaxUw,
         maxDdPerPath, maxUwPerPath,
+        belowInitPeriods,        // v2.3.0: パスごとの初期総資産割れ最長継続期間を戻り値に追加
+        consecutiveSellPeriods,  // v2.3.0: パスごとのリスク資産最長連続売却期間を戻り値に追加
         params: { simPaths, totalMonths: dataLen - 1 },
         dataLen,
         targetAssetMaintainRate,

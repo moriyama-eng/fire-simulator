@@ -13,6 +13,9 @@ self.onmessage = function (e) {
     const dds = new Float32Array(pathsCount * dataLen);
     const maxDds = new Float32Array(pathsCount);
     const maxUws = new Float32Array(pathsCount);
+    // v2.3.0: 新指標用バッファ
+    const belowInitPeriods = new Float32Array(pathsCount);
+    const consecutiveSellPeriods = new Float32Array(pathsCount);
     let bankruptCount = 0;
 
     for (let p = 0; p < pathsCount; p++) {
@@ -29,6 +32,9 @@ self.onmessage = function (e) {
         dds.set(result.dds, baseIdx);
         maxDds[p] = result.maxDD;
         maxUws[p] = result.maxUW;
+        // v2.3.0: 新指標を格納
+        belowInitPeriods[p] = result.maxBelowInitPeriod;
+        consecutiveSellPeriods[p] = result.maxConsecutiveSellPeriod;
         if (result.bankrupt) bankruptCount++;
 
         if (p % 100 === 0) self.postMessage({ type: "progress", completed: p });
@@ -41,6 +47,10 @@ self.onmessage = function (e) {
         ddsBuffer: dds.buffer,
         maxDdsBuffer: maxDds.buffer,
         maxUwsBuffer: maxUws.buffer,
+        // v2.3.0: 新指標バッファを転送リストに追加
+        belowInitPeriodsBuffer: belowInitPeriods.buffer,
+        consecutiveSellPeriodsBuffer: consecutiveSellPeriods.buffer,
         bankruptCount
-    }, [totals.buffer, cashes.buffer, dds.buffer, maxDds.buffer, maxUws.buffer]);
+    }, [totals.buffer, cashes.buffer, dds.buffer, maxDds.buffer, maxUws.buffer,
+        belowInitPeriods.buffer, consecutiveSellPeriods.buffer]);
 };
