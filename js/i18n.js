@@ -301,7 +301,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* テスト環境では document が特殊な場合がある */ }
-  return '2.3.0'; // フォールバック（実際の最新バージョンに合わせる）
+  return '2.3.1'; // フォールバック（実際の最新バージョンに合わせる）
 }
 const APP_VERSION = getAppVersion();
 

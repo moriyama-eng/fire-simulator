@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCdfPoints } from '../../js/app.js';
+import { buildCdfPoints } from '../../js/app/charts.js';
 
 describe('buildCdfPoints with mode', () => {
     it('CDFモード: 後勝ちで (i+1)/N を計算する', () => {
