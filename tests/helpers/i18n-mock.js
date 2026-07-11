@@ -6,7 +6,7 @@ vi.mock('../../js/i18n.js', async (importOriginal) => {
   const ja = actual.TRANSLATIONS.ja;
 
   // ★ テスト用のバージョン番号（固定でOK）
-  const APP_VERSION = '2.2.0';
+  const APP_VERSION = '2.3.1';
 
   function mockT(key, placeholders = []) {
     let text = ja[key] || key;

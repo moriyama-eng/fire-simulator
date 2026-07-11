@@ -1,6 +1,6 @@
 {
   "name": "fire-monte-carlo-simulator",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "FIRE モンテカルロ・シミュレータ",
   "type": "module",
   "scripts": {
