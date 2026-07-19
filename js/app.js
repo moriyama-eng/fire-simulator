@@ -1,10 +1,10 @@
 // ====================================================================
 // js/app.js
-// エントリポイント：全モジュールをインポートし、必要なものを再エクスポート
-// 元の DOMContentLoaded リスナーは init.js に完全移行済み
+// Entry point: imports all modules and re-exports necessary ones
+// The original DOMContentLoaded listener has been fully migrated to init.js
 // ====================================================================
 
-import './app/init.js';  // DOMContentLoaded の全処理を実行
+import './app/init.js';  // Executes all DOMContentLoaded processing
 
-// テスト用に buildCdfPoints を再エクスポート（tests/unit/chart-helpers.test.js が参照）
+// Re-export buildCdfPoints for tests (referenced by tests/unit/chart-helpers.test.js)
 export { buildCdfPoints } from './app/charts.js';

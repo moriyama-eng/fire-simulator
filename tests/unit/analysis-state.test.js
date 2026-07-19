@@ -1,5 +1,5 @@
 // tests/unit/analysis-state.test.js
-// 【Vitest 1.6 互換性】vi.mocked() は使用禁止、mockFn のプロパティに直接アクセスすること
+// [Vitest 1.6 compatibility] vi.mocked() is prohibited; access mockFn properties directly
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {

@@ -1,8 +1,8 @@
 // ====================================================================
 // js/app/init.js
-// DOMContentLoaded 内の全初期化処理
-// 依存: actions.js, charts.js, summary.js, ui-helpers.js,
-//       state.js（直接インポートしない）, i18n.js, core/url.js 等
+// All initialization processing inside DOMContentLoaded
+// Dependencies: actions.js, charts.js, summary.js, ui-helpers.js,
+//       state.js (not imported directly), i18n.js, core/url.js, etc.
 // ====================================================================
 
 import { applyQueryParams } from '../core/url.js';
@@ -29,7 +29,7 @@ import {
 } from './ui-helpers.js';
 
 // ====================================================================
-// i18n 周辺関数（循環インポートなし: init.js のローカルスコープで管理）
+// i18n related functions (no circular imports: managed in the local scope of init.js)
 // ====================================================================
 let isTranslating = false;
 function applyTranslations() {
@@ -52,7 +52,7 @@ function applyTranslations() {
     }
 }
 
-// MutationObserver: 動的に追加された要素の翻訳を保証する（ES2020非依存）
+// MutationObserver: Guarantees translation of dynamically added elements (ES2020-independent)
 var translationObserver = null;
 function setupTranslationObserver() {
     if (translationObserver) translationObserver.disconnect();
@@ -85,7 +85,7 @@ function setupTranslationObserver() {
 }
 
 // ====================================================================
-// 言語ボタンの active 状態を更新する
+// Update the active state of language buttons
 // ====================================================================
 function updateActiveLangButton() {
     const lang = getLanguage();
@@ -100,7 +100,7 @@ function updateActiveLangButton() {
 }
 
 // ====================================================================
-// 言語切り替えボタンのセットアップ
+// Set up language switch buttons
 // ====================================================================
 function setupLangSwitcher() {
     document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -114,10 +114,10 @@ function setupLangSwitcher() {
 }
 
 // ====================================================================
-// DOMContentLoaded 内の全初期化処理
+// All initialization processing inside DOMContentLoaded
 // ====================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. 進捗表示用コールバックを設定
+    // 1. Set up progress display callback
     setProgressCallback((progress) => {
         const btn = document.getElementById('runBtn');
         if (!btn) return;
@@ -125,26 +125,26 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.style.background = `linear-gradient(to right, rgba(99, 102, 241, 0.8) ${progress}%, rgba(30, 41, 59, 1) ${progress}%)`;
     });
 
-    // 2. ハイブリッド入力の初期化
+    // 2. Initialize hybrid inputs
     setupHybridInputs();
 
-    // 3. 言語切り替えボタンのセットアップ
+    // 3. Set up language switch buttons
     setupLangSwitcher();
 
-    // 4. 動的翻訳監視開始
+    // 4. Start dynamic translation monitoring
     setupTranslationObserver();
 
-    // 5. 初期翻訳適用
+    // 5. Apply initial translations
     applyTranslations();
 
-    // 6. 言語変更イベントリスナー
+    // 6. Language change event listener
     document.addEventListener('languageChanged', () => {
-        // FIX-10: シミュレーション実行中（app.js本体 or 比較タブ）は言語切り替えをスキップ
+        // Skip language switching while simulation is running (main app or comparison tab)
         import('../comparison-state.js').then(CS => {
             if (getIsRunning() || CS.getIsRunning()) return;
             applyTranslations();
             updateDfPanel();
-            // 言語切り替え時に通貨入力値を変換
+            // Convert currency inputs on language switch
             convertCurrencyInputs(getLanguage());
             const lastSimResult = getLastSimResult();
             const lastExecutedParams = getLastExecutedParams();
@@ -164,11 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (getDdHistChart() && lastSimResult) renderDdCdfChart(lastSimResult);
             if (getUwHistChart() && lastSimResult) renderUwCdfChart(lastSimResult);
-            // v2.3.0: 新指標グラフの言語切り替え時再描画
+            // v2.3.0: Redraw new indicator charts on language switch
             if (getBelowInitChart() && lastSimResult) renderBelowInitCdfChart(lastSimResult);
             if (getSellChart() && lastSimResult) renderConsecutiveSellCdfChart(lastSimResult);
             import('../analysis-ui.js').then(AUI => AUI.renderAnalysisTab());
-            // 比較タブが開いている場合は再描画
+            // Redraw if comparison tab is open
             import('../comparison-ui.js').then(CUI => {
                 const compTab = document.getElementById('comparisonTab');
                 if (compTab && !compTab.classList.contains('hidden')) {
@@ -179,19 +179,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 7. 実行ボタン
+    // 7. Run button
     document.getElementById('runBtn').addEventListener('click', runMain);
 
-    // 8. 対数/線形スケール切替
+    // 8. Log/linear scale toggle
     document.getElementById('logScaleToggle').addEventListener('change', onScaleToggle);
 
-    // 9. X共有ボタン
+    // 9. X share button
     document.getElementById('shareXBtn').addEventListener('click', shareToX);
 
-    // 10. 画像保存ボタン
+    // 10. Save image button
     document.getElementById('saveImageBtn').addEventListener('click', saveImage);
 
-    // 11. 変動モデルセレクト連動
+    // 11. Fluctuation model select linkage
     const modelSelect = document.getElementById('returnModelSelect');
     const tDistParams = document.getElementById('tDistParams');
     const updateModelPanel = () => {
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateModelPanel();
     }
 
-    // 12. 自由度 (自動/固定) トグル連動
+    // 12. Degrees of freedom (auto/fixed) toggle linkage
     const dfToggle = document.getElementById('simDfToggle');
     const volatilityInput = document.getElementById('volatilityNum');
 
@@ -222,17 +222,17 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDfPanel();
     }
 
-    // 13. 乱数シード トグル連動
+    // 13. Random seed toggle linkage
     const seedToggle = document.getElementById('seedToggle');
     const seedInputWrapper = document.getElementById('seedInputWrapper');
     const updateSeedPanel = () => {
         if (!seedToggle) return;
         if (!seedToggle.checked) {
-            // 固定 (unchecked)
+            // Fixed (unchecked)
             seedInputWrapper.classList.remove('opacity-50', 'pointer-events-none');
             seedInputWrapper.classList.add('opacity-100');
         } else {
-            // ランダム (checked)
+            // Random (checked)
             seedInputWrapper.classList.add('opacity-50', 'pointer-events-none');
             seedInputWrapper.classList.remove('opacity-100');
         }
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSeedPanel();
     }
 
-    // 14. インフレ変動モデル (AR-1) トグル連動
+    // 14. Inflation fluctuation model (AR-1) toggle linkage
     const infToggle = document.getElementById('inflationModelToggle');
     const arParamsPanel = document.getElementById('arModelParams');
 
@@ -257,14 +257,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     infToggle.addEventListener('change', updateArPanel);
-    updateArPanel(); // 初期ロード時の状態反映
+    updateArPanel(); // Reflect initial load state
 
-    // 15. 現金バッファ トグル連動（双方向）
+    // 15. Cash buffer toggle linkage (bidirectional)
     const cbToggle = document.getElementById('cashBufferToggle');
     const cbParamsPanel = document.getElementById('cashBufferParams');
     const cbInput = document.getElementById('initialCashBufferNum');
 
-    // パネルのグレーアウト状態を更新する関数
+    // Function to update the grayed-out state of the panel
     const updateCbPanel = () => {
         if (cbToggle.checked) {
             cbParamsPanel.classList.remove('opacity-50', 'pointer-events-none');
@@ -275,25 +275,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // トグルが変更されたとき → inputの値を更新する
+    // When the toggle changes → update the input value
     cbToggle.addEventListener('change', () => {
         if (cbToggle.checked) {
-            // ONにした場合：デフォルト値に戻す（現在値が0の場合のみ）
+            // When turned ON: restore to default value (only if the current value is 0)
             if (parseFloat(cbInput.value.replace(/,/g, '')) === 0) {
                 cbInput.value = DEFAULTS.initialCashBuffer.toLocaleString('en-US');
                 cbInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         } else {
-            // OFFにした場合：0に設定
+            // When turned OFF: set to 0
             cbInput.value = '0';
             cbInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
         updateCbPanel();
-        // 未実行状態ならサマリカードを更新
+        // Update summary card if not yet executed
         if (!getLastSimResult()) renderEmptySummaryCard(cbToggle.checked);
     });
 
-    // inputの値が変更されたとき → トグル状態を更新する
+    // When the input value changes → update toggle state
     cbInput.addEventListener('input', () => {
         const val = parseFloat(cbInput.value.replace(/,/g, ''));
         if (val === 0) {
@@ -310,9 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!getLastSimResult()) renderEmptySummaryCard(cbToggle.checked);
     });
 
-    updateCbPanel(); // 初期ロード時の状態反映
+    updateCbPanel(); // Reflect initial load state
 
-    // 16. 支出ガードレール トグル連動
+    // 16. Spending guardrail toggle linkage
     const grToggle = document.getElementById('guardrailToggle');
     const grParamsPanel = document.getElementById('guardrailParams');
 
@@ -329,20 +329,20 @@ document.addEventListener('DOMContentLoaded', () => {
     grToggle.addEventListener('change', updateGrPanel);
     updateGrPanel();
 
-    // 17. 未実行状態の（未実行）サマリカードを初期描画
+    // 17. Initial rendering of summary card for un-executed state
     applyTranslations();
-    updateActiveLangButton();  // 初期表示時に現在の言語に対応するボタンをアクティブにする
+    updateActiveLangButton();  // Activate the button corresponding to the current language on initial display
     renderEmptySummaryCard(document.getElementById('cashBufferToggle').checked);
 
-    // 18. 言語に応じた初期通貨変換
+    // 18. Initial currency conversion according to language
     const initialLang = getLanguage();
     if (initialLang === 'en') {
         convertCurrencyInputs('en');
     }
-    // 日本語モードの場合は HTML のデフォルト値（1,000 / 30）がそのまま使用されるため、追加の処理は不要
+    // In Japanese mode, the HTML default values (1,000 / 30) are used as is, so no additional processing is needed
 
-    // 19. パラメータが変更されたら未実行サマリを更新または警告バッジを表示するリスナーを各input/selectに追加
-    // 表示制御用のトグル（downsideFocusAsset, downsideFocusCash, logScaleToggle）は除外する (v1.8.3修正)
+    // 19. Add listeners to each input/select that update the un-executed summary or display a warning badge when parameters change
+    // Exclude display control toggles (downsideFocusAsset, downsideFocusCash, logScaleToggle) (v1.8.3 fix)
     const simulationTabEl = document.getElementById('simulationTab');
     const inputsAndSelects = simulationTabEl
         ? simulationTabEl.querySelectorAll('input:not(#downsideFocusAsset):not(#downsideFocusCash):not(#logScaleToggle), select')
@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 20. ダウンサイドフォーカス トグル連動
+    // 20. Downside focus toggle linkage
     const dfAsset = document.getElementById('downsideFocusAsset');
     const dfCash = document.getElementById('downsideFocusCash');
     if (dfAsset) {
@@ -377,22 +377,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 21. 比較タブボタンイベント
+    // 21. Comparison tab button event
     const compareTabBtn = document.getElementById('openCompareTabBtn');
     if (compareTabBtn) {
         compareTabBtn.addEventListener('click', openCompareTab);
     }
 
-    // 22. URLコピーボタンイベント
+    // 22. URL copy button event
     const copySimUrlBtn = document.getElementById('copySimUrlBtn');
     if (copySimUrlBtn) {
         copySimUrlBtn.addEventListener('click', copySimUrl);
     }
 
-    // 23. URLクエリパラメータの自動設定
+    // 23. Automatic setting of URL query parameters
     applyQueryParams(runMain);
 
-    // 24. タブ切り替え処理
+    // 24. Tab switch processing
     const simTabBtn = document.getElementById('simTabBtn');
     const analysisTabBtn = document.getElementById('analysisTabBtn');
     const comparisonTabBtn = document.getElementById('comparisonTabBtn');
@@ -400,19 +400,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const analysisTabContent = document.getElementById('analysisTab');
     const comparisonTabContent = document.getElementById('comparisonTab');
 
-    // 統一的なタブ切り替え関数（他のタブを確実に非表示にする）
+    // Unified tab switching function (ensures other tabs are hidden)
     function switchTab(activeBtn, activeContent) {
-        // 全タブボタンを非アクティブ化
+        // Deactivate all tab buttons
         [simTabBtn, analysisTabBtn, comparisonTabBtn].filter(Boolean).forEach(btn => {
             btn.classList.remove('active', 'text-indigo-300');
             btn.classList.add('text-slate-400');
             btn.setAttribute('aria-selected', 'false');
         });
-        // 全タブコンテンツを非表示
+        // Hide all tab content
         [simulationTab, analysisTabContent, comparisonTabContent].filter(Boolean).forEach(content => {
             content.classList.add('hidden');
         });
-        // 指定タブのみアクティブ化
+        // Activate only the specified tab
         if (activeBtn) {
             activeBtn.classList.add('active', 'text-indigo-300');
             activeBtn.classList.remove('text-slate-400');
@@ -437,10 +437,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (comparisonTabBtn) {
         comparisonTabBtn.addEventListener('click', () => {
             switchTab(comparisonTabBtn, comparisonTabContent);
-            // 比較タブを初めて開いたとき、またはすでに初期化済みの場合は再描画
+            // When first opening the comparison tab, or if already initialized, re-render
             import('../comparison-ui.js').then(CUI => {
                 if (!comparisonTabContent.dataset.initialized) {
-                    // 初回：現在のシミュレーションパラメータで初期化
+                    // First time: initialize with the current simulation parameters
                     import('../params-accessor.js').then(PA => {
                         import('../comparison-state.js').then(CS => {
                             const simParams = PA.getCurrentSimParams();
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
     import('../analysis-ui.js').then(AUI => { AUI.setupAnalysisEventDelegation(); })
         .catch(e => console.error('analysis-ui load error', e));
 
-    // 25. タブバー固定（CSS sticky が効かない環境へのフォールバック）
+    // 25. Tab bar pinning (fallback for environments where CSS sticky doesn't work)
     const tabNavBar = document.querySelector('.tab-nav-bar');
     if (tabNavBar) {
         const sentinel = document.createElement('div');
@@ -467,13 +467,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const observer = new IntersectionObserver(([entry]) => {
             const isSticky = entry.intersectionRatio < 1;
             if (isSticky) {
-                // 固定時の幅を確定させるために、元のサイズを取得
+                // Get the original size to determine the width when pinned
                 const originalWidth = tabNavBar.offsetWidth;
                 tabNavBar.style.position = 'fixed';
                 tabNavBar.style.top = '0';
                 tabNavBar.style.zIndex = '100';
                 tabNavBar.style.width = originalWidth + 'px';
-                // 左右中央揃えを維持
+                // Maintain horizontal center alignment
                 tabNavBar.style.left = '50%';
                 tabNavBar.style.transform = 'translateX(-50%)';
             } else {
@@ -489,6 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(sentinel);
     }
 
-    // 26. ツールチップ初期化（静的要素用）
+    // 26. Tooltip initialization (for static elements)
     initTooltips();
 });

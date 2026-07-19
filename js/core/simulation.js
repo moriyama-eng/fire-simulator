@@ -1,7 +1,7 @@
 // ====================================================================
 // js/core/simulation.js
-// 単一パスのシミュレーションロジック。Workerから呼び出される。
-// 分析タブからの利用でも変更はない。
+// Single-path simulation logic. Called from Workers.
+// No changes when used from the Analysis tab.
 // ====================================================================
 
 import { calcAutoDf } from './params.js';
@@ -79,8 +79,8 @@ export function runSinglePath(rngs, params) {
     const releaseGR = guardrailRelease / 100;
     const simDf = simDfManual ? simDfNum : calcAutoDf(volatility);
 
-    // v2.3.0: 初期総資産（名目値、インフレ調整なし）
-    // CB OFF時は activeInitialCashBuffer が 0 のため、リスク資産のみが初期総資産となる
+    // v2.3.0: Initial total assets (nominal value, not inflation-adjusted)
+    // When CB is OFF, activeInitialCashBuffer is 0, so only risk assets are the initial total assets
     const initialTotalAssets = initialRiskAsset + activeInitialCashBuffer;
 
     const totals = new Float32Array(dataLen);
@@ -98,14 +98,14 @@ export function runSinglePath(rngs, params) {
     let maxUwMonths = 0;
     let maxDD = 0;
 
-    // v2.3.0: 新指標の状態変数
-    // 指標①: 初期総資産割れ 継続期間（最長）
+    // v2.3.0: State variables for new indicators
+    // Indicator ①: Longest consecutive period below initial total assets
     let currentBelowInitPeriod = 0;
     let maxBelowInitPeriod = 0;
-    // 指標②: リスク資産連続売却期間（割れ中かつ売却ありの場合のみカウント）
+    // Indicator ②: Consecutive risk asset sell period (counted only when below initial assets AND selling)
     let currentConsecutiveSellPeriod = 0;
     let maxConsecutiveSellPeriod = 0;
-    // 当月の取崩しでリスク資産を売却したかを示すフラグ（毎月リセット）
+    // Flag indicating whether risk assets were sold in the current month's withdrawal (reset each month)
     let soldFromRisk = false;
 
     totals[0] = currentRiskAsset + currentCash;
@@ -123,10 +123,10 @@ export function runSinglePath(rngs, params) {
     for (let t = 1; t <= totalMonths; t++) {
         if (bankrupt) break;
 
-        // v2.3.0: 月次先頭でsoldFromRiskフラグをリセット（取崩し処理内で適切に設定される）
+        // v2.3.0: Reset the soldFromRisk flag at the beginning of each month (set appropriately in the withdrawal process)
         soldFromRisk = false;
 
-        // インフレ
+        // Inflation
         if (useArInflation) {
             const annualInfVol = infVol / 100;
             const monthlyInfVol = annualInfVol / Math.sqrt(12);
@@ -139,7 +139,7 @@ export function runSinglePath(rngs, params) {
             infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
         }
 
-        // 市場リターン
+        // Market return
         let Z;
         if (useTDistribution) {
             const tRand = rngs.tRand(simDf);
@@ -149,7 +149,7 @@ export function runSinglePath(rngs, params) {
         }
         currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
 
-        // 支出
+        // Spending
         let currentExpense = monthlyExpense * infMultiplier;
         const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
 
@@ -157,29 +157,29 @@ export function runSinglePath(rngs, params) {
             currentExpense *= (1 + guardrailReduction / 100);
         }
 
-        // ---- 取崩し処理 ----
-        // soldFromRisk を適切に設定する（毎月リセット済み）
+        // ---- Withdrawal processing ----
+        // Set soldFromRisk appropriately (already reset at the start of the month)
         if (cashBufferToggle && useCashNextMonth) {
-            // 現金バッファから取崩し
+            // Withdraw from cash buffer
             currentCash -= currentExpense;
-            soldFromRisk = false; // 現金バッファから取崩したため売却なし
+            soldFromRisk = false; // No selling because withdrawn from cash buffer
         } else if (cashBufferToggle && isReplenishMode && currentCash < currentBufferLimit) {
-            // 補充モード（リスク資産から現金バッファへ補充後、取崩し）
-            // 補充モード中の取崩しは実質的にリスク資産の売却として扱う（指標②の要件）
+            // Replenishment mode (replenish cash buffer from risk assets, then withdraw)
+            // Withdrawal during replenishment mode is treated as de facto risk asset selling (requirement for Indicator ②)
             const shortage = currentBufferLimit - currentCash;
             const replenishAmount = Math.min(shortage, currentExpense * replenishPace);
             const actualReplenish = Math.min(replenishAmount, currentRiskAsset);
             currentRiskAsset -= actualReplenish;
             currentCash += actualReplenish;
             currentRiskAsset -= currentExpense;
-            soldFromRisk = true; // 補充モード中は実質的にリスク資産を売却したとみなす
+            soldFromRisk = true; // Treated as de facto risk asset selling during replenishment mode
         } else {
-            // リスク資産から直接取崩し
+            // Withdraw directly from risk assets
             currentRiskAsset -= currentExpense;
             soldFromRisk = true;
         }
 
-        // 破綻判定
+        // Bankruptcy determination
         if (currentRiskAsset + currentCash <= EPSILON) {
             currentRiskAsset = 0;
             currentCash = 0;
@@ -188,18 +188,18 @@ export function runSinglePath(rngs, params) {
             cashes[t] = 0;
             dds[t] = -1.0;
             maxDD = -1.0;
-            // 既存 of 停滞期間：破綻後は残り月数を加算
+            // Existing stagnation period: add remaining months after bankruptcy
             currentUwMonths += (totalMonths - t) + 1;
             if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
 
-            // v2.3.0: 破綻後は残り月数を両新指標に加算（破綻=シミュレーション終了まで割れ・売却継続）
+            // v2.3.0: After bankruptcy, add remaining months to both new indicators (bankruptcy = below initial assets and selling continues until end of simulation)
             const remainingMonths = (totalMonths - t) + 1;
-            // 指標①: 破綻月を含めた残り月数を加算
+            // Indicator ①: Add remaining months including the bankruptcy month
             currentBelowInitPeriod += remainingMonths;
             if (currentBelowInitPeriod > maxBelowInitPeriod) {
                 maxBelowInitPeriod = currentBelowInitPeriod;
             }
-            // 指標②: 破綻後も売却が継続したとみなして残り月数を加算
+            // Indicator ②: Treated as selling continuing after bankruptcy, add remaining months
             currentConsecutiveSellPeriod += remainingMonths;
             if (currentConsecutiveSellPeriod > maxConsecutiveSellPeriod) {
                 maxConsecutiveSellPeriod = currentConsecutiveSellPeriod;
@@ -207,34 +207,34 @@ export function runSinglePath(rngs, params) {
             break;
         }
 
-        // v2.3.0: 取崩し額が0円以下の月は売却なしとみなす（リセット条件②）
+        // v2.3.0: If the withdrawal amount is 0 yen or less in a month, it is treated as no selling (reset condition ②)
         if (currentExpense <= 0) {
             soldFromRisk = false;
         }
 
-        // ---- 補正処理 ----
-        // 現金バッファが負になった場合、不足分をリスク資産で補填
+        // ---- Correction processing ----
+        // If cash buffer goes negative, make up the shortfall from risk assets
         if (currentCash < 0) {
-            currentRiskAsset += currentCash; // currentCash は負
+            currentRiskAsset += currentCash; // currentCash is negative
             currentCash = 0;
-            // 補正によりリスク資産が減少した場合は売却とみなす
+            // If risk assets decreased due to correction, treat it as selling
             soldFromRisk = true;
         }
-        // リスク資産が負になった場合（取崩し額が残高を超えたケース）
+        // If risk assets go negative (case where withdrawal amount exceeds balance)
         if (currentRiskAsset < 0) {
-            // 実質的にリスク資産の売却が行われたとして扱う（指標②のカウント継続）
+            // Treat as de facto risk asset selling (continue counting for Indicator ②)
             currentCash += currentRiskAsset;
             currentRiskAsset = 0;
             soldFromRisk = true;
         }
 
-        // 支出後総資産
+        // Post-spending total assets
         const eomAsset = currentRiskAsset + currentCash;
-        // 支出後総資産（月末資産）を算出
+        // Calculate end-of-month assets (post-spending total assets)
         const safeHWM = Math.max(highWaterMark, EPSILON);
         const eomDD = Math.min(0, (eomAsset - safeHWM) / safeHWM);
 
-        // 判定
+        // Determination
         const newState = evaluateMonthEnd(eomAsset, highWaterMark, eomDD, {
             isGuardrailActive,
             currentUwMonths,
@@ -251,35 +251,35 @@ export function runSinglePath(rngs, params) {
         maxDD = newState.maxDD;
         highWaterMark = newState.highWaterMark;
 
-        // ---- v2.3.0: 新指標の計算（月末総資産 eomAsset を基準に判定） ----
-        // ① 初期総資産割れ判定（同額以上 = 回復、それ未満 = 割れ状態）
+        // ---- v2.3.0: Calculation of new indicators (determined based on end-of-month total assets eomAsset) ----
+        // ① Determination of whether below initial total assets (equal or above = recovery, below = below state)
         const isBelowInit = eomAsset < initialTotalAssets;
 
-        // 指標①: 初期総資産割れ 継続期間（最長値を追跡）
+        // Indicator ①: Longest consecutive period below initial total assets (track maximum value)
         if (isBelowInit) {
             currentBelowInitPeriod++;
         } else {
-            // 同額以上で回復とみなしカウントをリセット
+            // Reset count when recovered to equal or above
             currentBelowInitPeriod = 0;
         }
         if (currentBelowInitPeriod > maxBelowInitPeriod) {
             maxBelowInitPeriod = currentBelowInitPeriod;
         }
 
-        // 指標②: リスク資産連続売却期間（割れ中かつ売却あり場合のみカウント）
-        // 補充モード中は soldFromRisk = true が維持されるため、
-        // else ブロック（リセット）は補充モード中に実質的に実行されない（要件通り）
+        // Indicator ②: Consecutive risk asset sell period (counted only when below initial assets AND selling)
+        // During replenishment mode, soldFromRisk = true is maintained,
+        // so the else block (reset) is effectively not executed during replenishment mode (as per requirements)
         if (isBelowInit && soldFromRisk) {
             currentConsecutiveSellPeriod++;
         } else {
-            // 割れが解消したか、売却が行われなかった場合（現金バッファ取崩し等）はリセット
+            // Reset if below-initial state is resolved, or if no selling occurred (e.g., cash buffer withdrawal)
             currentConsecutiveSellPeriod = 0;
         }
         if (currentConsecutiveSellPeriod > maxConsecutiveSellPeriod) {
             maxConsecutiveSellPeriod = currentConsecutiveSellPeriod;
         }
 
-        // 記録
+        // Record
         totals[t] = eomAsset;
         cashes[t] = currentCash;
         dds[t] = eomDD;
@@ -288,8 +288,8 @@ export function runSinglePath(rngs, params) {
     return {
         totals, cashes, dds,
         maxDD, maxUW: maxUwMonths,
-        maxBelowInitPeriod,      // v2.3.0: 初期総資産割れ最長継続期間（月数）
-        maxConsecutiveSellPeriod, // v2.3.0: リスク資産最長連続売却期間（月数）
+        maxBelowInitPeriod,      // v2.3.0: Longest consecutive period below initial total assets (months)
+        maxConsecutiveSellPeriod, // v2.3.0: Longest consecutive risk asset sell period (months)
         bankrupt
     };
 }

@@ -13,7 +13,7 @@ export async function runSimulation(params, userPercentiles) {
     if (!userPercentiles) userPercentiles = [10, 25, 50, 75, 90];
     const { simYears, simPaths, volatility, simDfManual, simDfNum, seedNum } = params;
 
-    // Bug #13: hardwareConcurrency = 0 の環境で最低1Workerを保証
+    // Guarantee at least 1 Worker in environments where hardwareConcurrency is 0
     const numWorkers = Math.max(1, Math.min(navigator.hardwareConcurrency || 4, 8));
     const basePaths = Math.floor(simPaths / numWorkers);
     const remainder = simPaths % numWorkers;
@@ -49,7 +49,7 @@ export async function runSimulation(params, userPercentiles) {
             worker.onerror = (err) => {
                 if (hasFailed) return;
                 hasFailed = true;
-                // Bug #29: alert を削除し、エラーを再throwで呼び出し元に伝播
+                // Remove alert and re-throw error to propagate to the caller
                 workers.forEach(w => w.terminate());
                 err.message = 'error.simFailed';
                 rejW(err);
@@ -64,13 +64,13 @@ export async function runSimulation(params, userPercentiles) {
     const results = await Promise.all(workerPromises);
     if (hasFailed) return;
 
-    // マージ
+    // Merge
     const mergedTotals = new Float32Array(simPaths * dataLen);
     const mergedCashes = new Float32Array(simPaths * dataLen);
     const mergedDds = new Float32Array(simPaths * dataLen);
     const maxDdPerPath = new Float32Array(simPaths);
     const maxUwPerPath = new Float32Array(simPaths);
-    // v2.3.0: 新指標バッファのマージ用配列
+    // v2.3.0: Arrays for merging new indicator buffers
     const belowInitPeriods = new Float32Array(simPaths);
     const consecutiveSellPeriods = new Float32Array(simPaths);
     let bankruptCount = 0, globalPathIndex = 0;
@@ -83,15 +83,15 @@ export async function runSimulation(params, userPercentiles) {
         mergedDds.set(new Float32Array(res.ddsBuffer), offset);
         maxDdPerPath.set(new Float32Array(res.maxDdsBuffer), globalPathIndex);
         maxUwPerPath.set(new Float32Array(res.maxUwsBuffer), globalPathIndex);
-        // v2.3.0: 新指標バッファをマージ
+        // v2.3.0: Merge new indicator buffers
         belowInitPeriods.set(new Float32Array(res.belowInitPeriodsBuffer), globalPathIndex);
         consecutiveSellPeriods.set(new Float32Array(res.consecutiveSellPeriodsBuffer), globalPathIndex);
         bankruptCount += res.bankruptCount;
         globalPathIndex += pathsCountInWorker;
     }
 
-    // 初期総資産（円単位）を計算：リスク資産 + 現金バッファ（CB ON時のみ）
-    // CB OFF時は params.initialCashBuffer が 0 になる（getParamsFromInputs で保証される）
+    // Calculate initial total assets (in yen): risk assets + cash buffer (only when CB is ON)
+    // When CB is OFF, params.initialCashBuffer is 0 (guaranteed by getParamsFromInputs)
     const initialTotalAssets = params.initialRiskAsset + (params.cashBufferToggle ? params.initialCashBuffer : 0);
 
     const result = aggregateResultsProduction({
@@ -99,8 +99,8 @@ export async function runSimulation(params, userPercentiles) {
         cashesBuffer: mergedCashes.buffer,
         ddsBuffer: mergedDds.buffer,
         maxDdPerPath, maxUwPerPath,
-        belowInitPeriods,          // v2.3.0: 新指標（パスごとの割れ最長継続期間）
-        consecutiveSellPeriods,    // v2.3.0: 新指標（パスごとの連続売却最長期間）
+        belowInitPeriods,          // v2.3.0: New indicator (longest consecutive period below initial assets per path)
+        consecutiveSellPeriods,    // v2.3.0: New indicator (longest consecutive sell period per path)
         simPaths, dataLen, percentiles: userPercentiles, bankruptCount,
         targetAssetRatio: params.targetAssetRatio,
         initialTotalAssets: initialTotalAssets,

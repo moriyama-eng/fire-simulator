@@ -9,11 +9,11 @@ describe('transposeFlat', () => {
     });
 });
 
-// ===== 目標資産維持確率のテスト =====
+// ===== Target asset maintenance rate tests =====
 import { aggregateResultsProduction } from '../../js/core/aggregation.js';
 
 describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
-    // ヘルパー関数: モックバッファを作成
+    // Helper function: create mock buffers
     const createMockBuffers = (simPaths, dataLen, finalAssets) => {
         const totalsBuffer = new Float32Array(simPaths * dataLen);
         for (let p = 0; p < simPaths; p++) {
@@ -28,8 +28,8 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         };
     };
 
-    // テストケース1: 全パスが閾値超過 → 100%
-    it('全パスが閾値超過 → 100%', () => {
+    // Test case 1: all paths exceed threshold → 100%
+    it('All paths exceed threshold → 100%', () => {
         const simPaths = 10;
         const dataLen = 361;
         const finalAssets = Array(simPaths).fill(150_000_000);
@@ -49,8 +49,8 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         expect(result.targetAssetMaintainRate).toBe(100);
     });
 
-    // テストケース2: 半数パスが閾値超過 → 50%
-    it('半数パスが閾値超過 → 50%', () => {
+    // Test case 2: half of paths exceed threshold → 50%
+    it('Half of paths exceed threshold → 50%', () => {
         const simPaths = 10;
         const dataLen = 361;
         const finalAssets = [
@@ -73,8 +73,8 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         expect(result.targetAssetMaintainRate).toBe(50);
     });
 
-    // テストケース3: 0パスが閾値超過 → 0%
-    it('0パスが閾値超過 → 0%', () => {
+    // Test case 3: 0 paths exceed threshold → 0%
+    it('0 paths exceed threshold → 0%', () => {
         const simPaths = 10;
         const dataLen = 361;
         const finalAssets = Array(simPaths).fill(50_000_000);
@@ -94,8 +94,8 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         expect(result.targetAssetMaintainRate).toBe(0);
     });
 
-    // テストケース4: targetAssetRatio=0.5（閾値半減）→ 全パス超過で100%
-    it('targetAssetRatio=0.5 → 閾値半減で全パス超過', () => {
+    // Test case 4: targetAssetRatio=0.5 (threshold halved) → all paths exceed = 100%
+    it('targetAssetRatio=0.5 → threshold halved, all paths exceed', () => {
         const simPaths = 10;
         const dataLen = 361;
         const finalAssets = Array(simPaths).fill(60_000_000);
@@ -115,8 +115,8 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         expect(result.targetAssetMaintainRate).toBe(100);
     });
 
-    // テストケース5: targetAssetRatio=2.0（閾値倍）→ 全パス未満で0%
-    it('targetAssetRatio=2.0 → 閾値倍で全パス未満', () => {
+    // Test case 5: targetAssetRatio=2.0 (threshold doubled) → all paths below = 0%
+    it('targetAssetRatio=2.0 → threshold doubled, all paths below', () => {
         const simPaths = 10;
         const dataLen = 361;
         const finalAssets = Array(simPaths).fill(150_000_000);

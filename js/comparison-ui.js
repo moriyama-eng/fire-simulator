@@ -1,5 +1,5 @@
 // js/comparison-ui.js
-// 比較タブ UI 制御
+// Comparison tab UI control
 
 import * as CS from './comparison-state.js';
 import { runAllScenarios } from './comparison-runner.js';
@@ -9,7 +9,7 @@ import { t, getLanguage, formatCurrency, formatPercent, formatYears, formatNumbe
 
 let runningState = null;
 
-// トーストメッセージを一時表示するユーティリティ関数
+// Utility function to temporarily display a toast message
 function showToast(message, duration = 2000) {
     const toast = document.createElement('div');
     toast.textContent = message;
@@ -18,7 +18,7 @@ function showToast(message, duration = 2000) {
     setTimeout(() => toast.remove(), duration);
 }
 
-// ----- 定数定義 (PARAM_ROWS) -----
+// ----- Constant definitions (PARAM_ROWS) -----
 const PARAM_ROWS = [
     { key: 'initial_risk_asset', labelKey: 'summary.riskAsset', inputType: 'number', unitKey: 'unit.oku', tooltipKey: 'asset.riskAsset.tooltip', field: 'initialRiskAsset', step: 0.1, min: 0, max: 10, scale: 1e8, displayCondition: null },
     { key: 'initial_cash_buffer', labelKey: 'summary.cashBuffer', inputType: 'number', unitKey: 'unit.man', tooltipKey: 'asset.cashBuffer.tooltip', field: 'initialCashBuffer', step: 500, min: 0, max: 10000, scale: 1e4, displayCondition: (inputs) => inputs.cashBufferEnabled },
@@ -44,7 +44,7 @@ const PARAM_ROWS = [
     { key: 'guardrail_reduction', labelKey: 'gr.reduction', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'gr.reduction.tooltip', field: 'guardrailReduction', step: 5.0, min: -100, max: 0, scale: 1, displayCondition: (inputs) => inputs.guardrailEnabled },
 ];
 
-// ----- 出力行定義（worst10_max_dd の isLowerBetter を削除）-----
+// ----- Output row definitions (removed isLowerBetter from worst10_max_dd) -----
 const OUTPUT_ROWS = [
     { key: 'success_rate', labelKey: 'summary.successRate', unitKey: 'unit.percent', tooltipKey: 'summary.successRate.tooltip', getValue: (r) => r?.successRate, format: (v) => v !== undefined ? v.toFixed(1) + '%' : null, isPercentage: true },
     { key: 'final_median', labelKey: 'summary.finalMedian', unitKey: 'unit.oku', tooltipKey: 'comparison.finalMedian.tooltip', getValue: (r) => r?.finalMedian, format: (v) => v !== undefined ? formatCurrency(v, '億円') : null, isPercentage: false },
@@ -53,7 +53,7 @@ const OUTPUT_ROWS = [
     { key: 'median_max_uw', labelKey: 'comparison.median_max_uw', unitKey: 'unit.years', tooltipKey: 'comparison.medianMaxUw.tooltip', getValue: (r) => r?.medianMaxUw, format: (v) => v !== undefined ? (v / 12).toFixed(1) + ' ' + t('unit.years') : null, isPercentage: false, isLowerBetter: true },
 ];
 
-// ----- ヘルパー関数（通貨変換・境界値変換）-----
+// ----- Helper functions (currency conversion and boundary value conversion) -----
 export function convertDisplayValueToJPY(displayValue, unitKey) {
     const numericValue = typeof displayValue === 'string' ? parseFloat(displayValue) : displayValue;
     if (isNaN(numericValue)) return 0;
@@ -318,12 +318,12 @@ export function renderComparisonTab() {
                     </div>
                     <div class="action-menu-wrapper mt-1 flex items-center justify-center gap-1" data-id="${s.id}">
                         <span class="drag-handle text-slate-500 ${isRunning ? 'opacity-50' : ''} cursor-grab">
-                            <svg class="drag-handle-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ドラッグハンドル">
+                            <svg class="drag-handle-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drag handle">
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                             </svg>
                         </span>
                         <button class="action-menu-trigger p-1.5 rounded text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 transition-colors" data-id="${s.id}" aria-haspopup="true" aria-expanded="false" ${isRunning ? 'disabled' : ''} title="${t('comparison.scenarioName')}">
-                            <span class="sr-only">シナリオ操作メニュー</span>
+                            <span class="sr-only">Scenario operation menu</span>
                             <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                                 <circle cx="12" cy="5" r="2" />
                                 <circle cx="12" cy="12" r="2" />
@@ -485,7 +485,7 @@ export function renderComparisonTab() {
     html += `</tbody></table></div>`;
     container.innerHTML = html;
 
-    // スクロール位置復元（二重 requestAnimationFrame でレイアウト確定を確実に）
+    // Restore scroll position (ensure layout is finalized using double requestAnimationFrame)
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             const newWrapper = container.querySelector('.comparison-table-wrapper');
@@ -496,36 +496,36 @@ export function renderComparisonTab() {
     setupEventDelegation();
     initTooltips();
     restoreActiveElement(activeInfo);
-    // FIX-03: ドラッグ＆ドロップでシナリオ列を並び替え
+    // Reorder scenario columns via drag and drop
     initSortable(container);
 }
 
 /**
- * FIX-03: SortableJSを用いてtheadのth列をドラッグ可能にする
- * テスト環境（JSDOM）ではSortableが未定義のためスキップ
- * @param {HTMLElement} container - comparisonTableContainerの要素
+ * Make thead th columns draggable using SortableJS
+ * Skip in test environments (JSDOM) where Sortable is not defined
+ * @param {HTMLElement} container - The comparisonTableContainer element
  */
 function initSortable(container) {
-    // テスト環境やSortable未ロード時はスキップ
+    // Skip if in test environment or Sortable is not loaded
     if (typeof Sortable === 'undefined') return;
     if (CS.getIsRunning()) return;
 
     const thead = container.querySelector('.comparison-table thead tr');
     if (!thead) return;
 
-    // 既存インスタンスがあれば破棄
+    // Destroy existing instance if present
     if (thead._sortableInstance) {
         thead._sortableInstance.destroy();
         thead._sortableInstance = null;
     }
 
     thead._sortableInstance = Sortable.create(thead, {
-        handle: '.drag-handle',    // ドラッグハンドルアイコンのみを操作点に指定
+        handle: '.drag-handle',    // Specify only the drag handle icon as the operation point
         animation: 150,
-        filter: '.sticky-left, .add-column',   // 左端「パラメータ」列と右端「追加」列は移動禁止
+        filter: '.sticky-left, .add-column',   // Prohibit moving the leftmost "Parameter" column and the rightmost "Add" column
         ghostClass: 'sortable-ghost',
         onEnd: (evt) => {
-            // stickyLeftの分だけインデックスをオフセット補正（theadの1列目はパラメータ列）
+            // Offset-correct the index by the amount of stickyLeft (the first column of thead is the parameter column)
             const fromIndex = evt.oldIndex - 1;
             const toIndex = evt.newIndex - 1;
             if (fromIndex < 0 || toIndex < 0) return;
@@ -537,7 +537,7 @@ function initSortable(container) {
 
 function updateProgress(current, total) {
     runningState = { current, total };
-    // 毎回ボタン要素を再取得（スタレ化防止）
+    // Re-acquire the button element each time (to prevent staleness)
     const btn = document.getElementById('runAllBtn');
     if (btn) {
         btn.textContent = t('comparison.running', [current, total]);
@@ -545,7 +545,7 @@ function updateProgress(current, total) {
     }
 }
 
-// シナリオ操作を一元処理する関数
+// Centralized function to handle scenario operations
 function handleScenarioAction(action, id) {
     if (CS.getIsRunning()) return;
     switch (action) {
@@ -602,7 +602,7 @@ function setupEventDelegation() {
     if (!container || container._delegationSetup) return;
     container._delegationSetup = true;
 
-    // クリックイベントの委譲（ボタン関連 - 主にadd, run-all等、またはDropdownトリガー、Dropdownアイテム）
+    // Click event delegation (button-related - primarily add, run-all, etc., or dropdown triggers and dropdown items)
     container.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-action]');
         const isRunning = CS.getIsRunning();
@@ -633,7 +633,7 @@ function setupEventDelegation() {
                         seedInput.value = CS.getCommonSeed();
                     }
                 }
-                // 編集中のシナリオ名を確定
+                // Confirm editing scenario name
                 const editingEl = document.querySelector('.scenario-name[contenteditable="true"]:focus');
                 if (editingEl) {
                     CS.updateScenarioName(editingEl.dataset.id, editingEl.textContent);
@@ -656,7 +656,7 @@ function setupEventDelegation() {
             }
         }
 
-        // プルダウントリガーのクリック（開閉）
+        // Dropdown trigger click (open/close)
         const trigger = e.target.closest('.action-menu-trigger');
         if (trigger) {
             if (CS.getIsRunning()) return;
@@ -664,7 +664,7 @@ function setupEventDelegation() {
                 e.stopPropagation();
                 const wrapper = trigger.closest('.action-menu-wrapper');
                 const dropdown = wrapper.querySelector('.action-dropdown');
-                // 既に開いている他のメニューを閉じる
+                // Close any other menus that are already open
                 document.querySelectorAll('.action-dropdown:not(.hidden)').forEach(el => {
                     if (el !== dropdown) el.classList.add('hidden');
                 });
@@ -679,14 +679,14 @@ function setupEventDelegation() {
             }
         }
 
-        // ドロップダウン項目のクリック
+        // Dropdown item click
         const item = e.target.closest('.dropdown-item');
         if (item && !item.disabled && !isRunning) {
             e.stopPropagation();
             const action = item.dataset.action;
             const id = item.dataset.id;
             
-            // ドロップダウンを閉じる
+            // Close the dropdown
             const dropdown = item.closest('.action-dropdown');
             if (dropdown) dropdown.classList.add('hidden');
             const trigger = item.closest('.action-menu-wrapper').querySelector('.action-menu-trigger');
@@ -696,7 +696,7 @@ function setupEventDelegation() {
         }
     });
 
-    // メニュー外クリックで閉じる（document に委譲）
+    // Close on click outside the menu (delegated to document)
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.action-menu-wrapper')) {
             document.querySelectorAll('.action-dropdown:not(.hidden)').forEach(el => {
@@ -707,7 +707,7 @@ function setupEventDelegation() {
         }
     });
 
-    // ドロップダウンを閉じるEscapeキーの監視
+    // Monitor Escape key to close dropdown
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const activeDropdown = document.querySelector('.action-dropdown:not(.hidden)');
@@ -732,15 +732,15 @@ function setupEventDelegation() {
         if (target.id === 'commonSeedToggle') {
             const seedInput = document.getElementById('commonSeedInput');
             if (seedInput) {
-                const isChecked = target.checked; // true = ランダム（無効化）
+                const isChecked = target.checked; // true = random (disabled)
                 const isRunning = CS.getIsRunning();
                 const shouldDisable = isChecked || isRunning;
                 seedInput.disabled = shouldDisable;
-                // クラスのトグルで視覚的グレーアウトを即時反映
+                // Immediately reflect the visual grayout by toggling classes
                 seedInput.classList.toggle('opacity-50', shouldDisable);
                 seedInput.classList.toggle('cursor-not-allowed', shouldDisable);
             }
-            // 再描画は不要（状態は即座に更新される）
+            // No re-rendering needed (state is updated immediately)
             return;
         }
 
@@ -794,7 +794,7 @@ function setupEventDelegation() {
         }
     }, true);
 
-    // フォーカスイン・フォーカスアウト・キーダウンイベントの委譲（シナリオ名の contenteditable 用）
+    // Delegate focusin, focusout, and keydown events (for contenteditable scenario names)
     container.addEventListener('focusin', (e) => {
         if (e.target.classList.contains('scenario-name')) {
             e.target._originalName = e.target.textContent;
@@ -833,8 +833,8 @@ function setupEventDelegation() {
 }
 
 /**
- * 比較タブを初期化してレンダリングする
- * @param {Object} initialInputs - シミュレーションタブから取得した初期パラメータ
+ * Initialize and render the comparison tab
+ * @param {Object} initialInputs - Initial parameters obtained from the simulation tab
  */
 export function initComparisonTab(initialInputs) {
     CS.initScenarios(initialInputs, t);

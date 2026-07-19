@@ -13,7 +13,7 @@ self.onmessage = function (e) {
     const dds = new Float32Array(pathsCount * dataLen);
     const maxDds = new Float32Array(pathsCount);
     const maxUws = new Float32Array(pathsCount);
-    // v2.3.0: 新指標用バッファ
+    // v2.3.0: Buffers for new indicators
     const belowInitPeriods = new Float32Array(pathsCount);
     const consecutiveSellPeriods = new Float32Array(pathsCount);
     let bankruptCount = 0;
@@ -32,7 +32,7 @@ self.onmessage = function (e) {
         dds.set(result.dds, baseIdx);
         maxDds[p] = result.maxDD;
         maxUws[p] = result.maxUW;
-        // v2.3.0: 新指標を格納
+        // v2.3.0: Store new indicators
         belowInitPeriods[p] = result.maxBelowInitPeriod;
         consecutiveSellPeriods[p] = result.maxConsecutiveSellPeriod;
         if (result.bankrupt) bankruptCount++;
@@ -47,7 +47,7 @@ self.onmessage = function (e) {
         ddsBuffer: dds.buffer,
         maxDdsBuffer: maxDds.buffer,
         maxUwsBuffer: maxUws.buffer,
-        // v2.3.0: 新指標バッファを転送リストに追加
+        // v2.3.0: Add new indicator buffers to the transfer list
         belowInitPeriodsBuffer: belowInitPeriods.buffer,
         consecutiveSellPeriodsBuffer: consecutiveSellPeriods.buffer,
         bankruptCount

@@ -15,13 +15,13 @@ export function transposeFlat(buffer, simPaths, dataLen) {
     return result;
 }
 
-// v1.10.0でメモリ効率化のため逐次転置方式に変更。v2.0.0でも同様の実装を維持。
-// 総資産・現金・ドローダウンを1種類ずつ計算し、不要になった転置結果はGCに解放させる。
+// Changed to sequential transposition method in v1.10.0 for memory efficiency. Same implementation maintained in v2.0.0.
+// Calculate and release each of the three types of buffers (total assets, cash, drawdown) one at a time.
 export function aggregateResultsProduction({
     totalsBuffer, cashesBuffer, ddsBuffer,
     maxDdPerPath, maxUwPerPath,
-    belowInitPeriods,        // v2.3.0: パスごとの初期総資産割れ最長継続期間
-    consecutiveSellPeriods,  // v2.3.0: パスごとのリスク資産最長連続売却期間
+    belowInitPeriods,        // v2.3.0: Longest consecutive period below initial total assets per path
+    consecutiveSellPeriods,  // v2.3.0: Longest consecutive risk asset sell period per path
     simPaths, dataLen, percentiles, bankruptCount,
     targetAssetRatio,
     initialTotalAssets
@@ -36,7 +36,7 @@ export function aggregateResultsProduction({
     const workBuffer = new Float32Array(simPaths);
     const resultBuf = new Float32Array(percentiles.length);
 
-    // 総資産(totals)のパーセンタイル計算
+    // Percentile calculation for total assets (totals)
     {
         const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
         for (let t = 0; t < dataLen; t++) {
@@ -44,10 +44,10 @@ export function aggregateResultsProduction({
             multiSelectTrue(workBuffer, ks, resultBuf);
             for (let i = 0; i < ks.length; i++) totalPercentileData[i][t] = resultBuf[i];
         }
-        // totalT はこのスコープを抜けると解放される
+        // totalT is released when this scope exits
     }
 
-    // 現金バッファ(cashes)のパーセンタイル計算
+    // Percentile calculation for cash buffer (cashes)
     {
         const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
         for (let t = 0; t < dataLen; t++) {
@@ -57,7 +57,7 @@ export function aggregateResultsProduction({
         }
     }
 
-    // ドローダウン(dds)のパーセンタイル計算
+    // Percentile calculation for drawdown (dds)
     {
         const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
         for (let t = 0; t < dataLen; t++) {
@@ -67,7 +67,7 @@ export function aggregateResultsProduction({
         }
     }
 
-    // 破壊的操作(quickselect)から保護するためコピーを作成
+    // Create copies to protect from destructive operations (quickselect)
     const ddCopy = Float32Array.from(maxDdPerPath);
     const uwCopy = Float32Array.from(maxUwPerPath);
     const worst5Idx = Math.floor(0.05 * (simPaths - 1));
@@ -83,10 +83,10 @@ export function aggregateResultsProduction({
     let medianPIdx = percentiles.indexOf(50);
     if (medianPIdx === -1) medianPIdx = Math.floor(percentiles.length / 2);
 
-    // 目標資産維持確率の計算
-    // targetAssetThreshold = 初期総資産 × targetAssetRatio
-    // 最終月（インデックス dataLen-1）の総資産が閾値以上か判定
-    // 注意: successRate の計算式は変更しない（別指標として追加）
+    // Calculation of target asset maintenance probability
+    // targetAssetThreshold = initial total assets × targetAssetRatio
+    // Determine if the total assets in the final month (index dataLen-1) are at or above the threshold
+    // Note: Do not change the successRate calculation formula (added as a separate indicator)
     const targetThreshold = initialTotalAssets * (targetAssetRatio / 100);
     let maintainCount = 0;
     const totalsArray = new Float32Array(totalsBuffer);
@@ -108,8 +108,8 @@ export function aggregateResultsProduction({
         worst10MaxDd, worst5MaxDd,
         medianMaxUw, worst10MaxUw,
         maxDdPerPath, maxUwPerPath,
-        belowInitPeriods,        // v2.3.0: パスごとの初期総資産割れ最長継続期間を戻り値に追加
-        consecutiveSellPeriods,  // v2.3.0: パスごとのリスク資産最長連続売却期間を戻り値に追加
+        belowInitPeriods,        // v2.3.0: Added longest consecutive period below initial total assets per path to return value
+        consecutiveSellPeriods,  // v2.3.0: Added longest consecutive risk asset sell period per path to return value
         params: { simPaths, totalMonths: dataLen - 1 },
         dataLen,
         targetAssetMaintainRate,

@@ -1,13 +1,13 @@
-// ブラウザ DevTools コンソールで実行
-// ※ パス数などを 1000 に設定するには、一時的に simPathsNum の min 属性を変更するか、
-//    DevTools で document.getElementById('simPathsNum').value = '1000' と入力する。
+// Execute in browser DevTools console
+// * To set the number of paths to 1000, temporarily change the min attribute of simPathsNum, or
+//   enter document.getElementById('simPathsNum').value = '1000' in DevTools.
 (function generateReference() {
     if (typeof lastSimResult === 'undefined') {
-        console.error('❌ lastSimResult がありません。先にシミュレーションを実行してください。');
+        console.error('❌ lastSimResult is not defined. Please run the simulation first.');
         return;
     }
     const ref = {
-        _comment: 'v1.8.3 参照データ。seed=123456, paths=1000, 他デフォルト値',
+        _comment: 'v1.8.3 reference data. seed=123456, paths=1000, other default values',
         successRate: lastSimResult.successRate,
         finalMedian: lastSimResult.finalMedian,
         worst10MaxDd: lastSimResult.worst10MaxDd,
@@ -24,8 +24,8 @@
         usedDf: lastSimResult.usedDf
     };
     const jsonStr = JSON.stringify(ref, null, 2);
-    console.log('✅ 参照データ:\n' + jsonStr);
+    console.log('✅ Reference data:\n' + jsonStr);
     copy(jsonStr);
-    console.log('\n📝 tests/fixtures/reference-results.json に保存し、以下で検証:');
+    console.log('\n📝 Save to tests/fixtures/reference-results.json and verify with:');
     console.log('node --input-type=commonjs -e "JSON.parse(require(\'fs\').readFileSync(\'tests/fixtures/reference-results.json\',\'utf-8\')); console.log(\'OK\')"');
 })();

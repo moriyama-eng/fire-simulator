@@ -1,7 +1,7 @@
 // ====================================================================
 // js/app/charts.js
-// グラフ描画関数群（Chart.js ラッパー）
-// 依存: i18n.js, app/state.js のみ（循環インポート防止）
+// Collection of chart rendering functions (Chart.js wrappers)
+// Dependencies: i18n.js and app/state.js only (to prevent circular imports)
 // ====================================================================
 
 import { t, formatCurrency, formatYears, getLanguage } from '../i18n.js';
@@ -16,8 +16,8 @@ import {
 } from './state.js';
 
 // ====================================================================
-// パーセンタイル色グラデーション（本数・昇順インデックスで決定）
-// 赤→橙→黄→黄緑→緑 のグラデーション
+// Percentile color gradient (determined by count and ascending index)
+// Gradient from red → orange → yellow → yellow-green → green
 // ====================================================================
 const GRADIENT_COLORS_BY_COUNT = {
     1: ['#f1c40f'],
@@ -28,22 +28,22 @@ const GRADIENT_COLORS_BY_COUNT = {
 };
 
 /**
- * 昇順インデックス(index)と総本数(total)から色を返す
- * index=0 が最小パーセンタイル（赤寄り）
+ * Returns a color based on the ascending index (index) and total count (total)
+ * index=0 corresponds to the lowest percentile (toward red)
  */
 function getPercentileColorByIndex(index, total) {
     const palette = GRADIENT_COLORS_BY_COUNT[Math.min(total, 5)] || GRADIENT_COLORS_BY_COUNT[5];
     return palette[Math.min(index, palette.length - 1)];
 }
 
-// X軸ラベル生成（インデックスのみ、tick callbackで年表示）
+// Generate X-axis labels (index only, year is displayed via tick callback)
 function generateLabels(dataLen) {
     const labels = [];
     for (let i = 0; i < dataLen; i++) labels.push(i);
     return labels;
 }
 
-// X軸 tick callback: 適切な年間隔でラベルを表示
+// X-axis tick callback: display labels at appropriate year intervals
 function xTickCallback(value, index) {
     const totalMonths = this.chart.data.labels.length - 1;
     const totalYears = totalMonths / 12;
@@ -55,7 +55,7 @@ function xTickCallback(value, index) {
     return null;
 }
 
-// ツールチップのタイトル（経過年数を常に表示）
+// Tooltip title (always show elapsed years)
 function tooltipTitleCallback(tooltipItems) {
     const index = tooltipItems[0].dataIndex;
     const year = Math.floor(index / 12);
@@ -67,8 +67,8 @@ function tooltipTitleCallback(tooltipItems) {
 }
 
 // ====================================================================
-// カスタムツールチップポジショナー（CCDFグラフ用）
-// ポイントの真上（スペース不足時は真下）に配置し、ポイントを覆わない
+// Custom tooltip positioner (for CCDF charts)
+// Placed directly above the point (below if space is insufficient) to avoid covering the point
 // ====================================================================
 const customTooltipPosition = function(items) {
     const chart = this.chart;
@@ -79,9 +79,9 @@ const customTooltipPosition = function(items) {
     const x = item.element.x;
     const y = item.element.y;
 
-    // Y軸のアライメント判定（上部余白が足りない場合のみ下側に配置）
+    // Determine Y-axis alignment (place below only when there is insufficient space above)
     let yAlignVal = 'bottom';
-    // ツールチップの概算高さ(約40px)+マージン(12px)を考慮して判定
+    // Determine position considering the estimated tooltip height (~40px) + margin (12px)
     if (y - 52 < top) {
         yAlignVal = 'top';
     }
@@ -94,25 +94,25 @@ const customTooltipPosition = function(items) {
     };
 };
 
-// テスト環境などでグローバルな Chart オブジェクトが存在しない場合のエラーを防ぐため、存在確認後に登録する
+// Guard against errors when a global Chart object does not exist (e.g., in test environments); register only if it exists
 if (typeof Chart !== 'undefined' && Chart.Tooltip && Chart.Tooltip.positioners) {
     Chart.Tooltip.positioners.customTooltipPosition = customTooltipPosition;
 }
 
 // ====================================================================
-// ダウンサイドフォーカス適用
+// Apply downside focus
 // ====================================================================
 export function applyDownsideFocus(chart, enabled) {
-    // チャートインスタンスが不完全な状態で呼ばれた場合のガード（言語切替タイミング等）
+    // Guard against being called when the chart instance is in an incomplete state (e.g., during language switching)
     if (!chart || !chart.data) return;
-    // まず全 dataset の表示・非表示を確定する
+    // First, determine the visibility of all datasets
     chart.data.datasets.forEach((ds, i) => {
         const pct = parseInt(ds.label, 10);
         const visible = !enabled || pct <= 50;
         chart.setDatasetVisibility(i, visible);
     });
 
-    // ファンチャートの fill 補正:
+    // Fan chart fill correction:
     let firstVisible = true;
     chart.data.datasets.forEach((ds) => {
         const pct = parseInt(ds.label, 10);
@@ -131,7 +131,7 @@ export function applyDownsideFocus(chart, enabled) {
 }
 
 // ====================================================================
-// v2.3.0: 共通 CCDF 点生成ヘルパー（UI負荷軽減のための間引き付き）
+// v2.3.0: Common CCDF point generation helper (with thinning for reduced UI load)
 // ====================================================================
 export function buildCdfPoints(sortedData, simPaths, mode = 'ccdf') {
     const pointsMap = new Map();
@@ -139,16 +139,16 @@ export function buildCdfPoints(sortedData, simPaths, mode = 'ccdf') {
         const x = sortedData[i];
         let y;
         if (mode === 'cdf') {
-            // CDF: P(X <= x) → 後勝ち（最後の出現）で計算
+            // CDF: P(X <= x) → last-wins (last occurrence) calculation
             y = (i + 1) / simPaths * 100;
         } else {
-            // CCDF: P(X >= x) → 先勝ち（最初の出現）で計算
+            // CCDF: P(X >= x) → first-wins (first occurrence) calculation
             if (pointsMap.has(x)) continue;
             y = (simPaths - i) / simPaths * 100;
         }
         pointsMap.set(x, y);
     }
-    // 横軸 0 の点を追加（すべてのグラフで必要）
+    // Add a point at x=0 on the horizontal axis (required for all charts)
     pointsMap.set(0, 100);
     return Array.from(pointsMap.entries())
         .map(([x, y]) => ({ x, y }))
@@ -156,7 +156,7 @@ export function buildCdfPoints(sortedData, simPaths, mode = 'ccdf') {
 }
 
 // ====================================================================
-// 資産推移グラフ描画
+// Asset trend chart rendering
 // ====================================================================
 export function renderAssetChart(result, isLogScale) {
     const { percentiles, totalPercentileData, dataLen } = result;
@@ -166,12 +166,12 @@ export function renderAssetChart(result, isLogScale) {
     const currentChart = getAssetChart();
     if (currentChart) { currentChart.destroy(); setAssetChart(null); }
 
-    // データセットを降順（高パーセンタイル低）で作成
-    // 色は昇順インデックス(origIdx)と総本数で決定する
+    // Create datasets in descending order (highest percentile first)
+    // Color is determined by ascending index (origIdx) and total count
     const orderedPercentiles = [...percentiles].reverse();
     const total = percentiles.length;
     const datasets = orderedPercentiles.map((pct, idx) => {
-        const origIdx = percentiles.indexOf(pct); // 昇順での位置
+        const origIdx = percentiles.indexOf(pct); // Position in ascending order
         const color = getPercentileColorByIndex(origIdx, total);
         let data;
         if (isLogScale) {
@@ -180,14 +180,14 @@ export function renderAssetChart(result, isLogScale) {
             data = Array.from(totalPercentileData[origIdx]);
         }
 
-        // ファンチャート化: 一番上の線（パーセンタイル最高値）以外は、一つ上の線までをグラデーションで塗りつぶす
+        // Fan chart: all lines except the topmost (highest percentile) are filled with a gradient up to the line above
         const fillMode = (idx === 0) ? false : '-1';
 
         return {
             label: (getLanguage() || '').startsWith('ja') ? `${pct}％` : `${pct}%`,
             data: data,
             borderColor: color,
-            backgroundColor: color + '26', // HEXアルファ (26=約15%の透明度で一律塗りつぶし)
+            backgroundColor: color + '26', // HEX alpha (26 = approx. 15% opacity, uniform fill)
             borderWidth: pct === 50 ? 2.5 : 1.5,
             pointRadius: 0,
             pointHoverRadius: 5,
@@ -215,11 +215,11 @@ export function renderAssetChart(result, isLogScale) {
                         title: tooltipTitleCallback,
                         label: function (context) {
                             const allItems = context.chart.tooltip.dataPoints;
-                            // ラベル部分の最大文字数を算出（1桁vs2桁のパーセンタイル桁そろえ）
+                            // Calculate the maximum number of characters in the label part (align digits for 1-digit vs 2-digit percentiles)
                             const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
                             const lbl = context.dataset.label.padStart(maxLblLen);
 
-                            // IIFEにより、外側のスコープの変数との衝突を回避する
+                            // Use IIFE to avoid variable collisions with outer scope variables
                             return (function () {
                                 const v = context.parsed.y;
                                 const lang = getLanguage() || '';
@@ -264,11 +264,11 @@ export function renderAssetChart(result, isLogScale) {
                         color: '#94a3b8',
                         font: { size: 13 },
                         callback: function (value) {
-                            // 対数スケール時: Y軸の表示桁幅（オーダー）による動的間引きアルゴリズム
+                            // Logarithmic scale: dynamic thinning algorithm based on display digit width (order) of the Y-axis
                             const chart = this.chart;
                             const isLog = chart.options.scales.y.type === 'logarithmic';
                             if (isLog) {
-                                // 現在のY軸の最小値最大値から表示桁幅を算出
+                                // Calculate the display digit width from the current Y-axis min/max values
                                 const yMin = chart.scales.y.min || 10_000_000;
                                 const yMax = chart.scales.y.max || 1_000_000_000;
                                 const minOrder = Math.floor(Math.log10(yMin / 100000000));
@@ -278,11 +278,11 @@ export function renderAssetChart(result, isLogScale) {
                                 const exponent = Math.floor(Math.log10(value));
                                 const mantissa = value / Math.pow(10, exponent);
 
-                                // 桁幅の種類が4つ以上なら、間引きを強化して10の累乗(mantissa=1)のみ表示
+                                // If there are 4 or more types of digit widths, strengthen thinning to show only powers of 10 (mantissa=1)
                                 if (orderRange >= 4) {
                                     if (Math.abs(mantissa - 1) > 0.05) return null;
                                 } else {
-                                    // 1, 2, 4, 6 に変更して重なりを解消
+                                    // Change to 1, 2, 4, 6 to resolve overlapping
                                     const allowed = [1, 2, 4, 6];
                                     const isAllowed = allowed.some(a => Math.abs(mantissa - a) < 0.05);
                                     if (!isAllowed) return null;
@@ -300,7 +300,7 @@ export function renderAssetChart(result, isLogScale) {
 
     setAssetChart(newChart);
 
-    // ダウンサイドフォーカス初期適用
+    // Apply initial downside focus
     const dfToggleAsset = document.getElementById('downsideFocusAsset');
     if (dfToggleAsset && dfToggleAsset.checked) {
         applyDownsideFocus(newChart, true);
@@ -308,7 +308,7 @@ export function renderAssetChart(result, isLogScale) {
 }
 
 // ====================================================================
-// 現金バッファ推移グラフ描画
+// Cash buffer trend chart rendering
 // ====================================================================
 export function renderCashChart(result) {
     const { percentiles, cashPercentileData, dataLen } = result;
@@ -318,8 +318,8 @@ export function renderCashChart(result) {
     const currentChart = getCashChart();
     if (currentChart) { currentChart.destroy(); setCashChart(null); }
 
-    // データセットを降順（高パーセンタイル低）で作成
-    // 色は昇順インデックス(origIdx)と総本数で決定する
+    // Create datasets in descending order (highest percentile first)
+    // Color is determined by ascending index (origIdx) and total count
     const orderedPercentiles = [...percentiles].reverse();
     const total = percentiles.length;
     const datasets = orderedPercentiles.map((pct, idx) => {
@@ -403,7 +403,7 @@ export function renderCashChart(result) {
 
     setCashChart(newChart);
 
-    // ダウンサイドフォーカス初期適用
+    // Apply initial downside focus
     const dfToggleCash = document.getElementById('downsideFocusCash');
     if (dfToggleCash && dfToggleCash.checked) {
         applyDownsideFocus(newChart, true);
@@ -411,13 +411,13 @@ export function renderCashChart(result) {
 }
 
 // ====================================================================
-// 最大ドローダウン CDF グラフ描画
+// Maximum drawdown CDF chart rendering
 // ====================================================================
 export function renderDdCdfChart(result) {
     const { maxDdPerPath, params } = result;
     const simPaths = params.simPaths;
 
-    // 最大ドローダウン（マイナス値）を%換算し、制限と丸めを施して昇順ソート
+    // Convert max drawdown (negative value) to percentage, apply limits and rounding, then sort in ascending order
     const sortedDd = Float32Array.from(maxDdPerPath)
         .map(v => {
             let pct = v * 100;
@@ -427,9 +427,9 @@ export function renderDdCdfChart(result) {
         })
         .sort();
 
-    // buildCdfPoints で点生成
+    // Generate points with buildCdfPoints
     const rawPoints = buildCdfPoints(sortedDd, simPaths, 'cdf');
-    // 横軸が負の値なので、Xの昇順で再ソートする（先頭に追加された { x: 0, y: 100 } を末尾に持っていくため）
+    // The x-axis has negative values, so re-sort in ascending order of X (to move the { x: 0, y: 100 } point added at the beginning to the end)
     const points = rawPoints.sort((a, b) => a.x - b.x);
 
     const ctx = document.getElementById('ddHistCanvas').getContext('2d');
@@ -510,12 +510,12 @@ export function renderDdCdfChart(result) {
 }
 
 // ====================================================================
-// 最長水面下期間 CCDF グラフ描画
+// Longest underwater period CCDF chart rendering
 // ====================================================================
 export function renderUwCdfChart(result) {
     const { maxUwPerPath, params } = result;
 
-    // 最長停滞期間（プラス値）の配列を昇順ソート
+    // Sort the array of longest stagnation periods (positive values) in ascending order
     const sortedUw = Float32Array.from(maxUwPerPath).sort();
     const simPaths = params.simPaths;
 
@@ -574,7 +574,7 @@ export function renderUwCdfChart(result) {
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 13 },
-                        stepSize: 60, // 5年(60ヵ月)刻みに統一
+                        stepSize: 60, // Unified at 5-year (60-month) intervals
                         callback: function (value) {
                             return formatYears(value / 12);
                         }
@@ -599,7 +599,7 @@ export function renderUwCdfChart(result) {
 }
 
 // ====================================================================
-// v2.3.0: 初期総資産割れ 継続期間 CCDF グラフ描画
+// v2.3.0: Below-initial-assets continuous period CCDF chart rendering
 // ====================================================================
 export function renderBelowInitCdfChart(result) {
     const { belowInitPeriods, params } = result;
@@ -682,7 +682,7 @@ export function renderBelowInitCdfChart(result) {
 }
 
 // ====================================================================
-// v2.3.0: リスク資産連続売却期間 CCDF グラフ描画
+// v2.3.0: Consecutive risk asset sell period CCDF chart rendering
 // ====================================================================
 export function renderConsecutiveSellCdfChart(result) {
     const { consecutiveSellPeriods, params } = result;
@@ -765,7 +765,7 @@ export function renderConsecutiveSellCdfChart(result) {
 }
 
 // ====================================================================
-// 対数/線形スケール切替（再計算なし、グラフ再描画のみ）
+// Toggle between logarithmic/linear scale (no recalculation, chart redraw only)
 // ====================================================================
 export function onScaleToggle() {
     const lastSimResult = getLastSimResult();

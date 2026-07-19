@@ -46,9 +46,9 @@ export function getParamsFromInputs(inputs) {
     let cashBufferVal = raw('initialCashBufferNum');
     let monthlyExpenseVal = raw('monthlyExpenseNum');
 
-    // 英語モードの場合、入力値はドル単位（K単位を除外した数値）なので、
-    // 元の円単位（入力値 * 100,000）に換算するためにここで10倍に調整する
-    // これにより、戻り値の * 10_000 と合わさって正確に 100_000 倍（$1 = 100円換算）になる
+    // In English mode, input values are in dollar units (excluding K unit values),
+    // so adjust by multiplying by 10 here to convert to the original yen unit (input value * 100,000).
+    // This, combined with the subsequent * 10_000, results in an accurate * 100,000 multiplication ($1 = 100 yen conversion).
     if (isEn) {
         cashBufferVal = cashBufferVal * 10;
         monthlyExpenseVal = monthlyExpenseVal * 10;
@@ -79,7 +79,7 @@ export function getParamsFromInputs(inputs) {
         simDfNum: Math.max(2.5, raw('simDfNum')),
         useFixedSeed: !inputs.seedToggle,
         seedNum: raw('seedNum'),
-        // targetAssetRatio: 初期総資産に対する割合（%）、デフォルト100%。通貨ではないため為替変換は行わない（固定レート100円=1ドルに影響しない）
+        // targetAssetRatio: Ratio relative to initial total assets (%), default 100%. Not a currency, so no exchange rate conversion is applied (not affected by the fixed rate of 100 yen = $1).
         targetAssetRatio: parseFloat(raw('targetAssetRatioNum')) || DEFAULTS.targetAssetRatio
     };
 }

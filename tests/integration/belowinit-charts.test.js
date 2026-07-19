@@ -1,11 +1,11 @@
 // tests/integration/belowinit-charts.test.js
-// v2.3.0: 新指標グラフ（belowInitChart, sellChart）の結合テスト
+// v2.3.0: Integration tests for the new metric charts (belowInitChart, sellChart)
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runSimulation } from '../../js/simulation-engine.js';
 import { readFileSync } from 'fs';
 
-// url.js をモックしてロード時の自動実行による isRunning の意図しない true 化を防ぐ
+// Mock url.js to prevent isRunning from unintentionally becoming true due to automatic execution on load
 vi.mock('../../js/core/url.js', async () => {
     const actual = await vi.importActual('../../js/core/url.js');
     return {
@@ -14,8 +14,8 @@ vi.mock('../../js/core/url.js', async () => {
     };
 });
 
-// analysis-ui.js / comparison-ui.js をモックして、
-// 言語切り替え時にテスト環境が破棄された後に非同期実行されて Unhandled Rejection になるのを防ぐ
+// Mock analysis-ui.js / comparison-ui.js to prevent Unhandled Rejection
+// caused by asynchronous execution after the test environment is destroyed during language switching
 vi.mock('../../js/analysis-ui.js', () => ({
     renderAnalysisTab: vi.fn(),
     setupAnalysisEventDelegation: vi.fn(),
@@ -29,10 +29,10 @@ vi.mock('../../js/comparison-ui.js', () => ({
 
 vi.mock('../../js/simulation-engine.js');
 
-// v2.3.0 新指標を含むダミーシミュレーション結果を生成
+// Generate dummy simulation results containing the new v2.3.0 metrics
 function makeDummyResultWithNewMetrics(overrides = {}) {
     const simPaths = 1000;
-    const dataLen = 361; // 30年 * 12ヶ月 + 1
+    const dataLen = 361; // 30 years * 12 months + 1
     const pcts = [10, 30, 50, 70, 90];
     const buildPD = () => pcts.map(() => new Float32Array(dataLen).fill(100_000_000));
 
@@ -49,9 +49,9 @@ function makeDummyResultWithNewMetrics(overrides = {}) {
         worst10MaxUw: 310,
         maxDdPerPath: new Float32Array(simPaths),
         maxUwPerPath: new Float32Array(simPaths),
-        // v2.3.0: 新指標データ
-        belowInitPeriods: new Float32Array(simPaths).fill(60),    // 仮の値（全パス60ヶ月）
-        consecutiveSellPeriods: new Float32Array(simPaths).fill(36), // 仮の値（全パス36ヶ月）
+        // v2.3.0: New metrics data
+        belowInitPeriods: new Float32Array(simPaths).fill(60),    // Dummy value (60 months for all paths)
+        consecutiveSellPeriods: new Float32Array(simPaths).fill(36), // Dummy value (36 months for all paths)
         params: { simPaths, totalMonths: dataLen - 1 },
         dataLen,
         usedSeed: 123456,
@@ -63,26 +63,26 @@ function makeDummyResultWithNewMetrics(overrides = {}) {
     };
 }
 
-// テスト実行環境（JSDOM）のセットアップ時に一度だけDOMを構築する。
-// app.jsやanalysis-uiのロード・初期化時の未定義エラーを防ぐために、必要なすべてのID要素を含める。
+// Build the DOM only once during setup of the test execution environment (JSDOM).
+// Include all necessary ID elements to prevent undefined errors when loading/initializing app.js and analysis-ui.
 const domSnippet = readFileSync('tests/fixtures/dom-snippet.html', 'utf-8');
 document.body.innerHTML = `
     <div id="simulationTab">
         ${domSnippet}
-        <!-- app.js の初期化に必要なグレーアウト対象パネル -->
+        <!-- Gray-out target panels required for app.js initialization -->
         <div id="tDistParams"></div>
         <div id="guardrailParams"></div>
         <div id="cashBufferParams"></div>
         <div id="seedInputWrapper"></div>
         <div id="arModelParams"></div>
-        <!-- v2.3.0: 新指標グラフタイトル -->
+        <!-- v2.3.0: New metrics chart titles -->
         <h2 id="belowInitTitle" data-i18n="chart.belowInit.title">初期総資産割れ 継続期間 発生確率</h2>
         <h2 id="sellTitle" data-i18n="chart.sell.title">初期総資産割れ時 リスク資産連続売却期間 発生確率</h2>
         <canvas id="belowInitChartCanvas"></canvas>
         <canvas id="sellChartCanvas"></canvas>
         <input type="checkbox" id="logScaleToggle">
     </div>
-    <!-- analysis-ui で非同期描画される要素をすべて定義（Unhandled Rejection の根本対策） -->
+    <!-- Define all elements rendered asynchronously in analysis-ui (fundamental workaround for Unhandled Rejection) -->
     <div id="analysisTab">
         <div id="card1Summary"></div>
         <div id="card1Detail" class="hidden"></div>
@@ -107,11 +107,11 @@ document.body.innerHTML = `
     <div id="tooltip-container"></div>
 `;
 
-// DOMが構築された状態で一度だけ app.js をインポートする
+// Import app.js only once with DOM constructed
 await import('../../js/app.js');
 
-// ロード完了後、DOMContentLoaded を明示的にディスパッチして、
-// app.js 内の DOMContentLoaded リスナー内のイベント登録・初期化処理を実行させる
+// After load is complete, explicitly dispatch DOMContentLoaded to trigger
+// event registration and initialization in the DOMContentLoaded listener in app.js
 document.dispatchEvent(new Event('DOMContentLoaded'));
 
 describe('Below-Initial charts integration', () => {
@@ -121,7 +121,7 @@ describe('Below-Initial charts integration', () => {
     });
 
     it('canvas elements for new charts exist in DOM', () => {
-        // 新グラフ用のcanvasが正しく存在することを確認
+        // Verify that canvas elements for new charts exist properly
         const belowInitCanvas = document.getElementById('belowInitChartCanvas');
         const sellCanvas = document.getElementById('sellChartCanvas');
         expect(belowInitCanvas).not.toBeNull();
@@ -129,13 +129,13 @@ describe('Below-Initial charts integration', () => {
     });
 
     it('does NOT have downside focus toggles for new charts', () => {
-        // 新グラフにはダウンサイドフォーカストグルが存在しないことを確認
+        // Verify that downside focus toggles do not exist for the new charts
         const toggles = document.querySelectorAll('#downsideFocusBelowInit, #downsideFocusSell');
         expect(toggles.length).toBe(0);
     });
 
     it('new metric result contains belowInitPeriods and consecutiveSellPeriods', () => {
-        // ダミー結果に新指標データが含まれることを確認
+        // Verify that the dummy result contains the new metrics data
         const result = makeDummyResultWithNewMetrics();
         expect(result).toHaveProperty('belowInitPeriods');
         expect(result).toHaveProperty('consecutiveSellPeriods');
@@ -146,7 +146,7 @@ describe('Below-Initial charts integration', () => {
     });
 
     it('belowInitPeriods values are non-negative', () => {
-        // 新指標の値が非負であることを確認
+        // Verify that the new metric values are non-negative
         const result = makeDummyResultWithNewMetrics();
         for (let i = 0; i < result.belowInitPeriods.length; i++) {
             expect(result.belowInitPeriods[i]).toBeGreaterThanOrEqual(0);
@@ -154,7 +154,7 @@ describe('Below-Initial charts integration', () => {
     });
 
     it('consecutiveSellPeriods <= belowInitPeriods for each path', () => {
-        // 各パスで指標②が指標①以下であることを確認
+        // Confirm that Indicator 2 is <= Indicator 1 for each path
         const result = makeDummyResultWithNewMetrics({
             belowInitPeriods: new Float32Array(1000).fill(60),
             consecutiveSellPeriods: new Float32Array(1000).fill(36),
@@ -171,7 +171,7 @@ describe('Below-Initial charts integration', () => {
             }
         };
 
-        // 初期状態で日本語を設定
+        // Set Japanese as the initial language
         setLanguageGlobal('ja');
         const titleBelowInit = document.getElementById('belowInitTitle');
         const titleSell = document.getElementById('sellTitle');
@@ -179,15 +179,15 @@ describe('Below-Initial charts integration', () => {
         expect(titleBelowInit.textContent).toBe('初期総資産割れ 継続期間 発生確率');
         expect(titleSell.textContent).toBe('初期総資産割れ時 リスク資産連続売却期間 発生確率');
 
-        // 英語に切り替え
+        // Switch to English
         setLanguageGlobal('en');
         await new Promise(r => setTimeout(r, 50));
 
-        // i18n のキーに対応する英語テキストに切り替わっていることを確認
+        // Confirm that the text switches to English corresponding to the i18n key
         expect(titleBelowInit.textContent).toBe('Duration Below Initial Assets Probability');
         expect(titleSell.textContent).toBe('Consecutive Risk-Asset Sales While Below Initial Assets Probability');
 
-        // 再度日本語に切り替え
+        // Switch back to Japanese
         setLanguageGlobal('ja');
         await new Promise(r => setTimeout(r, 50));
 

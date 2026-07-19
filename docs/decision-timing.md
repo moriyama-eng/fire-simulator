@@ -1,20 +1,21 @@
-# シミュレーションの意思決定タイミングについて (v2.3.0)
+# About Simulation Decision Timing (v2.3.2)
 
-## 月次処理順序
-当モンテカルロ・シミュレータでは、各月の処理を以下の順序で実行します。
+## Monthly Processing Order
+In this Monte Carlo simulator, the processing for each month is executed in the following order.
 
-1. **インフレ率の更新**: インフレ率（固定、またはAR-1モデルによる変動）を計算し、今月のインフレ乗数を決定します。
-2. **市場リターンの適用**: リスク資産の残高に対し、当月の市場リターン（対数正規分布または対数t分布）を乗算します。
-3. **支出（取崩し）の実行**: インフレ調整済みの月間支出額を、設定されたルール（現金バッファの利用、支出ガードレール）に従って資産から差し引きます。
-4. **月末評価（判定）**: 支出後の総資産額（リスク資産＋現金バッファ）を評価し、破綻の有無や、翌月のためのステータス（ドローダウン率の更新、現金バッファ使用のフラグ更新、ガードレールの発動/解除）を決定します。
+1. **Update inflation rate**: Calculate the inflation rate (fixed, or variable using the AR-1 model) and determine the inflation multiplier for the current month.
+2. **Apply market return**: Multiply the balance of risk assets by the current month's market return (log-normal or log-t distribution).
+3. **Execute spending (withdrawal)**: Deduct the inflation-adjusted monthly spending from assets according to the configured rules (use of cash buffer, spending guardrail).
+4. **End-of-month evaluation (determination)**: Evaluate the total assets after spending (risk assets + cash buffer) and determine whether bankruptcy has occurred and the status for the next month (updating the drawdown rate, updating the cash buffer usage flag, guardrail activation/deactivation).
 
-## 支出後判定基準の説明
-各種の閾値判定（ドローダウンによる取崩しルールの切り替え、ガードレールの発動など）は、**「支出後」の月末総資産** を基準に行われます。これにより、市場の変動だけでなく、自身の生活費の引き出しが資産に与えた直接的な結果を踏まえた、より現実的で保守的な判定が可能になります。
+## Explanation of Post-Spending Determination Criteria
+All threshold determinations (switching withdrawal rules due to drawdown, guardrail activation, etc.) are made based on the **end-of-month total assets "after spending"**. This enables more realistic and conservative determinations that take into account the direct impact that not only market fluctuations, but also one's own living expense withdrawals have on assets.
 
-## 判定のラグについて
-月末の判定結果（ガードレールが発動したか、現金バッファを取り崩すか等）は、**「翌月」の支出処理から適用**されます。
-実生活において「資産が減ったことを確認してから、翌月の生活費を切り詰める」という実際の行動ラグをシミュレーション上で再現しています。
+## About Determination Lag
+The results of end-of-month determinations (whether the guardrail was triggered, whether to draw from the cash buffer, etc.) are **applied from the "next month's" spending processing**.
+This reproduces in the simulation the actual action lag in real life of "confirming that assets have decreased, then cutting back on living expenses the following month."
 
-## v2.2.0 からの変更点
+## Document Version History
 
-本バージョン (v2.2.0) では「比較」タブが追加されましたが、コアの月次処理ロジック（市場リターン→インフレ→支出→判定）に変更はありません。
+- **v2.3.2**: No changes to the core monthly processing logic. Finalized English translations for documentation and code comments.
+- **v2.2.0**: The "Comparison" tab was added, but there are no changes to the core monthly processing logic (market return → inflation → spending → determination).

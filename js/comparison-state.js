@@ -1,5 +1,5 @@
 // js/comparison-state.js
-// 比較タブ 状態管理
+// Comparison tab state management
 
 import { DEFAULTS } from './core/params.js';
 

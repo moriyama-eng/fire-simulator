@@ -1,7 +1,7 @@
 // tests/unit/analysis-output.test.js
-// 【Vitest 1.6 互換性】vi.mocked() は使用禁止、mockFn のプロパティに直接アクセスすること
-// 【重要】Blob 非互換性対策: mockGenerateAsync の戻り値は {}（空オブジェクト）
-// 【重要】global.JSZip の退避・復元は同一ファイル内のテスト間隔離のために必須
+// [Vitest 1.6 compatibility] vi.mocked() is prohibited; access mockFn properties directly
+// [IMPORTANT] Blob incompatibility workaround: return value of mockGenerateAsync must be {} (empty object)
+// [IMPORTANT] Saving and restoring global.JSZip is mandatory for test isolation within the same file
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generateAndDownloadZip } from '../../js/analysis-output.js';
@@ -11,7 +11,7 @@ import { makeAnalysisResult, makeScenarioPoint, makeBaseMetrics } from '../helpe
 const mockZipFile = vi.fn();
 const mockZipFolderFile = vi.fn();
 const mockZipFolder = vi.fn(() => ({ file: mockZipFolderFile }));
-// createObjectURL がモックされるため、Blob 実体は不要。空オブジェクトで十分。
+// Since createObjectURL is mocked, no real Blob is needed. An empty object suffices.
 const mockGenerateAsync = vi.fn().mockResolvedValue({});
 const MockJSZip = vi.fn(() => ({
   file: mockZipFile,
@@ -31,7 +31,7 @@ let originalJSZip;
 let originalCreateObjectURL;
 
 beforeEach(() => {
-  originalJSZip = global.JSZip; // 現在のグローバル値を退避（同一ファイル内のテスト間隔離のため必須）
+  originalJSZip = global.JSZip; // Save current global value (mandatory for test isolation within the same file)
   originalCreateObjectURL = URL.createObjectURL;
   URL.createObjectURL = vi.fn().mockReturnValue('blob:test');
 
@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  global.JSZip = originalJSZip; // テスト終了ごとに必ず元の値に復元
+  global.JSZip = originalJSZip; // Always restore to the original value after each test
 });
 
 describe('generateAndDownloadZip - error cases', () => {
@@ -81,7 +81,7 @@ describe('generateAndDownloadZip - ZIP structure', () => {
     expect(manifest).toHaveProperty('base_scenario');
     expect(manifest.factors).toContain('expected_return_pct');
 
-    // ファイル数は選択因子数×4 + 1 = 5
+    // Number of files = number of selected factors x 4 + 1 = 5
     expect(manifest.outputs.metadata.length).toBe(5);
     expect(manifest.outputs.metadata).toContain('metadata/base.json');
     expect(manifest.outputs.metadata.every(item => typeof item === 'string')).toBe(true);
@@ -97,7 +97,7 @@ describe('generateAndDownloadZip - ZIP structure', () => {
     expect(lines[0]).toContain('analysis_run_id');
     expect(lines[0]).toContain('success_rate_pct');
     expect(lines[0]).toContain('final_median_jpy');
-    expect(lines.length).toBe(6); // ヘッダ + base + 4水準
+    expect(lines.length).toBe(6); // header + base + 4 levels
   });
 
   it('adds comparison_summary.csv with header and correct row count', async () => {
@@ -107,7 +107,7 @@ describe('generateAndDownloadZip - ZIP structure', () => {
     const csv = compCall[1];
     const lines = csv.split('\n').filter(line => line.trim() !== '');
     expect(lines[0]).toContain('delta_success_rate_pt');
-    expect(lines.length).toBe(5); // ヘッダ + 4水準
+    expect(lines.length).toBe(5); // header + 4 levels
   });
 
   it('creates metadata folder', async () => {
@@ -182,7 +182,7 @@ describe('generateAndDownloadZip - download', () => {
   });
 });
 
-// ===== target_asset_maintain_rate のCSV/JSON出力テスト =====
+// ===== CSV/JSON output test for target_asset_maintain_rate =====
 describe('generateAndDownloadZip - target_asset_maintain_rate', () => {
   it('includes target_asset_maintain_rate in summary.csv header and data', async () => {
     await generateAndDownloadZip();
@@ -193,7 +193,7 @@ describe('generateAndDownloadZip - target_asset_maintain_rate', () => {
     const header = lines[0];
     expect(header).toContain('target_asset_maintain_rate');
     
-    // データ行にカンマ区切りで値が存在することを確認
+    // Confirm that a comma-separated value exists in the data row
     const dataRow = lines[1]; // base scenario row
     const headerColumns = header.split(',');
     const idx = headerColumns.indexOf('target_asset_maintain_rate');

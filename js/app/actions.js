@@ -1,7 +1,7 @@
 // ====================================================================
 // js/app/actions.js
-// 主要アクション関数群
-// 依存: core/params.js, core/format.js, core/url.js,
+// Collection of main action functions
+// Dependencies: core/params.js, core/format.js, core/url.js,
 //       simulation-engine.js, core/state.js, i18n.js,
 //       app/state.js, app/charts.js, app/summary.js, app/ui-helpers.js
 // ====================================================================
@@ -30,11 +30,11 @@ import { updateSummaryCard, renderEmptySummaryCard } from './summary.js';
 import { initTooltips } from './ui-helpers.js';
 
 // ====================================================================
-// 入力変更フラグの更新
-// core/state.js の markInputChanged のラッパー
+// Update the input change flag
+// Wrapper for markInputChanged in core/state.js
 // ====================================================================
 export function markInputChanged() {
-    coreMarkInputChanged(); // 内部で setDirty(true) とボタン無効化を実行
+    coreMarkInputChanged(); // Internally calls setDirty(true) and disables the button
     const lastSimResult = getLastSimResult();
     if (lastSimResult) {
         const params = getParamsFromDom();
@@ -43,8 +43,8 @@ export function markInputChanged() {
 }
 
 // ====================================================================
-// DOMからパラメータを取得するヘルパー
-// getParams() の実体（計画書の指示通り、getParamsFromInputs を直接使用）
+// Helper to retrieve parameters from the DOM
+// The actual implementation of getParams() (uses getParamsFromInputs directly, as specified in the plan)
 // ====================================================================
 function getParamsFromDom() {
     return getParamsFromInputs({
@@ -77,7 +77,7 @@ function getParamsFromDom() {
 }
 
 // ====================================================================
-// メイン実行関数
+// Main execution function
 // ====================================================================
 export async function runMain() {
     if (getIsRunning()) return;
@@ -98,19 +98,19 @@ export async function runMain() {
 
     try {
 
-        // バリデーション：ガードレール終了閾値が発動閾値より小さい場合は発動閾値と同値に補正
+        // Validation: if the guardrail release threshold is smaller than the trigger threshold, correct it to match the trigger threshold
         if (params.guardrailToggle && params.guardrailRelease < params.guardrailTrigger) {
             params.guardrailRelease = params.guardrailTrigger;
             const releaseInput = document.getElementById('guardrailReleaseNum');
             if (releaseInput) releaseInput.value = params.guardrailTrigger.toFixed(1);
         }
-        // パーセンタイル入力を自動整形してから parsePercentiles を呼ぶ
+        // Auto-format the percentile input before calling parsePercentiles
         const pctInput = document.getElementById('percentileInput');
         pctInput.value = formatPercentileInput(pctInput.value);
         const percentiles = parsePercentiles(pctInput.value);
         const simStartTime = performance.now();
         const result = await runSimulation(params, percentiles);
-        // analysis-runner.js が参照するため window に保持
+        // Stored on window because analysis-runner.js references it
         window.lastSimOnlyMs = performance.now() - simStartTime;
         setLastSimResult(result);
         setIsResultDirty(false);
@@ -124,10 +124,10 @@ export async function runMain() {
         if (params.cashBufferToggle) renderCashChart(result);
         renderDdCdfChart(result);
         renderUwCdfChart(result);
-        // v2.3.0: 新指標グラフの描画
+        // v2.3.0: Render new indicator charts
         renderBelowInitCdfChart(result);
         renderConsecutiveSellCdfChart(result);
-        markResultClean(); // 共有ボタンの有効化
+        markResultClean(); // Enable the share button
         updateSummaryCard(result, params);
         setTimeout(() => {
             const target = document.getElementById('summaryCardContainer');
@@ -141,7 +141,7 @@ export async function runMain() {
         const reason = error.message.startsWith('error.') ? t(error.message) : error.message;
         alert(t('error.simulationFailed') + ": " + reason);
     } finally {
-        // Bug #21: 確実にデフォルト状態にリセット
+        // Ensure the button is reset to the default state reliably
         if (runBtn) {
             runBtn.disabled = false;
             runBtn.innerHTML = t('button.run');
@@ -158,7 +158,7 @@ export async function runMain() {
 }
 
 // ====================================================================
-// 画像キャプチャ（PNG保存）ロジック
+// Image capture (PNG save) logic
 // ====================================================================
 export async function saveImage() {
     const lastSimResult = getLastSimResult();
@@ -168,13 +168,13 @@ export async function saveImage() {
     const originalHtml = btn.innerHTML;
 
     try {
-        // ボタンをローディング状態に
+        // Put the button into loading state
         btn.disabled = true;
         btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>${t('button.savingImage')}`;
 
         const params = getParamsFromDom();
 
-        // 1. キャプチャ用DOM（シミュレーション条件）にデータを反映
+        // 1. Reflect data into the capture DOM (simulation conditions)
         const uiExecTime = document.getElementById('uiExecTime');
         if (uiExecTime) {
             document.getElementById('capExecTime').textContent = uiExecTime.textContent;
@@ -198,20 +198,20 @@ export async function saveImage() {
         document.getElementById('capInf').textContent = params.inflationRate.toFixed(1) + '%';
         document.getElementById('capYears').textContent = formatYears(params.simYears);
 
-        // ガードレール状態を反映（ON/OFFのみ表示）
+        // Reflect guardrail state (display ON/OFF only)
         document.getElementById('capGuardrail').textContent = params.guardrailToggle ? t('gr.on') : t('gr.off');
 
-        // キャプチャにバージョン番号を反映
+        // Reflect the version number in the capture
         var footerUrlEl = document.getElementById('capFooterUrl');
         if (footerUrlEl) footerUrlEl.textContent = t('capture.footerUrl');
 
-        // キャプチャ用DOM（シミュレーション結果）にデータを反映
+        // Reflect data into the capture DOM (simulation results)
         document.getElementById('capSuccess').textContent = formatPercent(lastSimResult.successRate / 100);
         document.getElementById('capMedian').textContent = formatCurrency(lastSimResult.finalMedian, '億円');
         document.getElementById('capTargetMaintainRate').textContent = lastSimResult.targetAssetMaintainRate.toFixed(1) + '%';
         document.getElementById('capTargetRatio').textContent = params.targetAssetRatio;
 
-        // 2. グラフ画像を転写（スマホでもPC表示のアスペクト比を維持するため一時的に固定サイズへ変更）
+        // 2. Transfer the chart image (temporarily change to a fixed size to maintain the PC aspect ratio even on smartphones)
         const chartCanvas = document.getElementById('assetChartCanvas');
         if (!chartCanvas) throw new Error("Chart element not found (assetChartCanvas not found)");
 
@@ -223,18 +223,18 @@ export async function saveImage() {
         const origWidth = chartContainer.style.width;
         const origHeight = chartContainer.style.height;
 
-        // 画面のレイアウトシフトを防ぐため親要素(カード)の高さを現在値に一時固定
+        // Temporarily fix the height of the parent element (card) to the current value to prevent layout shifts on screen
         chartCard.style.height = chartCard.offsetHeight + 'px';
         chartCard.style.overflow = 'hidden';
         chartContainer.style.width = '1000px';
         chartContainer.style.height = '600px';
 
-        // 画像出力用にフォントサイズを一時的に拡大
+        // Temporarily enlarge font sizes for image output
         if (assetChart) {
-            // ツールチップを強制的に非表示にする
+            // Force-hide the tooltip
             assetChart.tooltip.setActiveElements([], { x: 0, y: 0 });
 
-            // アニメーションを無効化（チラつき防止）
+            // Disable animation (to prevent flickering)
             const origAnimation = assetChart.options.animation;
             assetChart.options.animation = false;
 
@@ -244,12 +244,12 @@ export async function saveImage() {
             const origMaxRotation = assetChart.options.scales.x.ticks.maxRotation;
             const origMinRotation = assetChart.options.scales.x.ticks.minRotation;
 
-            // 保存用にフォントサイズを極限まで拡大 (1080px幅に対して他項目と調和するサイズ)
+            // Maximize font sizes for saving (sized to harmonize with other items at 1080px width)
             assetChart.options.plugins.legend.labels.font.size = 38;
             assetChart.options.scales.x.ticks.font.size = 34;
             assetChart.options.scales.y.ticks.font.size = 34;
             
-            // 英語モードのみX軸ラベルを36度傾斜させる（日本語モードは自動判別される水平表示を維持）
+            // Tilt X-axis labels 36 degrees only in English mode (Japanese mode maintains horizontal display, which is auto-detected)
             if (!isJa) {
                 assetChart.options.scales.x.ticks.maxRotation = 36;
                 assetChart.options.scales.x.ticks.minRotation = 36;
@@ -263,7 +263,7 @@ export async function saveImage() {
 
             const chartDataUrl = chartCanvas.toDataURL('image/png', 1.0);
 
-            // サイズとフォントを元に戻す
+            // Restore size and font
             assetChart.options.plugins.legend.labels.font.size = origLegendSize;
             assetChart.options.scales.x.ticks.font.size = origXTickSize;
             assetChart.options.scales.y.ticks.font.size = origYTickSize;
@@ -277,7 +277,7 @@ export async function saveImage() {
             chartCard.style.overflow = origCardOverflow;
             chartCard.style.height = origCardHeight;
 
-            // アニメーション設定を復元
+            // Restore animation settings
             assetChart.options.animation = origAnimation;
             assetChart.resize();
             assetChart.update('none');
@@ -289,15 +289,15 @@ export async function saveImage() {
 
         await new Promise(r => setTimeout(r, 300));
 
-        // 3. html2canvasでオフスクリーンコンテナをキャプチャ
+        // 3. Capture the off-screen container with html2canvas
         const container = document.getElementById('captureContainer');
         if (!container) throw new Error("Export template not found (captureContainer not found)");
 
         const canvas = await html2canvas(container, {
-            scale: 2, // 高解像度化のために2倍に設定
+            scale: 2, // Set to 2x for high-resolution output
             useCORS: true,
             allowTaint: true,
-            backgroundColor: "#0f172a", // 背景色を明示的に指定
+            backgroundColor: "#0f172a", // Explicitly specify the background color
             logging: false,
             width: 1080,
             height: 1350,
@@ -309,7 +309,7 @@ export async function saveImage() {
             scrollY: 0,
         });
 
-        // 4. ダウンロード実行
+        // 4. Execute download
         const url = canvas.toDataURL('image/png', 1.0);
         const a = document.createElement('a');
         a.href = url;
@@ -319,7 +319,7 @@ export async function saveImage() {
         a.click();
         document.body.removeChild(a);
 
-        // 成功時のフィードバック表示
+        // Display feedback on success
         btn.innerHTML = `<svg class="w-5 h-5 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>${t('button.imageSaved')}`;
         btn.classList.add('text-emerald-400');
         setTimeout(() => {
@@ -332,14 +332,14 @@ export async function saveImage() {
         console.error("画像保存エラーの詳細:", err);
         const reason = err.message.startsWith('error.') ? t(err.message) : err.message;
         alert(t('error.imageFailed', [reason]));
-        // エラー時は即座に復元
+        // Immediately restore on error
         btn.innerHTML = originalHtml;
         btn.disabled = false;
     }
 }
 
 // ====================================================================
-// X（Twitter）へのシェア
+// Share to X (Twitter)
 // ====================================================================
 export function shareToX() {
     const lastSimResult = getLastSimResult();
@@ -368,7 +368,7 @@ export function shareToX() {
 }
 
 // ====================================================================
-// 比較タブを新規タブで開く
+// Open the comparison tab in a new tab
 // ====================================================================
 export function openCompareTab() {
     const lastSimResult = getLastSimResult();
@@ -384,7 +384,7 @@ export function openCompareTab() {
 }
 
 // ====================================================================
-// シミュレーションURLをクリップボードにコピー
+// Copy the simulation URL to the clipboard
 // ====================================================================
 export async function copySimUrl() {
     const lastSimResult = getLastSimResult();
@@ -420,7 +420,7 @@ export async function copySimUrl() {
 }
 
 // ====================================================================
-// 分析タブへのベースコンテキスト同期
+// Sync base context to the analysis tab
 // ====================================================================
 export function syncBaseToAnalysis() {
     const lastSimResult = getLastSimResult();
@@ -439,7 +439,7 @@ export function syncBaseToAnalysisIfOpen() {
 }
 
 // ====================================================================
-// 有効パラメータへの変換
+// Convert to effective parameters
 // ====================================================================
 export function convertToEffectiveParams(params, simResult) {
     return {

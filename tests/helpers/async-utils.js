@@ -1,14 +1,14 @@
 // tests/helpers/async-utils.js
 
 /**
- * 非同期の状態変化を待つ簡易ポーリングヘルパー。
- * Vitest 1.6.0 には vi.waitFor が存在しないため、本関数を代わりに使用する。
+ * A simple polling helper for waiting for asynchronous state changes.
+ * Used instead of vi.waitFor, which does not exist in Vitest 1.6.0.
  *
- * @param {Function} callback - アサーションまたは条件チェックを行う関数。条件を満たせば正常終了、満たさなければ例外をスローする
+ * @param {Function} callback - A function that performs an assertion or condition check. Resolves normally if the condition is met; throws an exception if not.
  * @param {Object} [options]
- * @param {number} [options.timeout=3000] - 最大待機時間(ms)。通常のUIテストでは3秒で十分だが、長時間処理の場合は呼び出し側で延長する
- * @param {number} [options.interval=100] - ポーリング間隔(ms)
- * @param {string} [options.message] - タイムアウト時に表示するカスタム説明文
+ * @param {number} [options.timeout=3000] - Maximum wait time (ms). 3 seconds is sufficient for ordinary UI tests; increase at the call site for long-running processes.
+ * @param {number} [options.interval=100] - Polling interval (ms)
+ * @param {string} [options.message] - Custom description to display on timeout
  */
 export async function waitFor(callback, { timeout = 3000, interval = 100, message } = {}) {
   const start = Date.now();
@@ -16,7 +16,7 @@ export async function waitFor(callback, { timeout = 3000, interval = 100, messag
   while (Date.now() - start < timeout) {
     try {
       callback();
-      return; // 成功
+      return; // success
     } catch (e) {
       lastError = e;
     }
