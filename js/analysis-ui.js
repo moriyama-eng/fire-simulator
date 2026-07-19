@@ -1,17 +1,17 @@
 // js/analysis-ui.js
-// 分析タブ UI 制御
+// Analysis tab UI control
 
 import * as AS from './analysis-state.js';
 import { setProgressCallback, getProgressCallback } from './simulation-engine.js';
 import { t, formatCurrency, formatPercent, formatYears, formatNumber, getLanguage } from './i18n.js';
 
 // ====================================================================
-// メインレンダリング
+// Main rendering
 // ====================================================================
 export function renderAnalysisTab() {
     renderBaseCard();
 
-    // エラーメッセージの表示/非表示（#3）
+    // Show/hide error message (#3)
     const errorEl = document.getElementById('analysisError');
     const errMsg = AS.getErrorMessage();
     if (errorEl) {
@@ -26,7 +26,7 @@ export function renderAnalysisTab() {
     renderFactorSelector();
     renderTargetTable();
 
-    // ZIP出力ボタンの有効/無効制御
+    // Enable/disable the ZIP export button
     const exportBtn = document.getElementById('exportZipBtn');
     if (exportBtn) {
         exportBtn.disabled = !AS.getAnalysisResult();
@@ -37,7 +37,7 @@ export function renderAnalysisTab() {
 }
 
 // ====================================================================
-// カード1: 基準シナリオ
+// Card 1: Base scenario
 // ====================================================================
 function renderBaseCard() {
     const bp = AS.getBaseEffectiveParams();
@@ -48,7 +48,7 @@ function renderBaseCard() {
         return;
     }
 
-    // --- KPI サマリ (分析結果または直近のシミュレーションから) ---
+    // --- KPI summary (from analysis results or the most recent simulation) ---
     let kpiHtml = '';
     const result = AS.getAnalysisResult();
     if (result && result.baseScenario && result.baseScenario.metrics) {
@@ -59,7 +59,7 @@ function renderBaseCard() {
              <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(m.final_median_jpy, '億円')}</span></p>
          </div>`;
     } else {
-        // 分析未実行 → baseContext から直近のシミュレーションKPIを表示
+        // Analysis not yet run → display the most recent simulation KPIs from baseContext
         const ctx = AS.getState().baseContext;
         if (ctx && ctx.summary) {
             const s = ctx.summary;
@@ -73,7 +73,7 @@ function renderBaseCard() {
         }
     }
 
-    // --- 条件一覧 (常に表示) ---
+    // --- Condition list (always displayed) ---
     const detailHtml = `
         <div class="space-y-1">
             <p>${t('summary.riskAsset')}: ${formatCurrency(bp.initialRiskAsset, '億円')}</p>
@@ -97,7 +97,7 @@ function renderBaseCard() {
 }
 
 // ====================================================================
-// 因子セレクター
+// Factor selector
 // ====================================================================
 function renderFactorSelector() {
     const container = document.getElementById('factorSelector');
@@ -108,7 +108,7 @@ function renderFactorSelector() {
     document.getElementById('runAnalysisBtn').disabled = selected.length === 0 || AS.getState().isRunning;
     document.getElementById('runAnalysisBtn').textContent = t('analysis.run');
 
-    // 実行時間見積もりの動的更新（#5）
+    // Dynamic update of execution time estimate (#5)
     const bp = AS.getBaseEffectiveParams();
     if (bp) {
         const totalScenarios = AS.getScenarioCount();
@@ -118,7 +118,7 @@ function renderFactorSelector() {
         if (window.lastSimOnlyMs) {
             estMs = window.lastSimOnlyMs * totalScenarios;
         } else {
-            // 実測値がない場合の安全網（正常フローでは発生しない）
+            // Safety net when no measured value is available (should not occur in the normal flow)
             estMs = (paths * years) / (10000 * 30) * 350 * totalScenarios;
         }
         document.getElementById('estTime').textContent = Math.ceil(estMs / 1000) + ' ' + t('unit.seconds');
@@ -181,14 +181,14 @@ function fmtFactorVal(factor, value) {
         });
     }
 
-    // 英語モード: 通貨単位の因子のみUSD変換、それ以外は数値フォーマット
+    // English mode: convert only currency-unit factors to USD, otherwise use numeric format
     const isCurrency = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
     if (isCurrency) {
         const valueInJPY = value * (factor.scale || 1);
         return formatCurrency(valueInJPY, '円');
     }
 
-    // 倍率因子 (unit.multiplier) はスペースなしで 'x' を付加
+    // Multiplier factor (unit.multiplier): append 'x' without a space
     if (factor.unitKey === 'unit.multiplier') {
         const numStr = value.toLocaleString('en-US', {
             minimumFractionDigits: factor.decimals,
@@ -204,7 +204,7 @@ function fmtFactorVal(factor, value) {
 }
 
 // ====================================================================
-// ターゲットテーブル（改善因子変動量）
+// Target table (improvement factor variation amount)
 // ====================================================================
 function renderTargetTable() {
     const card = document.getElementById('cardTarget');
@@ -218,14 +218,14 @@ function renderTargetTable() {
     const baseMetrics = result.baseScenario.metrics;
     const metric = document.getElementById('targetMetric').value;
 
-    // 成功率改善幅を計算し、セレクトボックスの表示を更新
+    // Calculate success rate improvement margin and update the select box display
     const successRateDelta = AS.getSuccessRateTargetDelta(baseMetrics.success_rate_pct);
     const targetMetricOptionSuccess = document.getElementById('targetMetricOptionSuccess');
     if (targetMetricOptionSuccess && successRateDelta > 0) {
         targetMetricOptionSuccess.textContent = t('analysis.target.metric.successRate', [successRateDelta.toFixed(0)]);
     }
 
-    // FIRE成功率95%以上かつ指標が成功率の場合
+    // If FIRE success rate is 95% or above and the metric is success rate
     if (metric === 'success_rate_pct' && baseMetrics.success_rate_pct >= 95) {
         document.getElementById('targetTableWrapper').innerHTML = `<p class="text-center text-slate-400 py-6">${t('analysis.successRateHigh')}</p>`;
         document.getElementById('targetMetricLabel').textContent = t('analysis.target.metricLabels.successRate');
@@ -233,7 +233,7 @@ function renderTargetTable() {
         return;
     }
 
-    // 通常の表を表示
+    // Display the standard table
     document.getElementById('targetTableWrapper').innerHTML = `
         <table class="target-table text-sm" id="targetTable">
             <colgroup>
@@ -274,7 +274,7 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
     document.getElementById('targetMetricLabel').textContent = labels[metric];
     document.getElementById('currentMetricValue').textContent = displayFns[metric](baseMetrics[metric]);
 
-    // 動的改善幅の計算
+    // Dynamic improvement margin calculation
     const deltas = {
         success_rate_pct: AS.getSuccessRateTargetDelta(baseMetrics.success_rate_pct),
         final_p10_jpy: 20_000_000,
@@ -287,7 +287,7 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
     if (!body) return;
 
     const selected = AS.getSelectedFactors();
-    // FACTORS 定義順にソート
+    // Sort in FACTORS definition order
     const factorOrder = AS.FACTORS.map(f => f.key);
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
 
@@ -304,13 +304,13 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
 
         const baseVal = AS.getFactorBaseValue(key);
 
-        // 基準値（level: 0）のポイントを作成
+        // Create a point for the base value (level: 0)
         const basePoint = {
             factorValue: baseVal,
             metricValue: baseMetrics[metric]
         };
 
-        // 基準値を含む5水準のデータポイントを生成
+        // Generate 5 data points including the base value
         const points = [
             basePoint,
             ...results.map(r => ({
@@ -323,7 +323,7 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
         const minMetric = points[0].metricValue;
         const maxMetric = points[points.length - 1].metricValue;
         if (targetValue <= minMetric || targetValue >= maxMetric) {
-            // 範囲外の場合
+            // Out of range
             const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
             const isEnglish = getLanguage() === 'en';
             const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
@@ -347,7 +347,7 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
             const delta = requiredFactorValue - baseVal;
             const deltaColor = delta > 0 ? 'text-emerald-400' : 'text-rose-400';
             const deltaPrefix = delta >= 0 ? '+' : '';
-            // 単位表示の条件分岐（通貨属性の因子は英語モードで単位非表示）
+            // Conditional display of unit (hide unit in English mode for currency-attribute factors)
             const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
             const isEnglish = getLanguage() === 'en';
             const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
@@ -366,7 +366,7 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
 }
 
 // ====================================================================
-// 因子別比較表
+// Per-factor comparison table
 // ====================================================================
 function renderCompareCards() {
     const container = document.getElementById('compareCardsContainer');
@@ -379,7 +379,7 @@ function renderCompareCards() {
     card.classList.remove('hidden');
 
     const selected = AS.getSelectedFactors();
-    // FACTORS 定義順にソート
+    // Sort in FACTORS definition order
     const factorOrder = AS.FACTORS.map(f => f.key);
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
 
@@ -388,7 +388,7 @@ function renderCompareCards() {
         return;
     }
 
-    // ベースメトリクス取得（#9）
+    // Get base metrics (#9)
     const baseMetrics = result.baseScenario.metrics;
 
     let maxSuccess = baseMetrics.success_rate_pct;
@@ -409,13 +409,13 @@ function renderCompareCards() {
     for (const key of selected) {
         const factor = AS.FACTORS.find(f => f.key === key);
         const res = result.perFactorResults[key];
-        // 基準水準（level:0）を手動で追加
+        // Add the base level (level:0) manually
         const augmentedRes = [...res, { level: 0, metrics: baseMetrics }];
-        // H2 / L2 水準のメトリックを取得（トレンド判定用）
+        // Get H2 / L2 level metrics (for trend determination)
         const rPlus2 = augmentedRes.find(r => r.level === 2)?.metrics;
         const rMinus2 = augmentedRes.find(r => r.level === -2)?.metrics;
 
-        // ---- ヘルパー関数（v2.1.0 そのまま） ----
+        // ---- Helper functions (v2.1.0 unchanged) ----
         const barClassFromTrend = (level, valPlus2, valMinus2, isBase) => {
             if (isBase) return 'base';
             const trend = valPlus2 - valMinus2;
@@ -428,7 +428,7 @@ function renderCompareCards() {
             return { bar: 'base', text: 'text-indigo-300' };
         };
 
-        // ---- HTML 生成（v2.1.0 完全再現） ----
+        // ---- HTML generation (complete reproduction of v2.1.0) ----
         html += `<div class="glass-card compare-card rounded-xl">`;
         html += `<div class="compare-header-row">
             <div class="text-center">${t(`analysis.factors.${factor.key}`)}</div>
@@ -446,7 +446,7 @@ function renderCompareCards() {
             const m = r.metrics;
             const isBase = level === 0;
 
-            // 各メトリックのバークラスと色を算出
+            // Calculate bar classes and colors for each metric
             const successBarClass = barClassFromTrend(level, rPlus2?.success_rate_pct, rMinus2?.success_rate_pct, isBase);
             const p10BarClass = barClassFromTrend(level, rPlus2?.final_p10_jpy, rMinus2?.final_p10_jpy, isBase);
             const ddBarClass = barClassFromTrend(level, rPlus2?.worst10_max_dd, rMinus2?.worst10_max_dd, isBase);
@@ -454,14 +454,14 @@ function renderCompareCards() {
             const p10Colors = getMetricColorClasses(p10BarClass);
             const ddColors = getMetricColorClasses(ddBarClass);
 
-            // バーの幅（v2.1.0 の計算式を厳守）
+            // Bar width (strictly follow the v2.1.0 formula)
             const successWidth = Math.max(0, Math.min(100, ((m.success_rate_pct - 70) / (100 - 70)) * 100)).toFixed(0);
             const p10Width = (m.final_p10_jpy / maxP10 * 100).toFixed(0);
             const ddAbsWidth = (Math.abs(m.worst10_max_dd) / maxAbsDD * 100).toFixed(0);
             const ddPercent = (m.worst10_max_dd * 100).toFixed(1);
 
             html += `<div class="compare-row">`;
-            // ---- 因子値表示（既存のロジックを維持。下記は v2.1.0 の実装例） ----
+            // ---- Factor value display (existing logic maintained; the following is an example implementation from v2.1.0) ----
             const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
             const isEnglish = getLanguage() === 'en';
             const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
@@ -471,17 +471,17 @@ function renderCompareCards() {
                 <span class="setting-value">${fmtFactorVal(factor, val)}${unitSuffix}</span>
                 ${isBase ? `<span class="base-badge">${t('analysis.compare.badge')}</span>` : ''}
             </div>`;
-            // ---- 成功率バー ----
+            // ---- Success rate bar ----
             html += `<div class="bar-stack">
                 <div class="bar-track"><div class="bar-fill ${successColors.bar}" style="width:${successWidth}%"></div></div>
                 <span class="bar-value ${successColors.text}">${m.success_rate_pct.toFixed(1)}%</span>
             </div>`;
-            // ---- 最終資産10%タイル バー ----
+            // ---- Final asset 10th percentile bar ----
             html += `<div class="bar-stack">
                 <div class="bar-track"><div class="bar-fill ${p10Colors.bar}" style="width:${p10Width}%"></div></div>
                 <span class="bar-value ${p10Colors.text}">${formatCurrency(m.final_p10_jpy, '億円')}</span>
             </div>`;
-            // ---- 最大DD 10%タイル バー（DD用のトラッククラスに注意） ----
+            // ---- Max DD 10th percentile bar (note the track class for DD) ----
             html += `<div class="bar-stack">
                 <div class="dd-bar-track"><div class="dd-bar-fill ${ddColors.bar}" style="width:${ddAbsWidth}%"></div></div>
                 <span class="bar-value text-right ${ddColors.text}">${ddPercent}%</span>
@@ -494,7 +494,7 @@ function renderCompareCards() {
 }
 
 // ====================================================================
-// イベント委譲
+// Event delegation
 // ====================================================================
 let delegationDone = false;
 export function setupAnalysisEventDelegation() {
@@ -529,7 +529,7 @@ export function setupAnalysisEventDelegation() {
 
     document.getElementById('runAnalysisBtn')?.addEventListener('click', executeAnalysis);
 
-    // ZIP出力ボタンのイベント登録
+    // Register ZIP export button event
     document.getElementById('exportZipBtn')?.addEventListener('click', async () => {
         const btn = document.getElementById('exportZipBtn');
         const originalText = btn.innerHTML;
@@ -553,7 +553,7 @@ export function setupAnalysisEventDelegation() {
     });
 }
 
-// テスト専用: delegationDone フラグをリセットする
+// Test-only: reset the delegationDone flag
 export function _resetDelegationForTest() {
     delegationDone = false;
 }
@@ -567,7 +567,7 @@ async function executeAnalysis() {
     btn.disabled = true;
     btn.textContent = t('analysis.running', ['0']);
 
-    // 分析中はシミュレーションタブの進捗コールバックを無効化（#10）
+    // Disable the simulation tab's progress callback while analysis is running (#10)
     const savedCallback = getProgressCallback();
     setProgressCallback(null);
 
@@ -583,13 +583,13 @@ async function executeAnalysis() {
         const msg = e.message.startsWith('error.') ? t(e.message) : e.message;
         AS.setErrorMessage(msg);
     } finally {
-        // 進捗コールバックを復元（#10）
+        // Restore the progress callback (#10)
         setProgressCallback(savedCallback);
         btn.disabled = AS.getSelectedFactors().length === 0;
         btn.textContent = t('analysis.run');
         btn.style.background = '';
         renderAnalysisTab();
-        // 分析実行後の自動スクロール（#2）
+        // Auto-scroll after analysis execution (#2)
         setTimeout(() => {
             const target = document.getElementById('cardTarget');
             if (target) {

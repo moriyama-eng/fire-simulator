@@ -1,29 +1,29 @@
 // tests/unit/analysis-runner.test.js
-// 【Vitest 1.6 互換性】vi.mocked() は使用禁止、mockFn のプロパティに直接アクセスすること
-// 【最重要】vi.mock ファクトリ内では import バインディングを参照してはならない
-//   FACTORS は importOriginal() から、getState はローカルスパイ経由で使用する
+// [Vitest 1.6 compatibility] vi.mocked() is prohibited; access mockFn properties directly
+// [MOST IMPORTANT] Do not reference import bindings inside vi.mock factory
+//   FACTORS must come from importOriginal(), and getState via a local spy
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { runSimulation } from '../../js/simulation-engine.js';
 import * as AS from '../../js/analysis-state.js';
 import { runAnalysis, applyFactorChange, convertToLegacyParams } from '../../js/analysis-runner.js';
-// applyFactorChange のテストで使用するため、実際の FACTORS は引き続き import する
+// Continue importing the actual FACTORS for use in applyFactorChange tests
 import { FACTORS, getSuccessRateTargetDelta } from '../../js/analysis-state.js';
 import { makeDummySimResult, makeBaseEffectiveParams } from '../helpers/analysis-fixtures.js';
 
 vi.mock('../../js/simulation-engine.js');
 vi.mock('../../js/analysis-state.js', async (importOriginal) => {
   const actual = await importOriginal();
-  // ファクトリ内で使用する FACTORS は importOriginal() から取得する（import バインディングは未定義のため）
+  // Obtain FACTORS used in the factory from importOriginal() (import bindings are undefined)
   const { FACTORS: originalFactors } = actual;
-  // getState 用のスパイをローカル変数として定義
+  // Define the spy for getState as a local variable
   const getStateMock = vi.fn();
   return {
     ...actual,
     getState: getStateMock,
     getSelectedFactors: vi.fn(() => []),
-    // getFactorBaseValue のモック: getStateMock を経由して baseEffectiveParams を取得する。
-    // テスト実行時に毎回 getStateMock() が評価されるため、動的な状態に対応できる。
+    // Mock for getFactorBaseValue: get baseEffectiveParams via getStateMock.
+    // Since getStateMock() is evaluated each time a test runs, it can handle dynamic state.
     getFactorBaseValue: vi.fn((key) => {
       const bp = getStateMock().baseEffectiveParams;
       if (!bp) return null;
@@ -38,7 +38,7 @@ vi.mock('../../js/analysis-state.js', async (importOriginal) => {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  // リセットによりデフォルト実装が失われるため、明示的に再設定
+  // Explicitly re-set the default implementation because reset removes it
   runSimulation.mockResolvedValue(makeDummySimResult());
   AS.getState.mockReturnValue({
     baseEffectiveParams: makeBaseEffectiveParams(),
@@ -55,8 +55,8 @@ describe('runAnalysis', () => {
   });
 
   it('base scenario params include useFixedSeed and seedNum', async () => {
-    // 注: convertToLegacyParams は useFixedSeed: true をハードコードしている。
-    // 現在の実装では常に true だが、将来可変になる場合はテストの拡張が必要。
+    // Note: convertToLegacyParams hardcodes useFixedSeed: true.
+    // Currently always true in the implementation, but tests must be extended if it becomes variable in the future.
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
     await runAnalysis(vi.fn());
     const firstCallArgs = runSimulation.mock.calls[0][0];
@@ -68,8 +68,8 @@ describe('runAnalysis', () => {
     const onProgress = vi.fn();
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
     await runAnalysis(onProgress);
-    // 1回目: onProgress({done:0, total:5})（runSimulation 呼び出し前）
-    // 2〜5回目: 各水準の runSimulation 完了後
+    // 1st call: onProgress({done:0, total:5}) (before runSimulation is called)
+    // 2nd-5th calls: after each level's runSimulation completes
     expect(onProgress).toHaveBeenCalledTimes(5);
     expect(onProgress.mock.calls[0][0]).toEqual({ done: 0, total: 5 });
     const lastCall = onProgress.mock.calls[onProgress.mock.calls.length - 1][0];
@@ -82,7 +82,7 @@ describe('runAnalysis', () => {
       AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
       await expect(runAnalysis(vi.fn())).rejects.toThrow('test error');
     } finally {
-      // テストが途中で失敗しても、必ずデフォルト実装に戻す
+      // Always restore the default implementation even if the test fails midway
       runSimulation.mockResolvedValue(makeDummySimResult());
     }
   });
@@ -150,9 +150,9 @@ describe('convertToLegacyParams', () => {
 });
 
 describe('applyFactorChange', () => {
-  // 実際のコードに合わせ、完全な有効パラメータオブジェクトを渡して破壊的変更をテストする
-  // 注意: これらのテストは FACTORS の実際の scale と step に依存している。
-  // 因子定義が変更された場合は期待値を見直す必要がある。
+  // Pass a complete effective parameter object as in the actual code to test destructive changes
+  // Note: these tests depend on the actual scale and step of FACTORS.
+  // If the factor definition changes, the expected values must be reviewed.
   it('converts scale 1e8 factor correctly', () => {
     const factor = FACTORS.find(f => f.key === 'initial_risk_asset_jpy');
     const ep = makeBaseEffectiveParams({ initialRiskAsset: 100_000_000 });
@@ -190,10 +190,10 @@ describe('getSuccessRateTargetDelta', () => {
   });
 });
 
-// ===== target_asset_maintain_rate のテスト =====
+// ===== Tests for target_asset_maintain_rate =====
 describe('extractMetrics - target_asset_maintain_rate', () => {
   beforeEach(() => {
-    // 既存のモック設定をリセットしてから設定する
+    // Reset existing mock setup before re-configuring
     runSimulation.mockReset();
     runSimulation.mockResolvedValue(makeDummySimResult({ targetAssetMaintainRate: 88.5 }));
   });
@@ -202,11 +202,11 @@ describe('extractMetrics - target_asset_maintain_rate', () => {
     AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
     const result = await runAnalysis(vi.fn());
     
-    // baseScenario の metrics に target_asset_maintain_rate が含まれる
+    // baseScenario metrics include target_asset_maintain_rate
     expect(result.baseScenario.metrics).toHaveProperty('target_asset_maintain_rate');
     expect(result.baseScenario.metrics.target_asset_maintain_rate).toBe(88.5);
     
-    // 因子シナリオにも含まれる
+    // Also included in factor scenarios
     const factorResults = result.perFactorResults.expected_return_pct;
     expect(factorResults[0].metrics).toHaveProperty('target_asset_maintain_rate');
   });

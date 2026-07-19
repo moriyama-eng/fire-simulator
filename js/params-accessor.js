@@ -1,11 +1,11 @@
 // js/params-accessor.js
-// シミュレーションパラメータ取得ユーティリティ（循環インポート防止）
+// Simulation parameter retrieval utility (prevents circular imports)
 
 import { getParamsFromInputs } from './core/params.js';
 
 /**
- * 現在のシミュレーションタブのパラメータを取得する（比較タブ・分析タブ共用）
- * @returns {Object} パラメータオブジェクト（getParamsFromInputs と同じ形式）
+ * Retrieves the current Simulation tab parameters (shared between the Comparison tab and Analysis tab)
+ * @returns {Object} Parameter object (same format as getParamsFromInputs)
  */
 export function getCurrentSimParams() {
     return getParamsFromInputs({

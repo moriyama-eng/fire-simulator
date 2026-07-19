@@ -1,5 +1,5 @@
 // js/comparison-runner.js
-// 比較タブ 実行ロジック
+// Comparison tab execution logic
 
 import { runSimulation, setProgressCallback, getProgressCallback } from './simulation-engine.js';
 import { setScenarioResult, setScenarioError, setIsRunning, getScenarios, getCommonSeed, getCommonPaths } from './comparison-state.js';
@@ -9,7 +9,7 @@ export function convertComparisonParamsToLegacy(inputs, commonSeed, commonPaths)
     const simPaths = Math.max(5000, Math.min(50000, commonPaths));
     const clampNegative = (val) => Math.min(0, val);
     const clampPositive = (val, minVal = 0) => Math.max(minVal, val);
-    // tDfManual のガード（undefined 対策）デフォルト値は DEFAULTS.simDfNum (4.0) と同じ
+    // Guard for tDfManual (against undefined): default value is the same as DEFAULTS.simDfNum (4.0)
     const tDfManualValue = (inputs.tDfManual !== undefined && inputs.tDfManual !== null) ? inputs.tDfManual : 4.0;
 
     return {
@@ -72,7 +72,7 @@ export async function runAllScenarios(onProgress, onScenarioComplete, onAllCompl
                 console.error(`Simulation failed for scenario "${scenario.name}":`, err);
             }
         }
-        // ループ終了後の onProgress は呼ばない（二重実行防止）
+        // Do not call onProgress after the loop ends (prevents double execution)
     } finally {
         setIsRunning(false);
         setProgressCallback(savedCallback);

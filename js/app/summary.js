@@ -1,7 +1,7 @@
 // ====================================================================
 // js/app/summary.js
-// サマリーカード描画モジュール
-// 依存: i18n.js, app/state.js, app/ui-helpers.js
+// Summary card rendering module
+// Dependencies: i18n.js, app/state.js, app/ui-helpers.js
 // ====================================================================
 
 import { t, formatCurrency, formatDate, formatYears, formatNumber, getLanguage } from '../i18n.js';
@@ -9,21 +9,21 @@ import { getIsResultDirty } from './state.js';
 import { initTooltips } from './ui-helpers.js';
 
 // ====================================================================
-// applyTranslations の参照（summary内で呼ぶため動的インポートで循環を回避）
-// init.js から注入する形でもよいが、ここでは直接モジュール関数を定義
+// Reference to applyTranslations (use dynamic import to avoid circular imports when calling from within summary)
+// Could also be injected from init.js, but here it is defined directly as a module function
 // ====================================================================
 
 /**
- * サマリーカードの内容を更新する
- * @param {object} result - シミュレーション結果
- * @param {object} params - 実行パラメータ
+ * Updates the content of the summary card
+ * @param {object} result - Simulation result
+ * @param {object} params - Execution parameters
  */
 export function updateSummaryCard(result, params) {
     const container = document.getElementById('summaryCardContainer');
 
     const successRate = result.successRate.toFixed(1);
 
-    // 成功率に応じたステータスカラー
+    // Status color according to success rate
     let statusGrad = 'from-emerald-500/20 to-teal-500/5';
     let statusText = 'text-emerald-400';
     if (result.successRate < 80) {
@@ -104,7 +104,7 @@ export function updateSummaryCard(result, params) {
         const lang = getLanguage() || '';
         const isJa = lang.startsWith('ja');
         if (isJa) return (params.initialCashBuffer / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 }) + '万円';
-        // 万円 → 円 → ドル（÷100）→ Kドル（÷1000）
+        // 10,000 JPY → JPY → USD (÷100) → K USD (÷1000)
         const usd = params.initialCashBuffer / 100;
         const k = usd / 1000;
         return '$' + k.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' K';
@@ -172,13 +172,13 @@ export function updateSummaryCard(result, params) {
     </div>
     `;
 
-    // フェードイン表示
+    // Fade-in display
     container.classList.remove('hidden');
     // reflow
     void container.offsetWidth;
     container.classList.add('opacity-100');
 
-    // 動的翻訳適用（循環インポート回避のため動的インポートを使用）
+    // Apply dynamic translations (use dynamic import to avoid circular imports)
     import('../i18n.js').then(({ t: _t }) => {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             el.textContent = _t(el.getAttribute('data-i18n'));
@@ -188,7 +188,7 @@ export function updateSummaryCard(result, params) {
 }
 
 // ====================================================================
-// 未実行状態のサマリカード描画
+// Summary card rendering for the un-executed state
 // ====================================================================
 export function renderEmptySummaryCard(cbChecked = false) {
     const container = document.getElementById('summaryCardContainer');
@@ -291,7 +291,7 @@ export function renderEmptySummaryCard(cbChecked = false) {
     void container.offsetWidth;
     container.classList.add('opacity-100');
 
-    // 動的翻訳適用（循環インポート回避のため動的インポートを使用）
+    // Apply dynamic translations (use dynamic import to avoid circular imports)
     import('../i18n.js').then(({ t: _t }) => {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             el.textContent = _t(el.getAttribute('data-i18n'));

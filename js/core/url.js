@@ -16,17 +16,17 @@ export function buildSimulationUrl(params, options = {}) {
     } = options;
     const url = new URL(baseUrl || `${location.origin}${location.pathname}`);
     url.searchParams.set('asset', (params.initialRiskAsset / 100_000_000).toString());
-    // 言語に応じて cash と expense の単位を切り替え
-    // 日本語モード (lang === 'ja' または lang 未指定): 万円単位 (1万円 = 10,000円)
-    // 英語モード (lang === 'en'): Kドル単位 (1Kドル = 1,000ドル = 100,000円)
+    // Switch the unit of cash and expense according to the language
+    // Japanese mode (lang === 'ja' or lang unspecified): 10,000 yen unit (1 man-yen = 10,000 yen)
+    // English mode (lang === 'en'): K dollar unit (1K dollar = 1,000 dollars = 100,000 yen)
     const isEnglish = lang === 'en';
     let cashParam, expenseParam;
     if (isEnglish) {
-        // Kドル = 内部円 / 100,000
+        // K dollars = internal yen / 100,000
         cashParam = (params.initialCashBuffer / 100_000).toString();
         expenseParam = (params.monthlyExpense / 100_000).toString();
     } else {
-        // 万円 = 内部円 / 10,000
+        // 10,000 yen = internal yen / 10,000
         cashParam = (params.initialCashBuffer / 10_000).toString();
         expenseParam = (params.monthlyExpense / 10_000).toString();
     }
@@ -55,7 +55,7 @@ export function buildSimulationUrl(params, options = {}) {
     url.searchParams.set('grTrig', params.guardrailTrigger.toFixed(1));
     url.searchParams.set('grRel', params.guardrailRelease.toFixed(1));
     url.searchParams.set('grRed', params.guardrailReduction.toFixed(1));
-    // targetAssetRatio: パラメータ名 'tar'
+    // targetAssetRatio: parameter name 'tar'
     if (params.targetAssetRatio !== undefined) {
         url.searchParams.set('tar', params.targetAssetRatio.toFixed(1));
     }
@@ -120,7 +120,7 @@ export function applyParsedParams(parsed) {
     setNum('infVolNum','infVol'); setNum('infArNum','infAr');
     setNum('drawdownTriggerNum','ddTrig'); setNum('drawdownReplenishNum','ddRepl'); setNum('replenishPaceNum','replPace');
     setNum('guardrailTriggerNum','grTrig'); setNum('guardrailReleaseNum','grRel'); setNum('guardrailReductionNum','grRed');
-    // targetAssetRatio: パラメータ名 'tar'
+    // targetAssetRatio: parameter name 'tar'
     if (parsed['tar'] !== undefined) {
         const el = document.getElementById('targetAssetRatioNum');
         if (el) {
@@ -135,8 +135,8 @@ export function applyQueryParams(runMainFn) {
     const parsed = parseQueryParams(window.location.search);
     if (Object.keys(parsed).length === 0) return;
 
-    // 【重要】言語設定は数値変換（applyParsedParams）より先に実行する
-    // これにより英語モードのURLでも現金バッファや月間支出が正しくUSD単位で解釈される
+    // [IMPORTANT] Language settings must be applied before numeric conversion (applyParsedParams)
+    // This ensures that cash buffer and monthly expenses are interpreted correctly in USD units even for English mode URLs
     if (parsed['lang'] && (parsed['lang'] === 'ja' || parsed['lang'] === 'en')) {
         setLanguage(parsed['lang']);
     }

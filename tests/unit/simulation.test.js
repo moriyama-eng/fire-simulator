@@ -41,8 +41,8 @@ const defaultInputs = {
 describe('Reproducibility', () => {
     it('matches reference data with fixed seed 123456', () => {
         const params = getParamsFromInputs(defaultInputs);
-        // reference-results.json は paths=1000 で生成されたため、
-        // getParamsFromInputs のクランプ（5000）を上書きして 1000 に戻す
+        // reference-results.json was generated with paths=1000,
+        // so override the clamp (5000) in getParamsFromInputs to revert to 1000
         params.simPaths = 1000;
         const seed = params.seedNum;
         const finalValues = [];
@@ -66,11 +66,11 @@ describe('Reproducibility', () => {
 });
 
 // ====================================================================
-// v2.3.0: 新指標（初期総資産割れ継続期間・リスク資産連続売却期間）のユニットテスト
+// v2.3.0: Unit tests for new metrics (below-initial-assets continuous period / consecutive risk asset sell period)
 // ====================================================================
 describe('New below-initial metrics', () => {
     /**
-     * runSinglePath のヘルパー：RNG を固定シードで初期化して呼び出す
+     * Helper for runSinglePath: initialize RNG with a fixed seed and call it
      */
     function runWithParams(inputs, seedOffset = 0) {
         const params = getParamsFromInputs(inputs);
@@ -83,7 +83,7 @@ describe('New below-initial metrics', () => {
     }
 
     it('returns maxBelowInitPeriod and maxConsecutiveSellPeriod in result', () => {
-        // 戻り値に新指標が含まれることを確認
+        // Confirm that the return value includes new metrics
         const result = runWithParams(defaultInputs);
         expect(result).toHaveProperty('maxBelowInitPeriod');
         expect(result).toHaveProperty('maxConsecutiveSellPeriod');
@@ -92,7 +92,7 @@ describe('New below-initial metrics', () => {
     });
 
     it('maxConsecutiveSellPeriod <= maxBelowInitPeriod always holds', () => {
-        // 指標②は割れ中かつ売却あり期間のみカウントするため、常に指標①以下
+        // Indicator 2 counts only periods where below initial assets AND selling, so it is always <= Indicator 1
         const params = getParamsFromInputs(defaultInputs);
         for (let p = 0; p < 10; p++) {
             const rng = xoshiro128ss(params.seedNum + p);
@@ -105,14 +105,14 @@ describe('New below-initial metrics', () => {
     });
 
     it('returns non-negative values for both metrics', () => {
-        // 両指標が常に非負であることを確認
+        // Confirm that both metrics are always non-negative
         const result = runWithParams(defaultInputs, 42);
         expect(result.maxBelowInitPeriod).toBeGreaterThanOrEqual(0);
         expect(result.maxConsecutiveSellPeriod).toBeGreaterThanOrEqual(0);
     });
 
     it('matches reference data for new metrics (reproducibility)', () => {
-        // 参照データとの再現性確認（reference-belowinit-results.json の値と照合）
+        // Verify reproducibility against reference data (compare with values in reference-belowinit-results.json)
         const referenceData = JSON.parse(readFileSync('tests/fixtures/reference-belowinit-results.json', 'utf-8'));
         const params = getParamsFromInputs(defaultInputs);
         params.simPaths = 1000;
@@ -138,24 +138,24 @@ describe('New below-initial metrics', () => {
             ...defaultInputs,
             initialRiskAssetNum: '1000',
             initialCashBufferNum: '0',
-            monthlyExpenseNum: '10', // 支出を10に小さくして破綻を防ぐ
+            monthlyExpenseNum: '10', // Keep expenses low to prevent bankruptcy
             expectedReturnNum: '0',
-            volatilityNum: '120', // monthlyVol ≒ 0.3464
+            volatilityNum: '120', // monthlyVol approx. 0.3464
             inflationRateNum: '0',
-            simYearsNum: '1', // 12ヶ月
+            simYearsNum: '1', // 12 months
             cashBufferToggle: false,
             returnModelSelect: 'log-normal',
         });
 
-        // 資産の初期値 = 1000
-        // Z の列を設定して資産の動きをコントロールする
+        // Initial asset value = 1000
+        // Set the Z array to control asset movement
         // t=0: 1000
-        // t=1: Z=-1 (資産減、支出後 < 1000) -> belowInit: 1
-        // t=2: Z=-1 (資産減、支出後 < 1000) -> belowInit: 2
-        // t=3: Z=3  (資産増、支出後 >= 1000) -> belowInit: 0 にリセット
-        // t=4: Z=-1 (資産減、支出後 < 1000) -> belowInit: 1
-        // t=5: Z=3  (資産増、支出後 >= 1000) -> belowInit: 0
-        // 期待される maxBelowInitPeriod は 2。
+        // t=1: Z=-1 (asset decreases, post-expense < 1000) -> belowInit: 1
+        // t=2: Z=-1 (asset decreases, post-expense < 1000) -> belowInit: 2
+        // t=3: Z=3  (asset increases, post-expense >= 1000) -> reset belowInit: 0
+        // t=4: Z=-1 (asset decreases, post-expense < 1000) -> belowInit: 1
+        // t=5: Z=3  (asset increases, post-expense >= 1000) -> belowInit: 0
+        // Expected maxBelowInitPeriod is 2.
         const zValues = [-1, -1, 3, -1, 3, 0, 0, 0, 0, 0, 0, 0];
         let zIdx = 0;
         const rngs = {
@@ -176,9 +176,9 @@ describe('New below-initial metrics', () => {
             initialCashBufferNum: '200',
             monthlyExpenseNum: '50',
             expectedReturnNum: '0',
-            volatilityNum: '120', // monthlyVol ≒ 0.3464
+            volatilityNum: '120', // monthlyVol approx. 0.3464
             inflationRateNum: '0',
-            simYearsNum: '1', // 12ヶ月
+            simYearsNum: '1', // 12 months
             cashBufferToggle: true,
             drawdownTriggerNum: '-20.0', // ddThreshold = -0.2
             drawdownReplenishNum: '-5.0', // ddReplenishThreshold = -0.05
@@ -186,12 +186,12 @@ describe('New below-initial metrics', () => {
             returnModelSelect: 'log-normal',
         });
 
-        // t=1: Z=-3 (資産減) -> eomAsset < 800 (belowInit), eomDD <= -0.2 -> useCashNextMonth = true
-        // t=2: Z=6 (資産増) -> eomAsset >= HWM (1000) -> HWM更新, isReplenishMode = true. useCashNextMonth=trueによりcash=150.
-        // t=3: Z=-1.25 (資産少し減) -> useCashNextMonth=false, isReplenishMode=true, cash=150<200.
-        //      補充処理が走り、現金バッファから支出されるが soldFromRisk=true になる。
-        //      支出後 eomAsset < 1000 となり belowInit=true.
-        //      consecutiveSellPeriod が 1 になることを確認。
+        // t=1: Z=-3 (asset decreases) -> eomAsset < 800 (belowInit), eomDD <= -0.2 -> useCashNextMonth = true
+        // t=2: Z=6 (asset increases) -> eomAsset >= HWM (1000) -> HWM updated, isReplenishMode = true. cash=150 due to useCashNextMonth=true.
+        // t=3: Z=-1.25 (asset slightly decreases) -> useCashNextMonth=false, isReplenishMode=true, cash=150<200.
+        //      Replenishment runs; expense is paid from cash buffer, but soldFromRisk=true.
+        //      After expense, eomAsset < 1000, so belowInit=true.
+        //      Confirm that consecutiveSellPeriod becomes 1.
         const zValues = [-3, 6, -1.25, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let zIdx = 0;
         const rngs = {
@@ -202,7 +202,7 @@ describe('New below-initial metrics', () => {
         };
 
         const res = runSinglePath(rngs, customParams);
-        // t=3 で consecutiveSellPeriod が 1 以上になっているはず
+        // consecutiveSellPeriod should be 1 or more at t=3
         expect(res.maxConsecutiveSellPeriod).toBeGreaterThanOrEqual(1);
     });
 
@@ -218,9 +218,9 @@ describe('New below-initial metrics', () => {
             simYearsNum: '1',
             cashBufferToggle: false,
             guardrailToggle: true,
-            guardrailTriggerNum: '-10.0',      // eomDD <= -0.10 で発動
+            guardrailTriggerNum: '-10.0',      // activates when eomDD <= -0.10
             guardrailReleaseNum: '-5.0',
-            guardrailReductionNum: '-100.0',   // 削減率 -100% (支出0)
+            guardrailReductionNum: '-100.0',   // reduction rate -100% (expense = 0)
             returnModelSelect: 'log-normal',
         });
 

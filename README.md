@@ -1,223 +1,228 @@
-# FIRE モンテカルロ・シミュレータ (v2.3.1)
+[English](./README.md) | [日本語](./README-ja.md)
 
-本ツールは、ブラウザ単体で手軽に実行できる個人の資産形成・取崩しシミュレータです。
-確率論的なアプローチ（モンテカルロ・シミュレーション）を用いて、運用資産の枯渇リスクや長期的な資産推移を可視化することを目的に制作しました。
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-## 特徴
+# FIRE Monte Carlo Simulator (v2.3.2)
 
-- **ファットテールリスクを考慮した変動モデル（対数t分布）**  
-  従来の正規分布では過小評価されがちな「リーマンショック級の暴落」など、現実の金融市場で発生しうる「ファットテールリスク」を考慮した対数t分布モデルを選択可能です。
-- **統計的な価格変動モデルに基づくリスクシミュレーション**  
-  価格変動モデルとして対数正規分布モデル/対数t分布モデルを採用し、設定した期待リターンとボラティリティに基づく市場価格の推移をシミュレーションします。
-- **現金バッファ機能の導入**  
-  総資産が過去最高値から一定割合下落した際、自動的に現金バッファから取り崩す「現金バッファ戦略」をシミュレーション可能です。暴落耐性を高める具体的な運用指針の検証に役立ちます。
-- **暴落時の支出抑制（支出ガードレール機能）の導入**  
-  総資産が過去最高値から一定割合下落した際、自動的に翌月からの支出を削減する「支出ガードレール戦略」をシミュレーション可能です。暴落耐性を高める具体的な運用指針の検証に役立ちます。
-- **伊藤の補題（Ito Calculus）に基づく厳密なドリフト調整**  
-  入力パラメータ「期待リターン」を算術平均として再定義。ボラティリティに基づき幾何平均リターンが低下する現象（ボラティリティ・ドラッグ）を、数学的に正しくシミュレーション内部で処理するように改善しました。
-- **テールリスク（最大下落・停滞期間）の可視化**  
-  単なる資産推移だけでなく、最悪ケースのドローダウンや回復までの期間を、累積確率分布グラフ（CDF/CCDF）で直感的に把握可能です。
-- **インフレ変動モデル (AR-1モデル) の搭載**  
-  単なる定率インフレだけでなく、統計データ（米国CPIなど）の特性を参考にしたAR-1（自己回帰）モデルを選択できます。
+This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
-## 主な更新履歴
+## Features
 
-### 更新内容 (v2.3.1)
-- **内部構造のリファクタリング**: `app.js` を機能別モジュール（state, charts, summary, ui-helpers, actions, init）に分割し、可読性・保守性を大幅に向上させました。
-- **Chart.js エラー修正**: 言語切り替え時に発生していた `Cannot read properties of null` エラーを、`applyDownsideFocus` 関数にガード（`if (!chart || !chart.data) return;`）を追加して解消しました。
-- **テストインポートパス of `buildCdfPoints` 修正**: `buildCdfPoints` のインポート元を `app.js` から `app/charts.js` に修正し、テストの保守性を改善しました。
-- 外部仕様（UI・シミュレーション結果・動作）に変更はありません。
+- **Fat-tail risk-aware fluctuation model (log-t distribution)**  
+  You can select the log-t distribution model, which accounts for "fat-tail risks" that can occur in real financial markets — such as a "Lehman shock-level crash" — that tend to be underestimated by conventional normal distribution models.
+- **Risk simulation based on statistical price fluctuation models**  
+  Using a log-normal distribution model or a log-t distribution model as the price fluctuation model, the tool simulates the progression of market prices based on the configured expected return and volatility.
+- **Introduction of a cash buffer feature**  
+  It is possible to simulate a "cash buffer strategy" that automatically draws from a cash buffer when the total assets fall by a certain percentage from their all-time high. This is useful for verifying specific operational guidelines for improving crash resilience.
+- **Introduction of drawdown spending reduction (spending guardrail feature)**  
+  It is possible to simulate a "spending guardrail strategy" that automatically reduces spending from the following month when total assets fall by a certain percentage from their all-time high. This is useful for verifying specific operational guidelines for improving crash resilience.
+- **Rigorous drift adjustment based on Ito's Lemma (Ito Calculus)**  
+  The input parameter "expected return" is redefined as the arithmetic mean. The phenomenon where the geometric mean return decreases due to volatility (volatility drag) is now mathematically correctly handled inside the simulation.
+- **Visualization of tail risks (maximum drawdown / stagnation period)**  
+  In addition to simple asset progression, the worst-case drawdown and time to recovery can be intuitively grasped using cumulative probability distribution graphs (CDF/CCDF).
+- **Inflation fluctuation model (AR-1 model)**  
+  In addition to a simple fixed inflation rate, an AR-1 (autoregressive) model referencing the characteristics of statistical data (such as US CPI) can be selected.
 
-### 更新内容 (v2.3.0)
+## Main Update History
 
-- **新リスク指標（初期総資産割れ関連グラフ）の追加**
-  - シミュレーションタブに以下の2つのCCDF（相補累積分布関数）グラフを新設しました。
-    - **初期総資産割れ 継続期間 発生確率**：総資産がシミュレーション開始時の初期総資産を下回っている状態が最長で何ヶ月継続するかの確率分布を可視化します。
-    - **初期総資産割れ時 リスク資産連続売却期間 発生確率**：初期総資産割れが発生している期間中に、取崩し元としてリスク資産が連続して何ヶ月使われたかの確率分布を可視化します。
-  - これらの指標により、ユーザーは資産の底値圏における心理的負荷や行動リスク（割れからの回復遅延やリスク資産の売却継続リスク）をより詳細に評価できるようになりました。
-  - 既存の4つのグラフ（総資産推移・現金バッファ推移・最大ドローダウン・最長停滞期間）に加え、合計6つのグラフでリスクを多角的に分析できます。
+### Updates (v2.3.2)
+- **Internationalization (i18n)**: Translated all documentation, code comments, and Markdown files to English.
+- **Code Comment Cleanup**: Removed obsolete internal trace tags (such as `Bug #NN`, `FIX-NN`, `REQ-NN`) and unified comments in natural English.
+- No changes to the external specification (UI, simulation results, or behavior).
 
-- **内部データフローの拡張**
-  - `runSinglePath` の戻り値に `maxBelowInitPeriod` と `maxConsecutiveSellPeriod` を追加し、Worker間のバッファ受け渡しを実装しました。
-  - `aggregateResultsProduction` が新指標を戻り値に含むようになり、グラフ描画とZIP出力の基盤が整いました。
+### Updates (v2.3.1)
+- **Internal structure refactoring**: Split `app.js` into functionally separate modules (state, charts, summary, ui-helpers, actions, init), greatly improving readability and maintainability.
+- **Chart.js error fix**: Resolved a `Cannot read properties of null` error that occurred during language switching by adding a guard (`if (!chart || !chart.data) return;`) to the `applyDownsideFocus` function.
+- **Fixed test import path for `buildCdfPoints`**: Changed the import source of `buildCdfPoints` from `app.js` to `app/charts.js`, improving test maintainability.
+- No changes to the external specification (UI, simulation results, or behavior).
 
-- **テストスイートの拡充**
-  - 新指標向けに7つのユニットテストケースを `tests/unit/simulation.test.js` に追加し、ロジックの正確性を検証しました。
-  - 新指標の再現性テスト用フィクスチャ（`reference-belowinit-results.json`）と生成スクリプト（`generate-belowinit-reference.js`）を追加しました。
-  - 新グラフ描画と言語切替を検証する結合テスト（`tests/integration/belowinit-charts.test.js`）を追加しました。
-  - 既存の再現性テスト（`reference-results.json`）は従来通りパスすることを確認済みです。
+### Updates (v2.3.0)
 
-### 更新内容 (v2.2.0)
+- **Addition of new risk indicators (graphs related to falling below initial total assets)**
+  - The following two CCDF (Complementary Cumulative Distribution Function) graphs were newly added to the Simulation tab:
+    - **Probability of occurrence of continued period below initial total assets**: Visualizes the probability distribution of how many months the total assets remain below the initial total assets at the start of the simulation at their longest.
+    - **Probability of occurrence of consecutive risk asset sell period when below initial total assets**: Visualizes the probability distribution of how many months risk assets were consecutively used as the source of withdrawals during the period when assets were below the initial total assets.
+  - These indicators allow users to evaluate the psychological burden and behavioral risks (delayed recovery from lows and continued risk asset selling risk) during the period when assets are at their lowest in greater detail.
+  - In addition to the existing four graphs (total assets progression, cash buffer progression, maximum drawdown, longest stagnation period), risks can be analyzed from multiple angles with a total of six graphs.
 
-- **比較タブの追加**
-  - 複数の独立したシナリオを横並びで設定・一括実行し、主要な出力指標を表形式で比較できます。
-    - **注意**: デフォルトのシナリオ名（'Scenario 1'、'Scenario X'、'Copy of X'）は、ユーザー自身が編集・決定する「データ」であるため、言語切り替えによる自動翻訳の対象外（固定の英語ベース表記）となります。これにより、言語切り替え時にユーザーのデータが予期せず変質することを防ぎます。
-  - 最大10シナリオまで追加可能で、シナリオの複製・削除・並び替えが可能です。
-  - 「シミュレーションタブの値で上書き」ボタンで現在のシミュレーション条件を各シナリオに反映できます。
-  - 英語モードでは通貨単位が自動変換され（100円 = $1 固定レート）、入力フィールドの横に「K」「M」などの単位ラベルが表示されます。
-  - テストスイートを拡充し、比較タブ向けの単体テスト・結合テストを追加しました。
+- **Expansion of internal data flow**
+  - Added `maxBelowInitPeriod` and `maxConsecutiveSellPeriod` to the return value of `runSinglePath`, and implemented buffer transfer between Workers.
+  - `aggregateResultsProduction` now includes the new indicators in its return values, laying the groundwork for graph drawing and ZIP output.
 
-### 更新内容 (v2.1.0)
+- **Expansion of the test suite**
+  - Added 7 unit test cases for the new indicators in `tests/unit/simulation.test.js` to verify the accuracy of the logic.
+  - Added a fixture for reproducibility testing of new indicators (`reference-belowinit-results.json`) and a generation script (`generate-belowinit-reference.js`).
+  - Added an integration test (`tests/integration/belowinit-charts.test.js`) to verify new graph drawing and language switching.
+  - Confirmed that existing reproducibility tests (`reference-results.json`) continue to pass as before.
 
-- **目標資産維持確率の追加**
-  - シミュレーション終了時に、初期総資産（リスク資産+現金バッファ）の指定割合以上の資産を維持できる確率を計算・表示する機能を追加しました。
-  - 資産設定に「終了時目標資産（％）」の入力項目を追加。100%の場合は元本維持確率に相当します。
-  - サマリーカードに新指標として表示され、ZIP出力の CSV や JSON にも含まれます。
-  - ※インフレ調整は行わない名目値での評価です（ツールチップに注意書きあり）。
-- **英語モードの追加（実験的）**
-  - インターフェースの一部を英語に切り替え可能にしました（右上の言語ボタン：`English (experimental)`）。
-  - 通貨表示は USD（$1 = 100円 固定レート）に変換されます。内部計算は日本円で行われるため、便宜上扱いやすい固定レートを採用しています。
-  - **注意**: 英語モードは実験的な実装です。レイアウト崩れや未翻訳の箇所がある可能性があります。
+### Updates (v2.2.0)
 
-### 更新内容 (v2.0.0)
+- **Addition of the Comparison tab**
+  - Multiple independent scenarios can be configured side by side, run all at once, and the main output indicators can be compared in a table.
+    - **Note**: Default scenario names ('Scenario 1', 'Scenario X', 'Copy of X') are "data" that the user edits and determines themselves, so they are excluded from automatic translation when switching languages (fixed English-based notation). This prevents user data from being inadvertently altered when switching languages.
+  - Up to 10 scenarios can be added, and scenarios can be duplicated, deleted, and reordered.
+  - The "Overwrite with simulation tab values" button can reflect the current simulation conditions to each scenario.
+  - In English mode, currency units are automatically converted (100 yen = $1 fixed rate), and unit labels such as "K" and "M" are displayed next to input fields.
+  - The test suite has been expanded to include unit tests and integration tests for the Comparison tab.
 
-- **分析タブの追加**
-  - 主画面上部に「分析」タブを新設し、基準シナリオを基準とした One-way Sensitivity Analysis (OAT) を実行可能にしました。
-  - 10種類の因子（リスク資産、支出、リターン、ボラティリティ、現金バッファ関連など）を選択し、5水準の感度分析が行えます。
-  - 各シナリオの結果（FIRE成功率、最終総資産10%タイル、最大DD 10%タイル）を一覧表や因子別比較カードで視覚化します。
-  - 分析結果は ZIP 形式でダウンロード可能で、summary.csv, comparison_summary.csv, metadata/*.json, manifest.json が含まれます。
-  - 主画面の既存機能は変更していません。
-- **テストスイートの拡充と文書整備**
-  - 分析タブ向けに4モジュール（analysis-state, analysis-runner, analysis-output, analysis-ui）の単体・結合テストを追加
-  - 全20ファイル・約110テストケースの自動テストスイートを整備
-  - テスト設計思想・フィクスチャ設計指針・追加ガイドを `tests/README.md` に明文化
-  - メンテナンス不能な E2E テスト（Puppeteer/Playwright）を廃止し、インテグレーションテストに一本化
+### Updates (v2.1.0)
 
-  - **因子**: 感度分析の対象パラメータ（リターン、ボラティリティ等）
-  - **水準**: 因子の変化段階（-2, -1, 0, +1, +2 の5段階）
-  - **基準シナリオ**: 因子を一切変更しない基準の分析結果
+- **Addition of target asset maintenance probability**
+  - Added a feature that calculates and displays the probability of maintaining assets equal to or greater than a specified percentage of the initial total assets (risk assets + cash buffer) at the end of the simulation.
+  - Added an "End target asset (%)" input item to the asset settings. When set to 100%, this corresponds to the principal maintenance probability.
+  - Displayed as a new indicator on the summary card, and also included in the CSV and JSON of ZIP output.
+  - ※ This is an evaluation based on nominal values without inflation adjustment (note included in the tooltip).
+- **Addition of English mode (experimental)**
+  - Part of the interface can now be switched to English (language button in the upper right: `English (experimental)`).
+  - Currency display is converted to USD ($1 = 100 yen fixed rate). Since internal calculations are performed in Japanese yen, a convenient fixed rate is adopted.
+  - **Note**: English mode is an experimental implementation. There may be layout issues or untranslated sections.
 
-### 更新内容 (v1.10.0)
+### Updates (v2.0.0)
 
-- **集計処理のメモリ効率を大幅に改善**
-  - `aggregateResultsProduction` を逐次転置方式に変更し、5万パス時のピークメモリ使用量を削減しました。
-  - 総資産 / 現金 / ドローダウンの3種類のバッファを同時に転置せず、1種類ずつ計算・解放することで、ブラウザのメモリ負荷を抑えています。
-  - 計算アルゴリズムは変更していないため、シミュレーション結果はv1.9.0と完全に一致します。
+- **Addition of the Analysis tab**
+  - Added an "Analysis" tab to the top of the main screen, enabling One-way Sensitivity Analysis (OAT) based on a base scenario.
+  - 10 types of factors (risk assets, spending, return, volatility, cash buffer-related, etc.) can be selected for sensitivity analysis at 5 levels.
+  - Results for each scenario (FIRE success rate, final total assets 10th percentile, maximum DD 10th percentile) are visualized in a list table and per-factor comparison cards.
+  - Analysis results can be downloaded in ZIP format, containing summary.csv, comparison_summary.csv, metadata/*.json, and manifest.json.
+  - The existing features of the main screen are unchanged.
+- **Expansion of the test suite and documentation**
+  - Added unit and integration tests for 4 modules (analysis-state, analysis-runner, analysis-output, analysis-ui) for the Analysis tab
+  - Organized an automated test suite of about 20 files and approximately 110 test cases
+  - Documented the test design philosophy, fixture design guidelines, and addition guide in `tests/README.md`
+  - Discontinued unmaintainable E2E tests (Puppeteer/Playwright) and consolidated into integration tests
 
-### 更新内容 (v1.9.0)
+  - **Factor**: Target parameter for sensitivity analysis (return, volatility, etc.)
+  - **Level**: Stage of factor change (-2, -1, 0, +1, +2 in 5 stages)
+  - **Base scenario**: Baseline analysis result with no changes to any factors
 
-- **コード構造のリファクタリング**
-  純粋なロジック（計算、パラメータ管理、URL構築など）を `js/core/` に分離し、テスト容易性と保守性を向上させました。
-- **自動テストの導入**
-  Vitest + jsdom による単体テストと結合テストを構築し、計算ロジックの再現性やUIの状態遷移を自動検証できるようにしました。
-- **URL構築ロジックの共通化**
-  共有・比較・コピー機能で重複していたURL生成処理を `buildSimulationUrl` 関数に一元化しました。
-- **状態管理の明確化**
-  入力変更後のdirty状態とボタン制御を `state.js` に分離し、予期せぬ結果共有を防止するようにしました。
-- **月次判定基準のドキュメント化**
-  すべての判定が支出後総資産ベースであることを `docs/decision-timing.md` に明文化しました。
-- **CIパイプラインの導入**
-  GitHub Actions でプッシュ時に自動テストを実行するワークフローを追加しました。
+### Updates (v1.10.0)
 
-### 更新内容 (v1.8.3)
+- **Significantly improved memory efficiency of the aggregation process**
+  - Changed `aggregateResultsProduction` to a sequential transposition method, reducing peak memory usage during 50,000 paths.
+  - By calculating and releasing the three types of buffers — total assets / cash / drawdown — one type at a time rather than transposing them all at once, the browser's memory load is reduced.
+  - Since the calculation algorithm has not changed, simulation results are completely consistent with v1.9.0.
 
-- **内部計算単位の変更（万円 → 円）**
-  すべての内部金額計算を「万円」から「円」に統一しました。UI上の表示単位（億円・万円）に変更はありません。
-- **破綻判定の精度維持**
-  単位変更に伴い破綻判定の閾値（EPSILON）を 1 円に調整しました。シミュレーション結果の挙動は従来と変わりません。
-- **表示制御トグル操作時の挙動改善**
-  「総資産推移」および「現金バッファ推移」グラフ上の「50%以下のみ表示」トグルを操作した際に、シミュレーション条件の変更警告（⚠️ 条件変更あり）が誤って表示される不具合を修正しました。
+### Updates (v1.9.0)
 
-### 更新内容 (v1.8.2)
+- **Code structure refactoring**
+  Pure logic (calculations, parameter management, URL construction, etc.) was separated into `js/core/` to improve testability and maintainability.
+- **Introduction of automated testing**
+  Built unit tests and integration tests using Vitest + jsdom, enabling automatic verification of the reproducibility of calculation logic and UI state transitions.
+- **Consolidation of URL construction logic**
+  The URL generation process, which was duplicated across sharing, comparison, and copy functions, was centralized in the `buildSimulationUrl` function.
+- **Clarification of state management**
+  The dirty state after input changes and button control were separated into `state.js` to prevent unintended result sharing.
+- **Documentation of monthly determination criteria**
+  Documented in `docs/decision-timing.md` that all determinations are based on the post-spending total assets.
+- **Introduction of CI pipeline**
+  Added a GitHub Actions workflow that automatically runs tests on push.
 
-- **初期リスク資産のデフォルト値修正**
-  デフォルト値をUI表示単位（万円）と統一し、フォールバック時の異常値発生を防止しました。
-- **入力変更後の結果共有禁止（stale状態管理）**
-  シミュレーション実行後に入力値を変更すると、共有・保存・比較ボタンが無効化され、サマリーカードに警告が表示されます。再実行することで再有効化されます。これにより、現在の入力と異なる結果を誤って共有することを防ぎます。
-- **月次処理順序の完全統一（全判定を支出後基準に統一）**
-  ガードレール発動/解除判定、現金バッファ使用判定、最高値更新、補充モード開始/終了、最大ドローダウン記録をすべて「支出後総資産（月末資産）」基準に統一しました。判定結果はすべて翌月の行動（支出額・支出元）に反映されます。
-- **Worker エラー時の全停止対応**
-  並列計算中にいずれかのWorkerでエラーが発生した場合、すべてのWorkerを安全に停止し、UIを正常に復帰させるように改善しました。
-- **シミュレーション回数上限の統一**
-  UIと内部ロジックの上限値を 50,000回 に統一しました。
-- **ステッパーボタンの操作性改善**
-  クリックによる単発増減に対応し、キーボード操作時のアクセシビリティを向上させました（長押し連続増減は維持）。
+### Updates (v1.8.3)
 
-### 月次処理順序（v1.8.2以降）
+- **Change of internal calculation unit (10,000 yen → yen)**
+  All internal monetary calculations have been unified from "10,000 yen" to "yen". There is no change to the display unit on the UI (100 million yen, 10,000 yen).
+- **Maintenance of bankruptcy determination accuracy**
+  In conjunction with the unit change, the threshold (EPSILON) for bankruptcy determination was adjusted to 1 yen. The behavior of simulation results remains unchanged from before.
+- **Improvement of behavior when operating the display control toggle**
+  Fixed a bug where the simulation condition change warning (⚠️ Condition changed) was erroneously displayed when operating the "Show only 50% or below" toggle on the "Total Assets Progression" and "Cash Buffer Progression" graphs.
 
-本シミュレータでは、各月の処理を以下の順序で実行します：
-1. 市場リターン適用
-2. インフレ率更新
-3. **支出（取崩し）実行**（前月までの判定結果に基づき、支出元と支出額を決定）
-4. 支出後総資産（月末資産）を確定
-5. **支出後総資産を基準に、ガードレール発動/解除・現金バッファ使用有無・高値更新・補充モード・最大DDなどの全判定を実施**（結果は翌月の行動に反映）
+### Updates (v1.8.2)
 
-### 更新内容 (v1.8.1)
+- **Fix of default value for initial risk assets**
+  Unified the default value with the UI display unit (10,000 yen) to prevent abnormal values from occurring during fallback.
+- **Prohibition of result sharing after input changes (stale state management)**
+  After running a simulation, if input values are changed, the share, save, and compare buttons are disabled, and a warning is displayed on the summary card. Re-running will re-enable them. This prevents accidentally sharing results that differ from the current inputs.
+- **Complete unification of monthly processing order (all determinations unified to post-spending basis)**
+  Guardrail activation/deactivation determination, cash buffer usage determination, all-time high update, replenishment mode start/end, and maximum drawdown recording are all unified to be based on the "post-spending total assets (end-of-month assets)". The results of all determinations are reflected in the next month's actions (spending amount and source).
+- **Full stop response in case of Worker errors**
+  Improved so that if an error occurs in any Worker during parallel calculation, all Workers are safely stopped and the UI returns to normal.
+- **Unification of simulation count upper limit**
+  Unified the upper limit between the UI and internal logic to 50,000 times.
+- **Improvement of stepper button usability**
+  Supported single-click increment/decrement, and improved accessibility during keyboard operation (long-press continuous increment/decrement is maintained).
 
-- **UI フィードバックの改善**
-  「画像を保存」機能実行後、ボタンに成功した旨が一時的に表示されるようになり操作感を向上しました。また、スマートフォンなどの狭い画面において、設定項目のツールチップが画面外にはみ出して見切れないようにレイアウトを修正しました。
-- **安定性の向上**
-  シミュレーション実行中に稀にエラーが発生した場合に、処理が止まったままにならず即座にアラート通知されるようにフォールバック処理を強化しました。
-- **コード品質の向上**
-  シミュレーションの内部計算で使用される数値の微小閾値（マジックナンバー）を定数化定義し、メンテナンス性を高めました。
+### Monthly processing order (v1.8.2 and later)
 
-### 更新内容 (v1.8.0)
+In this simulator, the processing for each month is executed in the following order:
+1. Apply market return
+2. Update inflation rate
+3. **Execute spending (withdrawal)** (determine the source and amount of spending based on the results of determinations up to the previous month)
+4. Confirm the post-spending total assets (end-of-month assets)
+5. **Execute all determinations based on post-spending total assets, including guardrail activation/deactivation, cash buffer usage, all-time high update, replenishment mode, and maximum DD** (results are reflected in the next month's actions)
 
-- **パーセンタイル入力の自動整形**
-  シミュレーション実行時に、パーセンタイル入力欄の内容を自動的に整形します。数字以外の文字・範囲外の値（0や100など）は除去され、重複削除・昇順ソートが適用されます。設定できるのは最大5本で、6件目以降は自動的に削除されます。
+### Updates (v1.8.1)
 
-- **パーセンタイル線の色グラデーション刷新**
-  パーセンタイル線の色を、描画本数と順位に基づいて動的に決定する方式に変更しました。最小パーセンタイルが赤、最大パーセンタイルが緑となる 赤→橙→黄→黄緑→緑 のグラデーションが、1〜5本の描画本数に応じて自動的に最適化されます。
+- **Improvement of UI feedback**
+  After executing the "Save image" function, a success message is temporarily displayed on the button, improving the operational feel. Also fixed the layout so that setting tooltips do not go out of the screen on narrow screens such as smartphones.
+- **Improvement of stability**
+  Strengthened fallback processing so that if an error rarely occurs during simulation execution, an alert notification is immediately issued instead of the process stopping.
+- **Improvement of code quality**
+  Defined numerical micro-thresholds (magic numbers) used in internal simulation calculations as constants, improving maintainability.
 
-- **ダウンサイドフォーカス機能**
-  「総資産推移」、「現金バッファ推移」の各グラフ右上に「50%以下のみ表示」トグルを追加しました。ONにすると50パーセンタイル以下の悲観〜中央値シナリオのみを表示し、下振れリスクに絞った分析が容易になります。グラフの再計算なしで即座に切り替えられます。デフォルトはOFF（全表示）です。
+### Updates (v1.8.0)
 
-- **URLクエリパラメータ対応**
-  URLにクエリパラメータを付与することで、入力値を自動設定してページを開けるようになりました。`auto=1` パラメータを付与するとページ読み込み直後に自動実行されます。
+- **Automatic formatting of percentile input**
+  When executing a simulation, the content of the percentile input field is automatically formatted. Non-numeric characters and out-of-range values (such as 0 and 100) are removed, and deduplication and ascending sort are applied. A maximum of 5 can be configured, and the 6th and beyond are automatically deleted.
 
-- **「同条件の別タブを開く」ボタン追加**
-  シミュレーション実行後に表示されるボタンです。現在の入力条件と実行時の乱数シード値を固定したURLを別タブで開きます。別タブ側で条件の一部を変更して再実行することで、同じ乱数シーケンスによる厳密な比較シミュレーションが可能です。
+- **Revamp of percentile line color gradient**
+  Changed to a method of dynamically determining the color of percentile lines based on the number of lines drawn and their rank. The gradient from red → orange → yellow → yellow-green → green, where the minimum percentile is red and the maximum percentile is green, is automatically optimized according to the number of lines drawn from 1 to 5.
 
-- **「解析結果のURLリンクをコピー」ボタン追加**
-  シミュレーション実行後に表示されるボタンです。入力条件・シード値・自動実行フラグ（auto=1）を含むURLをクリップボードにコピーします。コピーしたURLをブラウザで開くと同じ条件でシミュレーションが自動実行されます。「Xにポスト」で共有されるURLと同一のリンクです。チャットやメモへの貼り付けで条件を共有するのに便利です。
+- **Downside focus feature**
+  Added a "Show only 50% or below" toggle to the upper right of each of the "Total Assets Progression" and "Cash Buffer Progression" graphs. When ON, only the pessimistic to median scenarios of the 50th percentile or below are displayed, making it easy to analyze focused on downside risk. Switching is instant without recalculating the graph. Default is OFF (show all).
 
-- **Xポスト URL のクエリパラメータ化**
-  「Xにポスト」ボタンで共有するURLに、すべての入力条件・シード値・`auto=1` フラグを含めるようにしました。Xのポストを見た方が同じURLを開くと、投稿者と同一の条件でシミュレーションが自動実行されます。
+- **URL query parameter support**
+  Input values can now be automatically configured by opening a page with query parameters appended to the URL. Appending the `auto=1` parameter will automatically execute immediately after the page loads.
 
-## 開発の背景
+- **Addition of "Open another tab with the same conditions" button**
+  This button is displayed after running the simulation. It opens a URL in a new tab with the current input conditions and the random seed value at the time of execution fixed. By changing some conditions on the other tab and re-running, a strict comparison simulation using the same random sequence is possible.
 
-私自身は機械設計を本業としており金融の専門家ではありませんが、自身の資産形成におけるリスクをより現実的に評価するために、複雑な計算をブラウザで直感的に行えるツールが必要と考え、本シミュレータを開発しました。
-同じようにFIREを目指す方々の参考になれば幸いです。
+- **Addition of "Copy analysis result URL link" button**
+  This button is displayed after running the simulation. It copies a URL including the input conditions, seed value, and auto-run flag (`auto=1`) to the clipboard. Opening the copied URL in a browser will automatically run the simulation under the same conditions. It is the same link as the URL shared by "Post to X". Convenient for sharing conditions by pasting into chat or notes.
 
-## 使い方
+- **Query parameterization of X post URL**
+  Changed the URL shared by the "Post to X" button to include all input conditions, seed value, and `auto=1` flag. When someone who sees the X post opens the same URL, the simulation is automatically run under the same conditions as the poster.
+
+## Development Background
+
+I am a mechanical designer by profession and not a financial expert, but I developed this simulator because I needed a tool that could intuitively perform complex calculations in a browser to more realistically assess the risks of my own asset formation. I hope it will be a reference for those who are also aiming for FIRE.
+
+## Usage
 
 > [!TIP]
-> **[シミュレーターを今すぐ実行する (GitHub Pages)](https://moriyama-eng.github.io/fire-simulator/)**
-> インストール不要・環境構築不要でそのまま使用できます。
+> **[Run the simulator now (GitHub Pages)](https://moriyama-eng.github.io/fire-simulator/)**
+> No installation or environment setup required; you can use it as is.
 
-ローカル環境でリポジトリをクローンして実行する場合、Web Worker を使用しているため `index.html` をブラウザで直接開いても動作しない可能性が高いです（セキュリティ制限による）。VS Code を利用している場合は [**Live Server 拡張機能**] をインストールし、`index.html` を右クリック、「Open with Live Server」を選択して立ち上がったブラウザで動作確認をしてください。
+When running by cloning the repository in a local environment, it is highly likely that it will not work by directly opening `index.html` in a browser due to the use of Web Workers (due to security restrictions). If you are using VS Code, install the **Live Server extension**, right-click `index.html`, select "Open with Live Server", and verify operation in the browser that opens.
 
-### テスト
+### Testing
 
-本プロジェクトでは、Vitest による2層の自動テストを採用しています：
+This project uses two layers of automated testing with Vitest:
 
-- **ユニットテスト**（`tests/unit/` — 15ファイル）: 純粋関数・コアロジックの正しさを検証
-- **インテグレーションテスト**（`tests/integration/` — 5ファイル）: DOM操作・UI状態遷移を検証
+- **Unit tests** (`tests/unit/` — 15 files): Verifies the correctness of pure functions and core logic
+- **Integration tests** (`tests/integration/` — 5 files): Verifies DOM operations and UI state transitions
 
 ```bash
-# 依存関係のインストール（初回のみ）
+# Install dependencies (first time only)
 npm install
 
-# 全テストの実行
+# Run all tests
 npm test
 
-# カバレッジレポート付きで実行
+# Run with coverage report
 npm run test:coverage
 
-# 特定のテストのみ実行
+# Run specific tests only
 npx vitest run tests/unit/format.test.js
 ```
 
-テストの設計思想や追加方法については [`tests/README.md`](./tests/README.md) を参照してください。
+For the test design philosophy and how to add tests, refer to [`tests/README.md`](./tests/README.md).
 
-CIでは GitHub Actions により、`main` ブランチへの push および pull request 時に
-自動テストが実行され、回帰を防止しています。
+In CI, GitHub Actions automatically runs tests on push to the `main` branch and pull requests, preventing regressions.
 
-## 免責事項
+## Disclaimer
 
-本ツールは個人の学習・検証目的で作成されたものであり、将来の運用成果を保証するものではありません。
-シミュレーション結果に基づく投資判断や資産運用によって生じた、いかなる損害についても作者は責任を負いかねます。最終的な投資判断はご自身の責任で行ってください。運用資産の種類や期間、個々の財務状況に応じた最適な戦略を保証するものではありません。
+This tool was created for personal learning and verification purposes, and does not guarantee future investment performance. The author cannot be held responsible for any damages arising from investment decisions or asset management based on simulation results. Make your final investment decisions at your own responsibility. This does not guarantee the optimal strategy for the type and period of invested assets or individual financial situations.
 
-## ライセンス
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

@@ -61,7 +61,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin: 0;
 }
 
-/* ハイブリッド数値入力のスタイル */
+/* Styles for hybrid numeric inputs */
 .num-input {
     background: transparent;
     text-align: right;
@@ -142,7 +142,7 @@ input[type="number"]::-webkit-inner-spin-button {
     transform: translateX(100%);
 }
 
-/* カスタムツールチップ用スタイル */
+/* Styles for custom tooltips */
 .tooltip-container {
     position: relative;
     display: inline-flex;
@@ -171,7 +171,7 @@ input[type="number"]::-webkit-inner-spin-button {
     pointer-events: none;
 }
 
-/* 右端起点（左に伸びる） */
+/* Originates from the right edge (extends to the left) */
 .tooltip-right-align .tooltip-text {
     right: -8px;
 }
@@ -186,7 +186,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
 }
 
-/* 左端起点（右に伸びる） */
+/* Originates from the left edge (extends to the right) */
 .tooltip-left-align .tooltip-text {
     left: -8px;
 }
@@ -201,7 +201,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
 }
 
-/* 中央配置 */
+/* Centered alignment */
 .tooltip-center-align .tooltip-text {
     left: 50%;
     transform: translateX(-50%);
@@ -218,7 +218,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
 }
 
-/* ステッパーボタンのスタイル */
+/* Styles for stepper buttons */
 .stepper-btn {
     background: rgba(99, 102, 241, 0.1);
     color: #818cf8;
@@ -390,7 +390,7 @@ input[type="number"]::-webkit-inner-spin-button {
     font-weight: 500;
 }
 
-/* FIX-06: 複数シナリオのバーを横並びに表示 */
+/* Display bars for multiple scenarios side-by-side */
 .bar-stack {
     display: flex;
     flex-direction: column-reverse;
@@ -554,7 +554,7 @@ input[type="number"]::-webkit-inner-spin-button {
         font-size: 0.65rem;
     }
 
-    /* REQ-MOBILE-01: 指標改善カードのヘッダー縦並び */
+    /* Vertical alignment for metric improvement card headers */
     #cardTarget>div:first-child {
         flex-direction: column;
         align-items: flex-start;
@@ -565,12 +565,12 @@ input[type="number"]::-webkit-inner-spin-button {
         width: 100%;
     }
 
-    /* 案1: 親の横並びコンテナの幅を制限 */
+    /* Option 1: Limit the width of the parent horizontal container */
     #cardTarget>div:first-child>div:last-child>div:first-child {
         max-width: 100%;
     }
 
-    /* セレクトボックスが縮むのを許可し、余白とフォントサイズを調整 */
+    /* Allow the select box to shrink, and adjust padding and font size */
     #targetMetric {
         max-width: 100%;
         font-size: 0.78rem;
@@ -579,7 +579,7 @@ input[type="number"]::-webkit-inner-spin-button {
         min-width: 0;
     }
 
-    /* REQ-MOBILE-02: 因子列の折り返し */
+    /* Wrap factor columns */
     .target-table td:first-child {
         white-space: normal;
         overflow: visible;
@@ -655,7 +655,7 @@ input[type="number"]::-webkit-inner-spin-button {
     color: #a5b4fc;
 }
 
-/* 画像保存テンプレート（#captureContainer）の英語モード対応 */
+/* Image saving template (#captureContainer) support for English mode */
 #captureContainer h1,
 #captureContainer h2,
 #captureContainer h3 {
@@ -678,7 +678,7 @@ input[type="number"]::-webkit-inner-spin-button {
     font-size: 28px;
 }
 
-/* ========== 比較タブ (v2.2.0) ========== */
+/* ========== Comparison Tab (v2.2.0) ========== */
 .comparison-table-wrapper {
     overflow-x: auto;
     overflow-y: auto;
@@ -709,7 +709,7 @@ input[type="number"]::-webkit-inner-spin-button {
     font-size: 0.75rem;
 }
 
-/* FIX-04: テーブルheaderを垂直スクロール時に固定 */
+/* Fix table headers vertically during scrolling */
 .comparison-table thead tr th {
     position: sticky;
     top: 0;
@@ -717,7 +717,7 @@ input[type="number"]::-webkit-inner-spin-button {
     background: rgba(30, 41, 59, 1);
 }
 
-/* 左端パラメータ列を横スクロール時に固定 */
+/* Fix the leftmost parameter column horizontally during scrolling */
 .comparison-table .sticky-left {
     position: sticky;
     left: 0;
@@ -725,20 +725,20 @@ input[type="number"]::-webkit-inner-spin-button {
     background: rgba(15, 23, 42, 1);
     border-right: 1px solid rgba(100, 116, 139, 0.4);
     width: 140px !important;
-    /* 200px → 140px */
+    /* 200px -> 140px */
     min-width: 140px !important;
     max-width: 160px !important;
-    /* 若干の可変性を持たせる */
+    /* Allow some variability */
     white-space: normal;
-    /* 折り返し許可 */
+    /* Allow word wrapping */
     word-break: break-word;
     font-size: 0.7rem;
-    /* スマホでも収まるよう微調整 */
+    /* Fine-tune to fit on mobile screens */
     padding: 0.5rem 0.4rem;
-    /* パディング縮小 */
+    /* Reduce padding */
 }
 
-/* ツールチップアイコンをテキストとインライン表示 */
+/* Display tooltip icons inline with the text */
 .sticky-left .tooltip-container {
     display: inline-flex;
     align-items: center;
@@ -753,7 +753,7 @@ input[type="number"]::-webkit-inner-spin-button {
     background: rgba(30, 41, 59, 1);
 }
 
-/* シナリオ名の contenteditable */
+/* contenteditable for scenario names */
 .scenario-name {
     display: inline-block;
     min-width: 80px;
@@ -763,13 +763,13 @@ input[type="number"]::-webkit-inner-spin-button {
     border: 1px solid transparent;
     outline: none;
     white-space: normal;
-    /* 折り返し許可 */
+    /* Allow word wrapping */
     word-break: break-word;
-    /* 長い単語も折り返す */
+    /* Wrap long words as well */
     overflow: visible;
-    /* 省略記号を除去 */
+    /* Remove ellipsis */
     text-overflow: clip;
-    /* 省略記号を除去 */
+    /* Remove ellipsis */
     line-height: 1.4;
 }
 
@@ -784,7 +784,7 @@ input[type="number"]::-webkit-inner-spin-button {
     background: rgba(99, 102, 241, 0.2);
 }
 
-/* シナリオ用インプット */
+/* Scenario input */
 .scenario-input {
     background: rgba(15, 23, 42, 0.7);
     border: 1px solid rgba(100, 116, 139, 0.3);
@@ -807,7 +807,7 @@ input[type="number"]::-webkit-inner-spin-button {
     cursor: not-allowed;
 }
 
-/* 境界値クランプ時のフィードバックアニメーション */
+/* Feedback animation when clamping boundary values */
 @keyframes clamp-pulse {
     0% {
         border-color: #f59e0b;
@@ -822,7 +822,7 @@ input[type="number"]::-webkit-inner-spin-button {
     animation: clamp-pulse 0.3s ease-out;
 }
 
-/* 比較コントロールエリア */
+/* Comparison control area */
 .comparison-controls {
     margin-bottom: 1rem;
     flex-wrap: wrap;
@@ -831,7 +831,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 
 
-/* ドラッグハンドル */
+/* Drag handle */
 .drag-handle {
     cursor: grab;
     user-select: none;
@@ -845,12 +845,12 @@ input[type="number"]::-webkit-inner-spin-button {
     cursor: grabbing;
 }
 
-/* 比較タブのテーブル幅をコンテンツ幅に制限 */
+/* Limit the comparison tab table width to the content width */
 .comparison-table {
     width: max-content !important;
 }
 
-/* 比較タブのシナリオ列の幅を固定 */
+/* Fix the width of scenario columns in the comparison tab */
 .comparison-table td:not(.sticky-left):not(.add-column),
 .comparison-table th:not(.sticky-left):not(.add-column) {
     width: 140px !important;
@@ -858,7 +858,7 @@ input[type="number"]::-webkit-inner-spin-button {
     max-width: 140px !important;
 }
 
-/* 未実行シナリオ列のグレーアウト */
+/* Gray out unexecuted scenario columns */
 .comparison-table td.pending-col {
     background: rgba(15, 23, 42, 0.45) !important;
 }
@@ -872,7 +872,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border-color: rgba(100, 116, 139, 0.15) !important;
 }
 
-/* 比較タブのヘッダーボタン2段化用レイアウト */
+/* Layout for two-row header buttons in the comparison tab */
 .scenario-header-btn-group {
     display: flex;
     justify-content: center;
@@ -883,7 +883,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border-top: 1px solid rgba(100, 116, 139, 0.2);
 }
 
-/* 列追加用のダミー列の幅固定 */
+/* Fix the width of dummy column for adding columns */
 .comparison-table .add-column {
     width: 80px !important;
     min-width: 80px !important;
@@ -891,7 +891,7 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: center;
 }
 
-/* 中間見出し（カテゴリ区切り行）のスタイル */
+/* Style for intermediate headers (category separator rows) */
 .comparison-table tr.section-header-row {
     background: rgba(30, 41, 59, 1) !important;
 }
@@ -900,9 +900,9 @@ input[type="number"]::-webkit-inner-spin-button {
     position: sticky;
     left: 0;
     z-index: 15;
-    /* 通常の固定セル(z-index:10)より前面 */
+    /* Display in front of normal fixed cells (z-index: 10) */
     background: rgba(30, 41, 59, 1) !important;
-    /* 背景を不透明にして重なりを隠す */
+    /* Make background opaque to hide overlapping elements */
     border-right: 1px solid rgba(100, 116, 139, 0.2);
     color: rgba(165, 180, 252, 0.95) !important;
     font-weight: 700 !important;
@@ -912,17 +912,17 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: 0.5rem 0.75rem !important;
     border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
     text-align: left;
-    /* テキスト左寄せで固定表示を実現 */
+    /* Achieve fixed display with left-aligned text */
 }
 
 .comparison-table tr.section-header-row td .section-header-title {
     position: sticky;
     left: 0.75rem;
-    /* tdのpadding-left(0.75rem)と同じ位置に固定 */
+    /* Fix at the same position as the td padding-left (0.75rem) */
     display: inline-block;
 }
 
-/* プルダウンメニュー */
+/* Dropdown menu */
 .action-menu-wrapper {
     position: relative;
     display: inline-block;
@@ -972,7 +972,7 @@ input[type="number"]::-webkit-inner-spin-button {
     cursor: pointer;
     transition: background 0.15s;
     min-height: 44px;
-    /* スマホタッチ領域確保 */
+    /* Ensure touch area on mobile */
     display: flex;
     align-items: center;
     gap: 8px;
@@ -991,7 +991,7 @@ input[type="number"]::-webkit-inner-spin-button {
     background: transparent;
 }
 
-/* スクロールバーを太くしてタップしやすく */
+/* Make scrollbars thicker for easier tapping */
 .comparison-table-wrapper::-webkit-scrollbar {
     height: 8px;
 }

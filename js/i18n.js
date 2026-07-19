@@ -245,7 +245,7 @@ export const TRANSLATIONS = {
     "unit.multiplier": "倍",
     "unit.paths": "回",
     "chart.probability": "発生確率",
-    // v2.3.0: 新指標グラフ用キー
+    // v2.3.0: Keys for new indicator charts
     "chart.belowInit.title": "初期総資産割れ 継続期間 発生確率",
     "chart.belowInit.tooltip": "総資産がシミュレーション開始時の初期総資産（リスク資産＋現金バッファ）を下回っている状態が、最長で何ヶ月継続するかの確率を表します。<br>初期総資産はインフレ調整を行わない名目値です。<br>例えばグラフ上で横軸が5年、縦軸が30%の場合、「初期総資産割れが5年以上継続する確率が30%ある」ことを意味します。<br>破綻（資産枯渇）したパスは、シミュレーション終了まで割れ状態が継続したものとしてカウントされます。<br>初期総資産と同額（===）になった月は「割れ状態が解消された」ものとみなし、カウントをリセットします。<br>※判定は月末（支出後）の総資産を基準に行われます。",
     "chart.belowInit.axisTitle": "初期総資産割れ 継続期間",
@@ -295,18 +295,18 @@ export const TRANSLATIONS = {
   }
 };
 
-// ★ バージョン番号を meta タグから取得する（テスト環境ではフォールバック値）
+// ★ Retrieve version number from meta tag (fallback value in test environment)
 function getAppVersion() {
   try {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
-  } catch (e) { /* テスト環境では document が特殊な場合がある */ }
-  return '2.3.1'; // フォールバック（実際の最新バージョンに合わせる）
+  } catch (e) { /* In test environments, document may be special */ }
+  return '2.3.2'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION = getAppVersion();
 
 TRANSLATIONS.en = {
-  // ========== 不足していた基本ラベル（用語対照表対応） ==========
+  // ========== Missing basic labels (mapped to terminology sheet) ==========
   "market.expectedReturn": "Expected return",
   "market.volatility": "Volatility",
   "market.inflation": "Expected inflation rate",
@@ -322,7 +322,7 @@ TRANSLATIONS.en = {
   "unit.times": "×",
   "unit.seconds": "sec",
   "unit.minutes": "min",
-  // ========== ツールチップ用（data-i18n-html） ==========
+  // ========== For tooltips (data-i18n-html) ==========
   "market.expectedReturn.tooltip": "Average annual growth rate (arithmetic mean) of risk assets.",
   "market.volatility.tooltip": "Standard deviation of risk asset returns. Higher values mean larger annual fluctuations.",
   "market.inflation.tooltip": "Long-term average inflation rate. (For AR-1 model, inflation fluctuates around this value.)",
@@ -338,21 +338,21 @@ TRANSLATIONS.en = {
   "seed.tooltip": "Seed for random number generation. Fixed seed ensures reproducible results.<br>Shared URLs include the seed for exact comparison.",
   "url.tooltipOpenCompare": "Opens a new tab with the same input conditions and fixed seed.<br>Change parameters in the new tab to compare effects using identical random sequences.",
   "url.tooltipCopy": "Copies a URL containing all current inputs, seed, and auto-run flag.<br>Opening the URL runs the simulation automatically.",
-  // ========== 画像保存テンプレート（captureContainer）用 ==========
+  // ========== For image saving template (captureContainer) ==========
   "capture.title": "FIRE Monte Carlo Simulator",
   "capture.conditionTitle": "Simulation Conditions",
   "capture.chartTitle": "Total Assets",
   "capture.resultTitle": "Simulation Results",
   "capture.successRate": "FIRE Success Rate",
   "capture.finalMedian": "Final Assets (Median)",
-  // ========== 分析タブの不足キー ==========
+  // ========== Missing keys for Analysis tab ==========
   "analysis.compare.badge": "base",
   "analysis.factorBaseSuffix": "base",
   "analysis.category.asset": "Asset",
   "analysis.category.market": "Market",
   "analysis.category.buffer": "Cash Buffer",
   "analysis.category.guardrail": "Guardrail",
-  // ===== 主要UI =====
+  // ===== Main UI =====
   "header.title": "FIRE Monte Carlo Simulator",
   "asset.title": "Asset Settings",
   "asset.riskAsset": "Initial risk assets",
@@ -597,7 +597,7 @@ TRANSLATIONS.en = {
   "footer.title": "FIRE Monte Carlo Simulator",
   "unit.paths": "trials",
   "chart.probability": "Probability",
-  // v2.3.0: 新指標グラフ用キー（英語）
+  // v2.3.0: Keys for new indicator charts (English)
   "chart.belowInit.title": "Duration Below Initial Assets Probability",
   "chart.belowInit.tooltip": "Probability that the total assets remain below the initial total assets (risk assets + cash buffer) for a given number of months.<br>Initial total assets are nominal values and are <strong>not</strong> adjusted for inflation.<br>For example, if the x-axis is 5 years and the y-axis is 30%, it means there is a 30% chance that the assets will stay below the initial level for more than 5 years.<br>Paths that go bankrupt are counted as if the condition persists until the end of the simulation.<br>A month in which total assets are <strong>equal to</strong> the initial level (===) is considered a recovery, and the count is reset.<br>※ Decisions are based on end-of-month total assets (after withdrawal).",
   "chart.belowInit.axisTitle": "Duration Below Initial Assets",
@@ -658,11 +658,11 @@ function getCurrentLang() {
 
 export function t(key, placeholders = []) {
   let text = TRANSLATIONS[getCurrentLang()]?.[key];
-  // undefined または null の場合のみフォールバック（空文字は有効とする）
+  // Fallback only if undefined or null (empty string is valid)
   if (text === undefined || text === null) {
     text = '[EN] ' + (TRANSLATIONS.ja[key] || key);
   }
-  // text が空文字の場合はそのまま空文字を返す（フォールバックしない）
+  // If text is an empty string, return empty string as is (no fallback)
 
   text = text.replace(/\{VERSION\}/g, APP_VERSION);
 
@@ -698,9 +698,9 @@ export function formatCurrency(valueInJPY, displayUnit) {
     return valueInJPY.toLocaleString('ja-JP');
   }
 
-  // 英語モード：USD表示（固定レート $1 = 100円）
-  // 表示ルール: 0→$0, 1-999→整数, 1,000-999,999→$X.XK, 1,000,000-999,999,999→$X.XM, 1e9以上→$X.XB
-  // 四捨五入ポリシー: 1ドル未満の端数は四捨五入して整数ドルに丸める（例: 99円 → $1）
+  // English mode: USD display (fixed rate $1 = 100 JPY)
+  // Display rules: 0 -> $0, 1-999 -> integer, 1,000-999,999 -> $X.XK, 1,000,000-999,999,999 -> $X.XM, 1e9 or more -> $X.XB
+  // Rounding policy: Fractions less than 1 USD are rounded to the nearest integer dollar (e.g., 99 JPY -> $1)
   var usd = valueInJPY / 100;
   if (usd === 0) return '$0';
   var absUsd = Math.abs(usd);

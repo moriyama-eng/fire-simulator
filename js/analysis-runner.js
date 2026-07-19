@@ -1,5 +1,5 @@
 // js/analysis-runner.js
-// 分析タブ シナリオ生成・実行
+// Analysis tab scenario generation and execution
 
 import * as AS from './analysis-state.js';
 import { runSimulation } from './simulation-engine.js';
@@ -22,8 +22,8 @@ import { runSimulation } from './simulation-engine.js';
  */
 
 /**
- * 分析用の有効パラメータ(ep)をシミュレーションエンジン用のパラメータ形式に変換する。
- * app.js の convertToEffectiveParams と対になる逆変換の関係。
+ * Converts the analysis effective parameters (ep) to the format required by the simulation engine.
+ * This is the inverse conversion relationship to convertToEffectiveParams in app.js.
  */
 export function convertToLegacyParams(ep) {
     return {
@@ -73,16 +73,16 @@ export async function runAnalysis(onProgress) {
     let current = 1;
     for (const factorKey of selected) {
         const factor = AS.FACTORS.find(f => f.key === factorKey);
-        const baseValue = AS.getFactorBaseValue(factorKey); // UI単位
+        const baseValue = AS.getFactorBaseValue(factorKey); // UI unit
         const results = [];
         for (const level of [-2, -1, 0, 1, 2]) {
-            if (level === 0) continue; // 基準水準(level=0)は既に実行済みのためスキップ
+            if (level === 0) continue; // Skip the baseline level (level=0) as it has already been executed
             const modifiedEp = { ...baseEp };
-            // UI単位の値を渡す。applyFactorChange が内部で scale を掛けて生の値に変換する。
+            // Pass the value in UI units. applyFactorChange internally multiplies by scale to convert to the raw value.
             applyFactorChange(modifiedEp, factor, baseValue + factor.step * level);
             const leg = convertToLegacyParams(modifiedEp);
             const res = await runSimulation(leg, pcts);
-            // 変更後の表示値を計算（scale で割って UI 単位に戻す）
+            // Calculate the display value after change (divide by scale to convert back to UI units)
             const rawValue = modifiedEp[factor.paramKey];
             const displayValue = rawValue / (factor.scale || 1);
             results.push({

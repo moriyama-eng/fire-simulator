@@ -1,14 +1,14 @@
 // ====================================================================
 // js/app/ui-helpers.js
-// UI補助関数群
-// 依存: i18n.js, core/params.js のみ（state.js は参照しない）
+// UI helper functions
+// Dependencies: i18n.js, core/params.js only (does not reference state.js)
 // ====================================================================
 
 import { t, setLanguage, getLanguage, formatCurrency } from '../i18n.js';
 import { DEFAULTS, calcAutoDf } from '../core/params.js';
 
 // ====================================================================
-// t分布自由度パネルの更新（i18n対応・モジュールレベル）
+// Update the t-distribution degrees of freedom panel (i18n-compatible, module level)
 // ====================================================================
 export function updateDfPanel() {
     const dfToggle = document.getElementById('simDfToggle');
@@ -18,20 +18,20 @@ export function updateDfPanel() {
     if (!dfToggle) return;
 
     if (!dfToggle.checked) {
-        // 固定 (unchecked)
+        // Fixed (unchecked)
         if (dfAutoDisplayWrapper) dfAutoDisplayWrapper.classList.add('hidden');
         if (dfManualWrapper) {
             dfManualWrapper.classList.remove('h-0', 'opacity-50', 'pointer-events-none');
             setTimeout(() => { dfManualWrapper.classList.add('opacity-100'); }, 10);
         }
     } else {
-        // 自動 (checked)
+        // Auto (checked)
         if (dfAutoDisplayWrapper) dfAutoDisplayWrapper.classList.remove('hidden');
         if (dfManualWrapper) {
             dfManualWrapper.classList.add('h-0', 'opacity-50', 'pointer-events-none');
             dfManualWrapper.classList.remove('opacity-100');
         }
-        // 値の更新
+        // Update value
         if (volatilityInput && dfAutoDisplayWrapper) {
             const vol = parseFloat(volatilityInput.value) || 18.0;
             const dfVal = calcAutoDf(vol).toFixed(1);
@@ -42,21 +42,21 @@ export function updateDfPanel() {
 }
 
 /**
- * 現金バッファと月間取崩し額の値を言語に応じて変換する
- * @param {string} targetLang - 'ja' または 'en'
+ * Converts the values of cash buffer and monthly withdrawal amount according to the language.
+ * @param {string} targetLang - 'ja' or 'en'
  */
 export function convertCurrencyInputs(targetLang) {
     const cashInput = document.getElementById('initialCashBufferNum');
     const expenseInput = document.getElementById('monthlyExpenseNum');
     if (!cashInput || !expenseInput) return;
 
-    // 現在の値を取得（カンマ除去）
+    // Get the current values (remove commas)
     let cashVal = parseFloat(cashInput.value.replace(/,/g, ''));
     let expenseVal = parseFloat(expenseInput.value.replace(/,/g, ''));
     if (isNaN(cashVal)) cashVal = 0;
     if (isNaN(expenseVal)) expenseVal = 0;
 
-    // ステップ・min・max を取得
+    // Get step, min, max
     let cashStep = parseFloat(cashInput.getAttribute('step') || '500');
     let expenseStep = parseFloat(expenseInput.getAttribute('step') || '5');
     let cashMin = parseFloat(cashInput.getAttribute('min') || '0');
@@ -65,7 +65,7 @@ export function convertCurrencyInputs(targetLang) {
     let expenseMax = parseFloat(expenseInput.getAttribute('max') || '500');
 
     if (targetLang === 'en') {
-        // 日本語 → 英語（万円 → ドル、÷10）
+        // Japanese → English (10,000 yen → dollar, ÷10)
         cashVal = cashVal / 10;
         expenseVal = expenseVal / 10;
         cashStep = cashStep / 10;
@@ -75,7 +75,7 @@ export function convertCurrencyInputs(targetLang) {
         cashMax = cashMax / 10;
         expenseMax = expenseMax / 10;
     } else {
-        // 英語 → 日本語（ドル → 万円、×10）
+        // English → Japanese (dollar → 10,000 yen, ×10)
         cashVal = cashVal * 10;
         expenseVal = expenseVal * 10;
         cashStep = cashStep * 10;
@@ -86,7 +86,7 @@ export function convertCurrencyInputs(targetLang) {
         expenseMax = expenseMax * 10;
     }
 
-    // 表示用フォーマット（整数なら小数点なし、それ以外は最大10桁まで表示・末尾0除去）
+    // Display format (no decimal if integer, otherwise display up to 10 digits removing trailing zeros)
     const formatNum = (val) => {
         if (Number.isInteger(val)) return val.toString();
         return val.toFixed(10).replace(/\.?0+$/, '');
@@ -95,7 +95,7 @@ export function convertCurrencyInputs(targetLang) {
     cashInput.value = formatNum(cashVal).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     expenseInput.value = formatNum(expenseVal).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-    // 属性を更新
+    // Update attributes
     cashInput.setAttribute('step', cashStep.toString());
     expenseInput.setAttribute('step', expenseStep.toString());
     cashInput.setAttribute('min', cashMin.toString());
@@ -103,13 +103,13 @@ export function convertCurrencyInputs(targetLang) {
     cashInput.setAttribute('max', cashMax.toString());
     expenseInput.setAttribute('max', expenseMax.toString());
 
-    // 変更イベントを発火（dirty状態更新のため）
+    // Fire change event (to update dirty state)
     cashInput.dispatchEvent(new Event('input', { bubbles: true }));
     expenseInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 // ====================================================================
-// ツールチップ初期化（静的・動的を問わず全てのツールチップに適用）
+// Tooltip initialization (applies to all tooltips, both static and dynamic)
 // ====================================================================
 export function initTooltips() {
     const tooltipContainer = document.getElementById('tooltip-container');
@@ -119,12 +119,12 @@ export function initTooltips() {
         const tooltip = trigger.querySelector('.tooltip-text');
         if (!tooltip) return;
 
-        // ツールチップ本体を body 直下の専用領域に移動（まだ移動していない場合のみ）
+        // Move the tooltip body to the dedicated area directly under body (only if not already moved)
         if (tooltip.parentElement !== tooltipContainer) {
             tooltipContainer.appendChild(tooltip);
         }
 
-        // 既存のリスナーを削除してから再設定（重複防止）
+        // Remove existing listeners before re-setting (prevents duplicates)
         const removeListeners = () => {
             trigger.removeEventListener('mouseenter', trigger._mouseEnterHandler);
             trigger.removeEventListener('mouseleave', trigger._mouseLeaveHandler);
@@ -167,11 +167,11 @@ export function initTooltips() {
             window.removeEventListener('scroll', positionTooltip);
         };
 
-        // ハンドラを保存して後で削除できるようにする
+        // Save handlers so they can be removed later
         trigger._mouseEnterHandler = mouseEnterHandler;
         trigger._mouseLeaveHandler = mouseLeaveHandler;
-        trigger._focusInHandler = mouseEnterHandler;  // focusin は同じ処理
-        trigger._focusOutHandler = mouseLeaveHandler; // focusout は同じ処理
+        trigger._focusInHandler = mouseEnterHandler;  // focusin uses the same processing
+        trigger._focusOutHandler = mouseLeaveHandler; // focusout uses the same processing
 
         trigger.addEventListener('mouseenter', mouseEnterHandler);
         trigger.addEventListener('mouseleave', mouseLeaveHandler);
@@ -181,15 +181,15 @@ export function initTooltips() {
 }
 
 // ====================================================================
-// ハイブリッド入力（ステッパーボタン付き数値入力）の初期化
+// Initialization of hybrid inputs (numeric inputs with stepper buttons)
 // ====================================================================
 export function setupHybridInputs() {
     const buttons = document.querySelectorAll('.stepper-btn');
 
-    // 各インプットフィールドの属性から小数点以下の表示桁数を判定する
+    // Determine the number of decimal places to display based on the attributes of each input field
     function getPrecision(input) {
         const stepAttr = input.getAttribute('step') || "1";
-        // リアルタイムの画面表示値を使用（カンマ除去）
+        // Use the real-time display value (remove commas)
         const currentValue = (input.value || "0").replace(/,/g, '');
 
         if (stepAttr.includes('.')) {
@@ -204,21 +204,21 @@ export function setupHybridInputs() {
     buttons.forEach(btn => {
         let intervalId;
         let timeoutId;
-        let isLongPress = false; // 長押し中フラグ（clickとの重複防止）
+        let isLongPress = false; // Flag for long press in progress (prevents overlap with click)
 
         const startIncrement = () => {
             isLongPress = true;
             updateValue();
-            // 最初の遅延後に連続更新開始
+            // Start continuous update after initial delay
             timeoutId = setTimeout(() => {
                 intervalId = setInterval(updateValue, 50);
-            }, 400); // 400ms長押しで連続開始
+            }, 400); // Start continuous on 400ms long press
         };
 
         const stopIncrement = () => {
             clearTimeout(timeoutId);
             clearInterval(intervalId);
-            // clickイベントとの競合（二重発火）を防ぐため、フラグクリアを遅延させる
+            // Delay clearing the flag to prevent conflict (double firing) with click event
             setTimeout(() => {
                 isLongPress = false;
             }, 50);
@@ -241,7 +241,7 @@ export function setupHybridInputs() {
                 val -= step;
             }
 
-            // min, max でクランプ
+            // Clamp with min, max
             let clamped = false;
             if (val < min) { val = min; clamped = true; }
             if (val > max) { val = max; clamped = true; }
@@ -260,7 +260,7 @@ export function setupHybridInputs() {
                 }
             }
 
-            // 浮動小数点の丸め誤差を防ぎ、かつHTML属性に基づく表示桁数を維持する
+            // Prevent floating point rounding errors while maintaining the number of decimal places based on HTML attributes
             const precision = getPrecision(input);
             const formatted = val.toFixed(precision);
 
@@ -272,21 +272,21 @@ export function setupHybridInputs() {
                 input.value = formatted;
             }
 
-            // 値が変更されたらイベントを発火
+            // Fire event when value changes
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            // markInputChanged は actions.js で定義されているため、カスタムイベントで通知
+            // Notify via custom event because markInputChanged is defined in actions.js
             input.dispatchEvent(new Event('change', { bubbles: true }));
         };
 
-        // マウスタッチイベントの登録
+        // Register mouse touch events
         btn.addEventListener('mousedown', (e) => {
-            // 左クリックのみ反応
+            // Respond to left click only
             if (e.button !== 0) return;
             e.preventDefault();
             startIncrement();
         });
         btn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // デフォルトのスワイプ等を防ぐ
+            e.preventDefault(); // Prevent default swipe etc.
             startIncrement();
         });
 
@@ -295,7 +295,7 @@ export function setupHybridInputs() {
         btn.addEventListener('touchend', stopIncrement);
         btn.addEventListener('touchcancel', stopIncrement);
 
-        // キーボード操作 (Enter / Space) による単発増減
+        // Single increment/decrement via keyboard operation (Enter / Space)
         btn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -304,7 +304,7 @@ export function setupHybridInputs() {
         });
     });
 
-    // 各インプットフィールドにフォーカスが外れた時のバリデーション（範囲内にクランプ）を追加
+    // Add validation (clamp to within range) when each input field loses focus
     document.querySelectorAll('.stepper-input').forEach(input => {
         input.addEventListener('blur', () => {
             let val = Number(input.value.replace(/,/g, ''));
@@ -347,7 +347,7 @@ export function setupHybridInputs() {
         });
     });
 
-    // getPrecision はローカルスコープ（クロージャ）に閉じているので blur ハンドラ内でも呼べる
+    // getPrecision is in the local scope (closure), so it can also be called inside the blur handler
     function getPrecision(input) {
         const stepAttr = input.getAttribute('step') || "1";
         const currentValue = (input.value || "0").replace(/,/g, '');

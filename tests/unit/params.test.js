@@ -9,13 +9,13 @@ describe('calcAutoDf', () => {
     it('does not go below lower bound of 2.5', () => { expect(calcAutoDf(80)).toBe(3.0); });
 });
 
-// ===== targetAssetRatio のデフォルト値テスト =====
+// ===== Default value test for targetAssetRatio =====
 import { getParamsFromInputs, DEFAULTS } from '../../js/core/params.js';
 
 describe('getParamsFromInputs - targetAssetRatio fallback', () => {
     it('uses DEFAULTS.targetAssetRatio when targetAssetRatioNum is undefined', () => {
         const inputs = {
-            // targetAssetRatioNum を意図的に省略
+            // Intentionally omit targetAssetRatioNum
             initialRiskAssetNum: '1.0',
             initialCashBufferNum: '1000',
             monthlyExpenseNum: '30',

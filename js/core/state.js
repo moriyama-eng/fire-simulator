@@ -1,8 +1,8 @@
 // ====================================================================
 // js/core/state.js
-// dirty 状態管理とボタン制御
-// 注意: サマリーカードの警告バッジは app.js 側の markInputChanged ラッパーで処理する。
-//       そのため、このモジュールは基本的なフラグ操作とボタン制御のみを提供する。
+// Dirty state management and button control
+// Note: The warning badge on the summary card is handled by the markInputChanged wrapper on the app.js side.
+//       Therefore, this module provides only basic flag operations and button control.
 // ====================================================================
 
 let isResultDirty = false;

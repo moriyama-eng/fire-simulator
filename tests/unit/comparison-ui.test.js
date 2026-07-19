@@ -7,49 +7,49 @@ import {
 
 describe('comparison-ui helpers', () => {
     describe('convertJPYToDisplayValue', () => {
-        it('億円をMドルに変換', () => {
+        it('Converts oku-yen to M-dollar', () => {
             expect(convertJPYToDisplayValue(100000000, 'unit.oku')).toBe(1.0);
             expect(convertJPYToDisplayValue(150000000, 'unit.oku')).toBe(1.5);
         });
-        it('万円をKドルに変換', () => {
+        it('Converts man-yen to K-dollar', () => {
             expect(convertJPYToDisplayValue(10000000, 'unit.man')).toBe(100);
             expect(convertJPYToDisplayValue(300000, 'unit.man')).toBe(3);
         });
-        it('単位なしはそのまま', () => {
+        it('Returns value as-is when no unit', () => {
             expect(convertJPYToDisplayValue(85.5, '%')).toBe(85.5);
             expect(convertJPYToDisplayValue(5, 'unit.multiplier')).toBe(5);
             expect(convertJPYToDisplayValue(10000, undefined)).toBe(10000);
         });
-        it('undefined/null の場合は 0 を返す', () => {
+        it('Returns 0 for undefined/null', () => {
             expect(convertJPYToDisplayValue(undefined, 'unit.oku')).toBe(0);
             expect(convertJPYToDisplayValue(null, 'unit.man')).toBe(0);
         });
-        it('文字列の数値も正しく処理する', () => {
+        it('Handles numeric strings correctly', () => {
             expect(convertJPYToDisplayValue('100000000', 'unit.oku')).toBe(1.0);
             expect(convertJPYToDisplayValue('invalid', 'unit.oku')).toBe(0);
         });
     });
 
     describe('convertDisplayValueToJPY', () => {
-        it('Mドルを円に変換', () => {
+        it('Converts M-dollar to yen', () => {
             expect(convertDisplayValueToJPY(1.0, 'unit.oku')).toBe(100000000);
             expect(convertDisplayValueToJPY(1.5, 'unit.oku')).toBe(150000000);
         });
-        it('Kドルを円に変換', () => {
+        it('Converts K-dollar to yen', () => {
             expect(convertDisplayValueToJPY(100, 'unit.man')).toBe(10000000);
             expect(convertDisplayValueToJPY(3, 'unit.man')).toBe(300000);
         });
-        it('単位なしはそのまま', () => {
+        it('Returns value as-is when no unit', () => {
             expect(convertDisplayValueToJPY(85.5, '%')).toBe(85.5);
             expect(convertDisplayValueToJPY(5, 'unit.multiplier')).toBe(5);
         });
-        it('無効な値の場合は 0 を返す', () => {
+        it('Returns 0 for invalid values', () => {
             expect(convertDisplayValueToJPY('invalid', 'unit.oku')).toBe(0);
             expect(convertDisplayValueToJPY(NaN, 'unit.man')).toBe(0);
         });
     });
 
-    describe('逆変換整合性 (100円 = $1 固定レート)', () => {
+    describe('Inverse conversion consistency (100 yen = $1 fixed rate)', () => {
         const testCases = [
             { jpy: 100000000, unitKey: 'unit.oku', expectedDisplay: 1.0 },
             { jpy: 150000000, unitKey: 'unit.oku', expectedDisplay: 1.5 },
@@ -57,14 +57,14 @@ describe('comparison-ui helpers', () => {
             { jpy: 300000, unitKey: 'unit.man', expectedDisplay: 3 },
         ];
         for (const tc of testCases) {
-            it(`JPY ${tc.jpy} → 表示値 → JPY が一致する (${tc.unitKey})`, () => {
+            it(`JPY ${tc.jpy} -> display value -> JPY matches (${tc.unitKey})`, () => {
                 const display = convertJPYToDisplayValue(tc.jpy, tc.unitKey);
                 expect(display).toBeCloseTo(tc.expectedDisplay, 6);
                 const backToJpy = convertDisplayValueToJPY(display, tc.unitKey);
                 expect(backToJpy).toBe(tc.jpy);
             });
         }
-        it('非通貨パラメータは変換されない', () => {
+        it('Non-currency parameters are not converted', () => {
             const value = 85.5;
             const display = convertJPYToDisplayValue(value, '%');
             expect(display).toBe(value);
@@ -81,22 +81,22 @@ describe('comparison-ui helpers', () => {
             target_asset_ratio: { key: 'target_asset_ratio', step: 1, min: 0, max: 500 },
             other_param: { key: 'other', step: 1, min: -100, max: 0 },
         };
-        it('日本語モードでは元の値が返る', () => {
+        it('Returns original value in Japanese mode', () => {
             expect(getLocalizedInputBounds(mockRowDefs.initial_cash_buffer, false)).toEqual({ step: 500, min: 0, max: 10000 });
         });
-        it('英語モードの initial_risk_asset は正しく変換される', () => {
+        it('initial_risk_asset is converted correctly in English mode', () => {
             expect(getLocalizedInputBounds(mockRowDefs.initial_risk_asset, true)).toEqual({ step: 0.1, min: 0, max: 10 });
         });
-        it('英語モードの initial_cash_buffer は正しく変換される', () => {
+        it('initial_cash_buffer is converted correctly in English mode', () => {
             expect(getLocalizedInputBounds(mockRowDefs.initial_cash_buffer, true)).toEqual({ step: 50, min: 0, max: 1000 });
         });
-        it('英語モードの monthly_expense は正しく変換される', () => {
+        it('monthly_expense is converted correctly in English mode', () => {
             expect(getLocalizedInputBounds(mockRowDefs.monthly_expense, true)).toEqual({ step: 0.5, min: 0, max: 50 });
         });
-        it('英語モードでも通貨以外のパラメータ（target_asset_ratio）は変換されない', () => {
+        it('Non-currency parameter (target_asset_ratio) is not converted even in English mode', () => {
             expect(getLocalizedInputBounds(mockRowDefs.target_asset_ratio, true)).toEqual({ step: 1, min: 0, max: 500 });
         });
-        it('英語モードでも通貨以外のパラメータは変換されない', () => {
+        it('Non-currency parameters are not converted even in English mode', () => {
             expect(getLocalizedInputBounds(mockRowDefs.other_param, true)).toEqual({ step: 1, min: -100, max: 0 });
         });
     });

@@ -1,14 +1,14 @@
 // js/analysis-output.js
-// 分析タブ ZIP出力モジュール
-// 責務: CSV生成、JSON生成、ZIPアーカイブ作成
-// 依存: js/analysis-state.js (JSZipはグローバル)
+// Analysis tab ZIP output module
+// Responsibilities: CSV generation, JSON generation, ZIP archive creation
+// Dependencies: js/analysis-state.js (JSZip is global)
 
 import * as AS from './analysis-state.js';
 
-// metaタグからアプリバージョンを動的取得
+// Dynamically retrieve the app version from the meta tag
 const getAppVersion = () => {
     const meta = document.querySelector('meta[name="app-version"]');
-    return meta ? meta.content : '2.3.1'; // フォールバックは現バージョン
+    return meta ? meta.content : '2.3.2'; // Fallback is the current version
 };
 
 
@@ -21,14 +21,14 @@ export async function generateAndDownloadZip() {
   const analysisRunId = new Date().toISOString();
   const baseMetrics = result.baseScenario.metrics;
 
-  // --- ヘルパー関数群（CSVエスケープ・行構築）を内部で定義 ---
+  // --- Define helper functions (CSV escape, row construction) internally ---
   const csvVal = (v) => {
     if (v === null || v === undefined) return '';
     if (typeof v === 'string' && (v.includes(',') || v.includes('"'))) return `"${v.replace(/"/g, '""')}"`;
     return String(v);
   };
 
-  // サマリー行の構築
+  // Build summary rows
   const summaryRows = [];
   summaryRows.push({
     analysis_run_id: analysisRunId, scenario_id: 'base', is_base: true,
@@ -47,7 +47,7 @@ export async function generateAndDownloadZip() {
   const comparisonRows = [];
   const metadataEntries = [];
 
-  // 基準シナリオのメタデータ
+  // Metadata for the base scenario
   metadataEntries.push({
     scenarioId: 'base',
     scenario: {
@@ -67,7 +67,7 @@ export async function generateAndDownloadZip() {
     analysisPercentiles: []
   });
 
-  // 因子ごとの結果を処理
+  // Process results per factor
   if (result.perFactorResults) {
     for (const [factorKey, scenarios] of Object.entries(result.perFactorResults)) {
       const factor = AS.FACTORS.find(f => f.key === factorKey);
@@ -79,7 +79,7 @@ export async function generateAndDownloadZip() {
         const levelCode = String(scenario.level);
         const scenarioId = `${factorKey}_level_${levelCode}`;
 
-        // サマリー行
+        // Summary row
         summaryRows.push({
           analysis_run_id: analysisRunId,
           scenario_id: scenarioId,
@@ -101,7 +101,7 @@ export async function generateAndDownloadZip() {
           target_asset_maintain_rate: m.target_asset_maintain_rate
         });
 
-        // 比較行
+        // Comparison row
         comparisonRows.push({
           analysis_run_id: analysisRunId,
           base_scenario_id: 'base',
@@ -120,7 +120,7 @@ export async function generateAndDownloadZip() {
           delta_worst10_underwater_months: ''
         });
 
-        // メタデータエントリ
+        // Metadata entry
         metadataEntries.push({
           scenarioId: scenarioId,
           scenario: {
@@ -138,13 +138,13 @@ export async function generateAndDownloadZip() {
             dataLen: 0,
             worst10MaxDd: m.worst10_max_dd,
             targetAssetMaintainRate: m.target_asset_maintain_rate
-          }, analysisPercentiles: [] // 空でOK
+          }, analysisPercentiles: [] // Empty is OK
         });
       }
     }
   }
 
-  // --- CSV生成 ---
+  // --- CSV generation ---
   const summaryHeader = ['analysis_run_id', 'scenario_id', 'is_base', 'factor_key', 'factor_label', 'level_code', 'value_after_change', 'value_unit', 'success_rate_pct', 'final_median_jpy', 'final_p10_jpy', 'median_max_dd', 'worst10_max_dd', 'median_underwater_months', 'worst10_underwater_months', 'seed', 'sim_paths', 'sim_years', 'model_type', 'df_mode', 'used_df', 'inflation_mode', 'cash_buffer_enabled', 'guardrail_enabled', 'target_asset_maintain_rate'];
   const summaryCsv = summaryHeader.join(',') + '\n' +
     summaryRows.map(row => summaryHeader.map(key => csvVal(row[key])).join(',')).join('\n');
@@ -153,7 +153,7 @@ export async function generateAndDownloadZip() {
   const comparisonCsv = comparisonHeader.join(',') + '\n' +
     comparisonRows.map(row => comparisonHeader.map(key => csvVal(row[key])).join(',')).join('\n');
 
-  // --- マニフェスト作成 ---
+  // --- Create manifest ---
   const manifest = {
     analysis_run_id: analysisRunId,
     base_scenario: baseMetrics,
@@ -167,7 +167,7 @@ export async function generateAndDownloadZip() {
     }
   };
 
-  // --- ZIP 構成 ---
+  // --- ZIP structure ---
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   zip.file('summary.csv', summaryCsv);
   zip.file('comparison_summary.csv', comparisonCsv);
@@ -197,7 +197,7 @@ export async function generateAndDownloadZip() {
     mdFolder.file(`${entry.scenarioId}.json`, jsonContent);
   }
 
-  // --- ダウンロード ---
+  // --- Download ---
   const now = new Date();
   const ts = [
     now.getFullYear(),

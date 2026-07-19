@@ -1,15 +1,15 @@
 // tests/helpers/comparison-fixtures.js
 
 /**
- * モックのシナリオ入力パラメータを生成
- * @param {Object} overrides - 上書きするフィールド
+ * Generate mock scenario input parameters
+ * @param {Object} overrides - Fields to override
  * @returns {Object}
  */
 export function makeMockScenarioInputs(overrides = {}) {
     return {
-        initialRiskAsset: 100000000,          // 1億円
-        initialCashBuffer: 10000000,          // 1000万円
-        monthlyExpense: 300000,               // 30万円
+        initialRiskAsset: 100000000,          // 100 million yen
+        initialCashBuffer: 10000000,          // 10 million yen
+        monthlyExpense: 300000,               // 300 thousand yen
         targetAssetRatio: 100,                // 100%
         expectedReturn: 10.0,
         volatility: 18.0,
@@ -34,10 +34,10 @@ export function makeMockScenarioInputs(overrides = {}) {
 }
 
 /**
- * モックのシナリオオブジェクトを生成
- * @param {string} id - シナリオID
- * @param {string} name - シナリオ名
- * @param {Object} inputsOverrides - 入力パラメータの上書き
+ * Generate a mock scenario object
+ * @param {string} id - Scenario ID
+ * @param {string} name - Scenario name
+ * @param {Object} inputsOverrides - Override for input parameters
  * @returns {Object}
  */
 export function makeMockScenario(id = 'test-id', name = 'Test Scenario', inputsOverrides = {}) {
@@ -51,8 +51,8 @@ export function makeMockScenario(id = 'test-id', name = 'Test Scenario', inputsO
 }
 
 /**
- * モックのシミュレーション結果を生成
- * @param {Object} overrides - 上書きするフィールド
+ * Generate mock simulation results
+ * @param {Object} overrides - Fields to override
  * @returns {Object}
  */
 export function makeMockSimResult(overrides = {}) {
@@ -67,9 +67,9 @@ export function makeMockSimResult(overrides = {}) {
 }
 
 /**
- * モックの翻訳関数（単体テスト用）
- * @param {string} key - 翻訳キー
- * @param {Array} args - プレースホルダー引数
+ * Mock translation function (for unit tests)
+ * @param {string} key - Translation key
+ * @param {Array} args - Placeholder arguments
  * @returns {string}
  */
 export function mockT(key, args = []) {

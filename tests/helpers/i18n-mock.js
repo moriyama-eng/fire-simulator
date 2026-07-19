@@ -1,16 +1,16 @@
 import { vi } from 'vitest';
 
 vi.mock('../../js/i18n.js', async (importOriginal) => {
-  // tests/helpers/i18n-mock.js の vi.mock コールバック内
+  // Inside vi.mock callback in tests/helpers/i18n-mock.js
   const actual = await importOriginal();
   const ja = actual.TRANSLATIONS.ja;
 
-  // ★ テスト用のバージョン番号（固定でOK）
-  const APP_VERSION = '2.3.1';
+  // * Version number for testing (fixed is fine)
+  const APP_VERSION = '2.3.2';
 
   function mockT(key, placeholders = []) {
     let text = ja[key] || key;
-    // ★ バージョン番号を置換
+    // * Replace version number
     text = text.replace(/\{VERSION\}/g, APP_VERSION);
     placeholders.forEach((p, i) => {
       text = text.replace(new RegExp('\\{' + i + '\\}', 'g'), p);

@@ -1,9 +1,9 @@
 // js/analysis-state.js
-// 分析タブ 状態管理
+// Analysis tab state management
 
-// ----- 因子定義 -----
-// paramKey は baseEffectiveParams（app.js で生成）内のプロパティ名と厳密に一致させること。
-// また、applyFactorChange (analysis-runner.js) で因子の変更を適用するプロパティ名でもある。
+// ----- Factor definitions -----
+// paramKey must exactly match the property name in baseEffectiveParams (generated in app.js).
+// It is also the property name used to apply factor changes in applyFactorChange (analysis-runner.js).
 export const FACTORS = [
     { key: 'initial_risk_asset_jpy', labelKey: 'analysis.factors.initial_risk_asset_jpy', categoryKey: 'analysis.category.asset', catClass: 'cat-asset', unitKey: 'unit.oku', step: 0.1, decimals: 1, scale: 1e8, paramKey: 'initialRiskAsset' },
     { key: 'initial_cash_buffer_jpy', labelKey: 'analysis.factors.initial_cash_buffer_jpy', categoryKey: 'analysis.category.asset', catClass: 'cat-asset', unitKey: 'unit.man', step: 500, decimals: 0, scale: 1e4, paramKey: 'initialCashBuffer' },
@@ -17,7 +17,7 @@ export const FACTORS = [
     { key: 'guardrail_reduction_pct', labelKey: 'analysis.factors.guardrail_reduction_pct', categoryKey: 'analysis.category.guardrail', catClass: 'cat-guardrail', unitKey: 'unit.percent', step: 5.0, decimals: 1, scale: 1, paramKey: 'guardrailReduction', requiresFeature: 'guardrail' },
 ];
 
-// ----- 分析タブ状態管理 -----
+// ----- Analysis tab state management -----
 const state = {
     baseContext: null,
     baseEffectiveParams: null,
@@ -34,8 +34,8 @@ export function getAnalysisResult() { return state.analysisResult; }
 export function getErrorMessage() { return state.errorMessage; }
 
 /**
- * Base条件に応じて現在利用可能な因子を返す
- * CB OFF 時は現金バッファ因子、GR OFF 時はガードレール因子が除外される
+ * Returns the currently available factors based on the base conditions.
+ * Cash buffer factors are excluded when CB is OFF, and guardrail factors are excluded when GR is OFF.
  */
 export function getAvailableFactors() {
     const bp = state.baseEffectiveParams;
@@ -47,15 +47,15 @@ export function getAvailableFactors() {
     });
 }
 
-// ----- 状態更新 -----
+// ----- State updates -----
 export function setBaseContext(baseContext, baseEffectiveParams) {
-    // ベース条件が前回と同じなら分析結果を消さない
+    // Do not clear analysis results if the base condition is the same as the previous one
     const isSameBase = state.baseEffectiveParams && JSON.stringify(state.baseEffectiveParams) === JSON.stringify(baseEffectiveParams);
 
     state.baseContext = baseContext;
     state.baseEffectiveParams = baseEffectiveParams;
 
-    if (isSameBase) return; // 変化がなければ何もしない
+    if (isSameBase) return; // Do nothing if there is no change
 
     const availableKeys = getAvailableFactors().map(f => f.key);
     state.selectedFactors = state.selectedFactors.filter(key => availableKeys.includes(key));
@@ -84,10 +84,10 @@ export function setErrorMessage(msg) {
     state.isRunning = false;
 }
 
-// ----- 因子の値計算 -----
+// ----- Factor value calculation -----
 /**
- * 因子の現在のベース値をUI表示単位で返す
- * 内部パラメータの生の値からスケールダウンする
+ * Returns the current base value of a factor in UI display units.
+ * Scales down from the raw value of the internal parameter.
  */
 export function getFactorBaseValue(factorKey) {
     const bp = state.baseEffectiveParams;
@@ -102,7 +102,7 @@ export function getFactorBaseValue(factorKey) {
 }
 
 /**
- * 5水準の値をUI表示単位で返す
+ * Returns the values at 5 levels in UI display units.
  */
 export function getGeneratedValues(factorKey) {
     const base = getFactorBaseValue(factorKey);
@@ -126,24 +126,24 @@ export function _resetStateForTest() {
 }
 
 /**
- * テスト専用: 因子を強制設定する
+ * For testing only: forcibly sets factors
  */
 export function _setAvailableFactorsForTest(factors) {
-    // 内部的に状態を汚染させる hack
-    // 実際には getAvailableFactors が state.baseEffectiveParams に依存しているため
-    // テスト用に関数を増やすより、setBaseContext を適切に呼ぶべき。
-    // 今回はテストコード側を修正する
+    // A hack that internally pollutes state
+    // In practice, since getAvailableFactors depends on state.baseEffectiveParams,
+    // it is better to call setBaseContext appropriately rather than adding functions for testing.
+    // For now, modify the test code side.
 }
 
 
 /**
- * ベース成功率(pct)に応じた目標成功率の改善幅を返す
- * - 95以上 → 0
- * - 90以上95未満 → 1.0
- * - 85以上90未満 → 2.0
- * - 85未満 → 5.0
- * @param {number} baseRatePct - 現在の成功率(%)
- * @returns {number} 改善幅(%pt)
+ * Returns the improvement margin in the target success rate according to the base success rate (pct).
+ * - 95 or above → 0
+ * - 90 or above and below 95 → 1.0
+ * - 85 or above and below 90 → 2.0
+ * - Below 85 → 5.0
+ * @param {number} baseRatePct - Current success rate (%)
+ * @returns {number} Improvement margin (%pt)
  */
 export function getSuccessRateTargetDelta(baseRatePct) {
     if (baseRatePct >= 95) return 0;

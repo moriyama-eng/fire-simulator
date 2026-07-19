@@ -19,7 +19,7 @@ const makeBaseEffectiveParams = (overrides = {}) => ({
   ...overrides
 });
 
-// DOMのセットアップを模倣
+// Mock DOM setup
 const setupDOM = () => {
   document.body.innerHTML = `
         <div id="analysisTab">

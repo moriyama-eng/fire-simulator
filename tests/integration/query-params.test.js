@@ -18,7 +18,7 @@ describe('query-params', () => {
         expect(document.getElementById('percentileInput').value).toBe('10,50,90');
     });
 
-    // ===== tar パラメータ復元テスト =====
+    // ===== Restore test for tar parameter =====
     it('restores targetAssetRatio from tar parameter', () => {
         applyParsedParams({
             asset: '2', cash: '500', expense: '40', ret: '7.0', vol: '20.0', inf: '3.0',

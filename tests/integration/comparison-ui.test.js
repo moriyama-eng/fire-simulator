@@ -26,7 +26,7 @@ describe('comparison-ui integration', () => {
         vi.restoreAllMocks();
     });
 
-    it('シナリオ追加ボタンで列が増える', () => {
+    it('Clicking the add scenario button increases the column count', () => {
         expect(CS.getScenarioCount()).toBe(1);
         const addBtn = document.getElementById('addScenarioBtn');
         addBtn.click();
@@ -36,7 +36,7 @@ describe('comparison-ui integration', () => {
         expect(headers.length).toBe(2);
     });
 
-    it('シナリオ削除ボタンで列が減る', async () => {
+    it('Clicking the delete scenario button decreases the column count', async () => {
         CS.addScenario(makeMockScenarioInputs(), mockT);
         renderComparisonTab();
         expect(CS.getScenarioCount()).toBe(2);
@@ -45,7 +45,7 @@ describe('comparison-ui integration', () => {
         await waitFor(() => expect(CS.getScenarioCount()).toBe(1));
     });
 
-    it('最後の1つのシナリオは削除されない', async () => {
+    it('The last remaining scenario is not deleted', async () => {
         expect(CS.getScenarioCount()).toBe(1);
         const deleteBtn = document.querySelector('[data-action="delete"]');
         expect(deleteBtn.disabled).toBe(true);
@@ -53,25 +53,25 @@ describe('comparison-ui integration', () => {
         expect(CS.getScenarioCount()).toBe(1);
     });
 
-    it('共通設定変更時に全結果がクリアされる', () => {
+    it('All results are cleared when common settings change', () => {
         const id = CS.getScenarios()[0].id;
         CS.setScenarioResult(id, { successRate: 95 });
         renderComparisonTab();
         const seedInput = document.getElementById('commonSeedInput');
         seedInput.value = '99999';
         seedInput.dispatchEvent(new Event('change'));
-        // data-section="output-header" の次の行の2つ目のセル（最初のシナリオの結果）
+        // Second cell in the row following data-section="output-header" (result of the first scenario)
         const resultCell = document.querySelector('tbody tr[data-section="output-header"] ~ tr td:nth-child(2)');
         expect(resultCell.textContent.trim()).toBe('');
     });
 
-    it('「すべて実行」ボタンがシミュレーションを呼び出す', async () => {
+    it('The "Run All" button calls the simulation', async () => {
         const runBtn = document.getElementById('runAllBtn');
         runBtn.click();
         await waitFor(() => expect(runSimulation).toHaveBeenCalled());
     });
 
-    it('CB OFF時にinitial_cash_bufferの入力欄がdisabledになる', () => {
+    it('The initial_cash_buffer input is disabled when CB is OFF', () => {
         const scenario = CS.getScenarios()[0];
         CS.updateScenarioInput(scenario.id, 'cashBufferEnabled', false);
         renderComparisonTab();
@@ -79,7 +79,7 @@ describe('comparison-ui integration', () => {
         expect(input.disabled).toBe(true);
     });
 
-    it('GR OFF時にguardrail_triggerの入力欄がdisabledになる', () => {
+    it('The guardrail_trigger input is disabled when GR is OFF', () => {
         const scenario = CS.getScenarios()[0];
         CS.updateScenarioInput(scenario.id, 'guardrailEnabled', false);
         renderComparisonTab();
@@ -87,7 +87,7 @@ describe('comparison-ui integration', () => {
         expect(input.disabled).toBe(true);
     });
 
-    it('左右移動ボタンで列順序が変わる', () => {
+    it('Column order changes with left/right move buttons', () => {
         CS.addScenario(makeMockScenarioInputs(), mockT);
         CS.addScenario(makeMockScenarioInputs(), mockT);
         renderComparisonTab();
@@ -99,7 +99,7 @@ describe('comparison-ui integration', () => {
         expect(newIds[1]).toBe(originalIds[0]);
     });
 
-    it('セレクトボックス（変動モデル）を変更しても状態がNaNにならず、シミュレーションが実行できる', async () => {
+    it('State does not become NaN and simulation can run even after changing the select box (volatility model)', async () => {
         const scenario = CS.getScenarios()[0];
         expect(scenario.inputs.returnModel).toBe('log-t');
         const select = document.querySelector(`select[data-id="${scenario.id}"][data-field="returnModel"]`);
@@ -110,18 +110,18 @@ describe('comparison-ui integration', () => {
         expect(typeof updatedScenario.inputs.returnModel).toBe('string');
     });
 
-    it('トグルがランダムの状態で「すべて実行」すると、シード入力欄のvalueがランダムシード値に即時更新される', async () => {
+    it('When the toggle is in random mode and "Run All" is clicked, the seed input value is immediately updated to the random seed value', async () => {
         const seedToggle = document.getElementById('commonSeedToggle');
         const seedInput = document.getElementById('commonSeedInput');
         
-        // 初期状態はランダム（checked === true）
+        // Initial state is random (checked === true)
         expect(seedToggle.checked).toBe(true);
         const oldSeed = seedInput.value;
         
         const runBtn = document.getElementById('runAllBtn');
         runBtn.click();
         
-        // 実行直後にシード入力欄のvalueが更新される
+        // The seed input value is updated immediately after execution
         expect(seedInput.value).not.toBe(oldSeed);
         expect(seedInput.value).toBe(CS.getCommonSeed().toString());
     });
