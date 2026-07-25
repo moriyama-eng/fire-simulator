@@ -3,7 +3,11 @@
   "version": "2.3.2",
   "description": "FIRE Monte Carlo Simulator",
   "type": "module",
+  "bin": {
+    "fire-sim": "./cli.js"
+  },
   "scripts": {
+    "simulate": "node cli.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
