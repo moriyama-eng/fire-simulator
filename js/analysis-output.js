@@ -8,7 +8,7 @@ import * as AS from './analysis-state.js';
 // Dynamically retrieve the app version from the meta tag
 const getAppVersion = () => {
     const meta = document.querySelector('meta[name="app-version"]');
-    return meta ? meta.content : '2.3.2'; // Fallback is the current version
+    return meta ? meta.content : '2.4.0'; // Fallback is the current version
 };
 
 

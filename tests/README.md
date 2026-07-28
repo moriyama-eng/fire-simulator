@@ -256,3 +256,20 @@ it('toggles state on click', () => {
   so existence confirmation and temporary definition are required before creating a spy
 - **Asynchronous assertions**: Use the `waitFor` helper and set the timeout appropriately
   (considering that CI environments may be slower than local environments)
+
+## v2.4.0 Additional Tests (T1–T7)
+
+| Test ID | File | Description |
+| --- | --- | --- |
+| T1 | tests/unit/headless.test.js | Reproducibility: `normalizeHeadlessParams` + `runSimulationHeadless` results match `tests/fixtures/headless-reference-results.json` |
+| T2 | tests/unit/headless.test.js | Determinism: Two runs with identical params produce identical `successRate` / `finalMedian` / `totalPercentileData` |
+| T3 | tests/integration/cli.test.js | CLI integration: `node cli.js run <file>` scalar key validation, file generation, `--out` auto directory creation |
+| T4 | tests/integration/cli.test.js | Float32Array conversion: `--stdout` output `totalPercentileData[0]` is a plain array |
+| T5 | tests/integration/cli.test.js | list-factors: Output `factors` count and `paramKey` values match `FACTORS` |
+| T6 | tests/unit/headless.test.js | currency=USD: `result.currency === 'USD'`, no rate conversion applied |
+| T7 | tests/unit/headless.test.js | normalizeHeadlessParams: HEADLESS_DEFAULTS fallback, clamp boundaries, guardrail cross-validation, boolean defaults, simDfManual=false |
+
+### Test Data
+
+`tests/fixtures/headless-reference-results.json`: Reference data for T1. Regeneratable via `node tests/fixtures/generate-headless-reference.js`.
+Note: The generation script passes `simPaths: 1000`, which is clamped to `5000` by `normalizeHeadlessParams`.

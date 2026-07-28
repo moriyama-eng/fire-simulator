@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.3.2)
+# FIRE Monte Carlo Simulator (v2.4.0)
 
 This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
@@ -22,8 +22,16 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
   In addition to simple asset progression, the worst-case drawdown and time to recovery can be intuitively grasped using cumulative probability distribution graphs (CDF/CCDF).
 - **Inflation fluctuation model (AR-1 model)**  
   In addition to a simple fixed inflation rate, an AR-1 (autoregressive) model referencing the characteristics of statistical data (such as US CPI) can be selected.
+- **Headless / Command-line interface (CLI)**  
+  Run simulations directly from the terminal without a browser. Ideal for automation, batch processing, and parameter sweeps. Outputs full JSON results (including percentile time-series) for further analysis. See the [CLI Usage Guide](./docs/cli-usage.md) for details and examples.
 
 ## Main Update History
+
+### Updates (v2.4.0)
+- **Headless execution function (`runSimulationHeadless`)**: Added a function that runs the simulation in a single process without using Web Workers. Results are bit-for-bit identical to the Worker version.
+- **CLI (`cli.js`)**: Added a command-line interface. Supports `run` and `list-factors` subcommands. Outputs full JSON to `.temp/fire-sim/` and a scalar summary to stdout.
+- **Input units**: All monetary values are accepted in base currency units (¥ or $). No fixed-rate conversion ($1=¥100) is applied.
+- No changes to the external UI specification or simulation algorithm.
 
 ### Updates (v2.3.2)
 - **Internationalization (i18n)**: Translated all documentation, code comments, and Markdown files to English.
@@ -193,6 +201,23 @@ I am a mechanical designer by profession and not a financial expert, but I devel
 > No installation or environment setup required; you can use it as is.
 
 When running by cloning the repository in a local environment, it is highly likely that it will not work by directly opening `index.html` in a browser due to the use of Web Workers (due to security restrictions). If you are using VS Code, install the **Live Server extension**, right-click `index.html`, select "Open with Live Server", and verify operation in the browser that opens.
+
+### Command-line Interface (CLI)
+
+Run simulations in headless mode without opening a browser.
+
+```bash
+# Basic usage
+node cli.js run params.json
+
+# Full result to stdout (no file)
+node cli.js run params.json --stdout
+
+# Custom output directory
+node cli.js run params.json --out .temp/my-result.json
+```
+
+For complete CLI documentation, parameter schema, and advanced options, see the **[CLI Usage Guide](./docs/cli-usage.md)** and **[Headless API Reference](./docs/headless-api.md)**.
 
 ### Testing
 

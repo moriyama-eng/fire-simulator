@@ -1,0 +1,20 @@
+{
+  "_comment": "v2.4.0 headless reference data. seed=123456, simPaths input=1000 → clamped to 5000 by normalizeHeadlessParams, HEADLESS_DEFAULTS equivalent",
+  "successRate": 90.12,
+  "finalMedian": 477095552,
+  "worst10MaxDd": -0.9868345856666565,
+  "worst5MaxDd": -1,
+  "medianMaxUw": 112,
+  "worst10MaxUw": 321,
+  "percentileFinalValues": {
+    "10": 1796387.375,
+    "30": 205960176,
+    "50": 477095552,
+    "70": 991451328,
+    "90": 2338019328
+  },
+  "seed": 123456,
+  "modelType": "log-normal",
+  "usedDf": 4.2,
+  "currency": "JPY"
+}
