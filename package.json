@@ -1,12 +1,19 @@
 {
   "name": "fire-monte-carlo-simulator",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "description": "FIRE Monte Carlo Simulator",
   "type": "module",
+  "bin": {
+    "fire-sim": "./cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "simulate": "node cli.js"
   },
   "devDependencies": {
     "vitest": "^1.6.0",
