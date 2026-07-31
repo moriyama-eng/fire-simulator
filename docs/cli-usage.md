@@ -48,6 +48,9 @@ cat my-params.json | node cli.js run
 
 #### Output
 
+- **When `--stdout` is specified**: Outputs the complete result JSON to stdout. The `outputFile` field is **omitted** from this output, and no file is written.
+- **When `--stdout` is NOT specified**: Outputs a scalar summary JSON to stdout. This summary object **always includes** the `outputFile` field (`null` when `--no-file` is specified, or a file path string otherwise).
+
 **stdout (scalar summary)**:
 
 ```json
@@ -74,6 +77,7 @@ time-series data: `totalPercentileData`, `cashPercentileData`, `ddPercentileData
 
 > **Note**: `.temp/fire-sim/` is gitignored. If `--out` points outside `.temp/`,
 > the file will NOT be gitignored (user responsibility).
+
 
 ### `list-factors` — Output factor definitions
 

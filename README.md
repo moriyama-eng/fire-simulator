@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.4.0)
+# FIRE Monte Carlo Simulator (v2.4.1)
 
 This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
@@ -25,7 +25,21 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
 - **Headless / Command-line interface (CLI)**  
   Run simulations directly from the terminal without a browser. Ideal for automation, batch processing, and parameter sweeps. Outputs full JSON results (including percentile time-series) for further analysis. See the [CLI Usage Guide](./docs/cli-usage.md) for details and examples.
 
+## Currency Semantics
+
+| Execution Mode | Currency Conversion | Monetary Input/Output Units | Internal Calculation Unit |
+|---|---|---|---|
+| **Browser UI (English Mode)** | Display-only fixed rate ($1 = ¥100) | $1, ¥10K, ¥100M UI units | JPY |
+| **CLI / Headless Mode** | None (label-only `currency` metadata) | Base currency units (JPY or USD as-is) | Base currency units |
+
 ## Main Update History
+
+### Updates (v2.4.1)
+- **Shared Clamp Helpers**: Extracted unit-independent clamp pure functions (`clampSimPaths`, `clampNonPositive`, `clampNonNegative`, `clampRange`, `clampMinDf`, `resolveGuardrailRelease`) into `js/core/params.js` for shared reuse between UI and Headless paths.
+- **Trace Tag Cleanup**: Removed internal trace tags (`M2`, `M4`, `M5`, `M6`, `M7`, `L1`) across code comments while preserving descriptive text.
+- **Test Suite Expansion**: Added T8 (Worker vs Headless bit-for-bit equivalence test across 1, 3, and 8 worker configurations) and T10 (shared clamp helper unit test).
+- **Documentation & CLI Specification Clarifications**: Documented `outputFile` field behavior in CLI stdout mode and added Currency Semantics comparison table.
+- No changes to external UI specifications, simulation algorithms, or calculation values (100% bit-for-bit identical).
 
 ### Updates (v2.4.0)
 - **Headless execution function (`runSimulationHeadless`)**: Added a function that runs the simulation in a single process without using Web Workers. Results are bit-for-bit identical to the Worker version.

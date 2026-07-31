@@ -94,6 +94,8 @@ and `comparison-runner`. Returns a fully normalized params object.
 - `currency` is a label (metadata) only. It does not affect any monetary calculations.
 - No fixed-rate conversion ($1 = 100 JPY) is applied.
 - When running in USD mode, pass monetary values in dollar units as-is.
+- For a comparison between Browser UI and CLI/Headless currency handling, see the [Currency Semantics table in README.md](../README.md#currency-semantics).
+
 
 ## Usage Example
 

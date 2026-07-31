@@ -15,7 +15,7 @@ import { FACTORS } from './js/core/factors.js';
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
 const VERSION = pkg.version;
 
-// ---- toPlain: recursively convert TypedArrays to plain JS arrays (M4) ----
+// ---- toPlain: recursively convert TypedArrays to plain JS arrays ----
 /**
  * Recursively converts TypedArray / Array / Object to plain JSON-serializable values.
  * Float32Array and similar cannot be serialized by JSON.stringify directly.
@@ -33,7 +33,7 @@ function toPlain(v) {
     return v;
 }
 
-// ---- readStdin: read UTF-8 text from stdin with TTY detection (M5) ----
+// ---- readStdin: read UTF-8 text from stdin with TTY detection ----
 /**
  * Reads UTF-8 text from stdin.
  * If stdin is a TTY (interactive terminal), prints usage to stderr and exits with code 1.
@@ -99,7 +99,7 @@ async function main() {
         return;
     }
 
-    // ---- Parse --out first to avoid collision with positional/flag parsing (M2) ----
+    // ---- Parse --out first to avoid collision with positional/flag parsing ----
     let outPath = null;
     const filteredArgs = [];
     for (let i = 0; i < args.length; i++) {
@@ -152,7 +152,7 @@ async function main() {
         process.exit(1);
     }
 
-    // Extract and normalize percentiles (M6)
+    // Extract and normalize percentiles
     const percentilesInput = rawParams.percentiles;
     const percentiles = normalizeHeadlessPercentiles(percentilesInput);
 
@@ -223,7 +223,7 @@ async function main() {
     };
 
     if (!isNoFile) {
-        // Auto-create output directory (L1)
+        // Auto-create output directory
         try {
             mkdirSync(dirname(outputPath), { recursive: true });
             writeFileSync(outputPath, JSON.stringify(fullOutput, null, indent), 'utf-8');
@@ -232,6 +232,7 @@ async function main() {
             process.exit(2);
         }
     }
+
 
     // Output scalar summary JSON to stdout
     const summary = {

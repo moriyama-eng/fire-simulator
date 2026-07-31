@@ -83,3 +83,43 @@ export function getParamsFromInputs(inputs) {
         targetAssetRatio: parseFloat(raw('targetAssetRatioNum')) || DEFAULTS.targetAssetRatio
     };
 }
+
+// ---- Unit-independent clamp helpers (shared by normalizeHeadlessParams) ----
+// Source of truth: getParamsFromInputs (UI path) and comparison-runner.
+// NOTE: getParamsFromInputs rounds simPaths (Math.round), but comparison-runner /
+// analysis-runner do NOT round. clampSimPaths intentionally includes Math.round to
+// match the UI path, because normalizeHeadlessParams currently mirrors getParamsFromInputs.
+// If this helper is ever reused for comparison/analysis paths, review the rounding difference.
+
+// simPaths: clamp to [5000, 50000] with rounding (matches getParamsFromInputs)
+export function clampSimPaths(v) {
+    return Math.max(5000, Math.min(50000, Math.round(Number(v))));
+}
+
+// Non-positive clamp: values must be <= 0 (drawdown*/guardrail* triggers)
+export function clampNonPositive(v) {
+    return Math.min(0, Number(v));
+}
+
+// Non-negative clamp: values must be >= min (default 0) (replenishPace, infVol)
+export function clampNonNegative(v, min = 0) {
+    return Math.max(min, Number(v));
+}
+
+// Range clamp: composition order is Math.min(hi, Math.max(lo, x)) — do NOT reorder
+// (matches infAr [0,1.0] and targetAssetRatio [0,500])
+export function clampRange(v, lo, hi) {
+    return Math.min(hi, Math.max(lo, Number(v)));
+}
+
+// simDfNum: minimum 2.5 (matches getParamsFromInputs)
+export function clampMinDf(v) {
+    return Math.max(2.5, Number(v));
+}
+
+// Guardrail cross-validation (PURE function — no DOM side effects).
+// Source: actions.js runMain UI path, but the DOM write-back (releaseInput.value=...)
+// is intentionally excluded; this returns only the resolved release value.
+export function resolveGuardrailRelease(toggle, trigger, release) {
+    return (toggle && release < trigger) ? trigger : release;
+}
