@@ -3,6 +3,15 @@
 // Currency is label-only. No fixed-rate conversion ($1=100JPY) is applied.
 // All monetary values are accepted in base currency units (JPY or USD).
 
+import {
+    clampSimPaths,
+    clampNonPositive,
+    clampNonNegative,
+    clampRange,
+    clampMinDf,
+    resolveGuardrailRelease
+} from './params.js';
+
 // ----- Defaults for headless execution (base currency units) -----
 // Do NOT mix in UI-unit DEFAULTS from js/core/params.js.
 export const HEADLESS_DEFAULTS = Object.freeze({
@@ -34,7 +43,7 @@ export const HEADLESS_DEFAULTS = Object.freeze({
     currency:               'JPY',
 });
 
-// ----- Percentiles normalization (M6) -----
+// ----- Percentiles normalization -----
 /**
  * Normalize a percentiles array using the same rules as formatPercentileInput:
  * - Integer values 1-99 only
@@ -90,7 +99,7 @@ export function normalizeHeadlessParams(raw) {
     // ----- Clamps (sources: getParamsFromInputs / comparison-runner / new guards) -----
 
     // simPaths: clamp to [5000, 50000] and round (matches getParamsFromInputs)
-    p.simPaths = Math.max(5000, Math.min(50000, Math.round(Number(p.simPaths))));
+    p.simPaths = clampSimPaths(p.simPaths);
 
     // simYears: minimum 1 (prevents negative dataLen)
     p.simYears = Math.max(1, Math.round(Number(p.simYears)));
@@ -104,33 +113,31 @@ export function normalizeHeadlessParams(raw) {
     p.monthlyExpense    = Math.max(0, Number(p.monthlyExpense));
 
     // Negative-clamp (matches getParamsFromInputs / comparison-runner)
-    p.drawdownTrigger    = Math.min(0, Number(p.drawdownTrigger));
-    p.drawdownReplenish  = Math.min(0, Number(p.drawdownReplenish));
-    p.guardrailTrigger   = Math.min(0, Number(p.guardrailTrigger));
-    p.guardrailReduction = Math.min(0, Number(p.guardrailReduction));
-    p.guardrailRelease   = Math.min(0, Number(p.guardrailRelease));
+    p.drawdownTrigger    = clampNonPositive(p.drawdownTrigger);
+    p.drawdownReplenish  = clampNonPositive(p.drawdownReplenish);
+    p.guardrailTrigger   = clampNonPositive(p.guardrailTrigger);
+    p.guardrailReduction = clampNonPositive(p.guardrailReduction);
+    p.guardrailRelease   = clampNonPositive(p.guardrailRelease);
 
     // Positive-clamp (matches getParamsFromInputs)
-    p.replenishPace = Math.max(0, Number(p.replenishPace));
+    p.replenishPace = clampNonNegative(p.replenishPace);
 
     // infVol: minimum 0 (matches comparison-runner)
-    p.infVol = Math.max(0, Number(p.infVol));
+    p.infVol = clampNonNegative(p.infVol);
 
     // infAr: clamp to [0, 1.0] (matches comparison-runner)
-    p.infAr = Math.min(1.0, Math.max(0, Number(p.infAr)));
+    p.infAr = clampRange(p.infAr, 0, 1.0);
 
     // simDfNum: minimum 2.5 (matches getParamsFromInputs)
-    p.simDfNum = Math.max(2.5, Number(p.simDfNum));
+    p.simDfNum = clampMinDf(p.simDfNum);
 
     // targetAssetRatio: clamp to [0, 500] (matches comparison-runner)
-    p.targetAssetRatio = Math.min(500, Math.max(0, Number(p.targetAssetRatio)));
+    p.targetAssetRatio = clampRange(p.targetAssetRatio, 0, 500);
 
-    // ----- M7: guardrail cross-validation -----
+    // ----- Guardrail cross-validation -----
     // When guardrailToggle is true and guardrailRelease < guardrailTrigger,
     // snap guardrailRelease to guardrailTrigger (matches actions.js in the UI path).
-    if (p.guardrailToggle && p.guardrailRelease < p.guardrailTrigger) {
-        p.guardrailRelease = p.guardrailTrigger;
-    }
+    p.guardrailRelease = resolveGuardrailRelease(p.guardrailToggle, p.guardrailTrigger, p.guardrailRelease);
 
     // currency: accept only 'JPY' or 'USD' (label-only, no conversion)
     if (p.currency !== 'JPY' && p.currency !== 'USD') {
@@ -139,3 +146,4 @@ export function normalizeHeadlessParams(raw) {
 
     return p;
 }
+

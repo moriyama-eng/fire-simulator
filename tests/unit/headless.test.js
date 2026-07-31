@@ -1,5 +1,5 @@
 // tests/unit/headless.test.js
-// T1-T2, T6-T7: Unit tests for headless simulation runner and parameter normalization
+// T1-T2, T6-T8: Unit tests for headless simulation runner and parameter normalization
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -11,6 +11,10 @@ import {
     normalizeHeadlessPercentiles,
 } from '../../js/core/headless-params.js';
 import { runSimulationHeadless } from '../../js/headless.js';
+import { xoshiro128ss, createNormalGenerator, createGammaGenerator, createTGenerator } from '../../js/core/random.js';
+import { runSinglePath } from '../../js/core/simulation.js';
+import { aggregateResultsProduction } from '../../js/core/aggregation.js';
+import { calcAutoDf } from '../../js/core/params.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -81,7 +85,7 @@ describe('T7: normalizeHeadlessParams', () => {
         expect(p.simDfManual).toBe(false);
     });
 
-    it('M7: guardrail cross-validation (guardrailRelease < guardrailTrigger -> release=trigger)', () => {
+    it('guardrail cross-validation (guardrailRelease < guardrailTrigger -> release=trigger)', () => {
         const p = normalizeHeadlessParams({
             guardrailToggle: true,
             guardrailTrigger: -20,
@@ -91,7 +95,7 @@ describe('T7: normalizeHeadlessParams', () => {
         expect(p.guardrailRelease).toBe(-20);
     });
 
-    it('M7: skip cross-validation when guardrailToggle=false', () => {
+    it('skip cross-validation when guardrailToggle=false', () => {
         const p = normalizeHeadlessParams({
             guardrailToggle: false,
             guardrailTrigger: -20,
@@ -210,3 +214,156 @@ describe('T6: currency=USD', () => {
         expect(result.finalMedian).toBeLessThan(1e12); // Confirm 100x conversion is NOT applied
     });
 });
+
+// ===== T8: Worker vs Headless equivalence check =====
+// NOTE: This harness is a Node-compatible replica (direct copy of the path-splitting,
+// seed-offset, buffer-merge, and aggregation logic) of simulation-engine.js + worker.js.
+// If simulation-engine.js or worker.js changes, this harness MUST be kept in sync.
+function runWorkerHarness(params, userPercentiles, numWorkers) {
+    const { simYears, simPaths } = params;
+    const basePaths = Math.floor(simPaths / numWorkers);
+    const remainder = simPaths % numWorkers;
+    const totalMonths = simYears * 12;
+    const dataLen = totalMonths + 1;
+
+    let currentSeedOffset = 0;
+    const results = [];
+
+    for (let i = 0; i < numWorkers; i++) {
+        const pathsCount = basePaths + (i < remainder ? 1 : 0);
+        // NOTE: Empty worker case (pathsCount === 0) is unreachable in production/tests because simPaths >= 5000 and numWorkers <= 8.
+        if (pathsCount === 0) break;
+
+        const totals = new Float32Array(pathsCount * dataLen);
+        const cashes = new Float32Array(pathsCount * dataLen);
+        const dds = new Float32Array(pathsCount * dataLen);
+        const maxDds = new Float32Array(pathsCount);
+        const maxUws = new Float32Array(pathsCount);
+        const belowInitPeriods = new Float32Array(pathsCount);
+        const consecutiveSellPeriods = new Float32Array(pathsCount);
+        let bankruptCount = 0;
+
+        for (let p = 0; p < pathsCount; p++) {
+            // Seed offset logic: seedNum + currentSeedOffset + p corresponds to global path index seedNum + p_global
+            const rng = xoshiro128ss(params.seedNum + currentSeedOffset + p);
+            const normalGen = createNormalGenerator(rng);
+            const gammaRand = createGammaGenerator(rng, normalGen);
+            const tRand = createTGenerator(normalGen, gammaRand);
+
+            const res = runSinglePath({ rng, normalGen, gammaRand, tRand }, params);
+
+            const baseIdx = p * dataLen;
+            totals.set(res.totals, baseIdx);
+            cashes.set(res.cashes, baseIdx);
+            dds.set(res.dds, baseIdx);
+            maxDds[p] = res.maxDD;
+            maxUws[p] = res.maxUW;
+            belowInitPeriods[p] = res.maxBelowInitPeriod;
+            consecutiveSellPeriods[p] = res.maxConsecutiveSellPeriod;
+            if (res.bankrupt) bankruptCount++;
+        }
+
+        results.push({
+            totalsBuffer: totals.buffer,
+            cashesBuffer: cashes.buffer,
+            ddsBuffer: dds.buffer,
+            maxDdsBuffer: maxDds.buffer,
+            maxUwsBuffer: maxUws.buffer,
+            belowInitPeriodsBuffer: belowInitPeriods.buffer,
+            consecutiveSellPeriodsBuffer: consecutiveSellPeriods.buffer,
+            bankruptCount,
+        });
+
+        currentSeedOffset += pathsCount;
+    }
+
+    // Merge buffers
+    const mergedTotals = new Float32Array(simPaths * dataLen);
+    const mergedCashes = new Float32Array(simPaths * dataLen);
+    const mergedDds = new Float32Array(simPaths * dataLen);
+    const maxDdPerPath = new Float32Array(simPaths);
+    const maxUwPerPath = new Float32Array(simPaths);
+    const belowInitPeriods = new Float32Array(simPaths);
+    const consecutiveSellPeriods = new Float32Array(simPaths);
+    let bankruptCount = 0;
+    let globalPathIndex = 0;
+
+    for (const res of results) {
+        const pathsCountInWorker = res.totalsBuffer.byteLength / (dataLen * 4);
+        const offset = globalPathIndex * dataLen;
+        mergedTotals.set(new Float32Array(res.totalsBuffer), offset);
+        mergedCashes.set(new Float32Array(res.cashesBuffer), offset);
+        mergedDds.set(new Float32Array(res.ddsBuffer), offset);
+        maxDdPerPath.set(new Float32Array(res.maxDdsBuffer), globalPathIndex);
+        maxUwPerPath.set(new Float32Array(res.maxUwsBuffer), globalPathIndex);
+        belowInitPeriods.set(new Float32Array(res.belowInitPeriodsBuffer), globalPathIndex);
+        consecutiveSellPeriods.set(new Float32Array(res.consecutiveSellPeriodsBuffer), globalPathIndex);
+        bankruptCount += res.bankruptCount;
+        globalPathIndex += pathsCountInWorker;
+    }
+
+    const initialTotalAssets = params.initialRiskAsset + (params.cashBufferToggle ? params.initialCashBuffer : 0);
+
+    const result = aggregateResultsProduction({
+        totalsBuffer: mergedTotals.buffer,
+        cashesBuffer: mergedCashes.buffer,
+        ddsBuffer: mergedDds.buffer,
+        maxDdPerPath,
+        maxUwPerPath,
+        belowInitPeriods,
+        consecutiveSellPeriods,
+        simPaths,
+        dataLen,
+        percentiles: userPercentiles,
+        bankruptCount,
+        targetAssetRatio: params.targetAssetRatio,
+        initialTotalAssets,
+    });
+
+    result.usedSeed = params.seedNum;
+    result.modelType = params.useTDistribution ? 'log-t' : 'log-normal';
+    result.usedDf = Math.max(2.1, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
+    result.currency = params.currency ?? 'JPY';
+
+    return result;
+}
+
+function assertFloatArrayEqual(a, b) {
+    expect(a.length).toBe(b.length);
+    for (let i = 0; i < a.length; i++) {
+        expect(a[i]).toBe(b[i]);
+    }
+}
+
+function assertFloatArraysEqual(a, b) {
+    expect(a.length).toBe(b.length);
+    for (let i = 0; i < a.length; i++) {
+        assertFloatArrayEqual(a[i], b[i]);
+    }
+}
+
+describe('T8: Worker vs Headless equivalence check', () => {
+    it('produces identical bit-for-bit output for numWorkers in [1, 3, 8]', () => {
+        const params = normalizeHeadlessParams({ simPaths: 5000, seedNum: 42, simYears: 5 });
+        const pcts = [10, 30, 50, 70, 90];
+        const headless = runSimulationHeadless(params, pcts);
+        for (const numWorkers of [1, 3, 8]) {
+            const worker = runWorkerHarness(params, pcts, numWorkers);
+            expect(worker.successRate).toBe(headless.successRate);
+            expect(worker.finalMedian).toBe(headless.finalMedian);
+            expect(worker.targetAssetMaintainRate).toBe(headless.targetAssetMaintainRate);
+            expect(worker.worst10MaxDd).toBe(headless.worst10MaxDd);
+            expect(worker.worst5MaxDd).toBe(headless.worst5MaxDd);
+            expect(worker.medianMaxUw).toBe(headless.medianMaxUw);
+            expect(worker.worst10MaxUw).toBe(headless.worst10MaxUw);
+            assertFloatArraysEqual(worker.totalPercentileData, headless.totalPercentileData);
+            assertFloatArraysEqual(worker.cashPercentileData, headless.cashPercentileData);
+            assertFloatArraysEqual(worker.ddPercentileData, headless.ddPercentileData);
+            assertFloatArrayEqual(worker.maxDdPerPath, headless.maxDdPerPath);
+            assertFloatArrayEqual(worker.maxUwPerPath, headless.maxUwPerPath);
+            assertFloatArrayEqual(worker.belowInitPeriods, headless.belowInitPeriods);
+            assertFloatArrayEqual(worker.consecutiveSellPeriods, headless.consecutiveSellPeriods);
+        }
+    });
+});
+

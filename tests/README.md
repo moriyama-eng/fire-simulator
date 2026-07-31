@@ -257,7 +257,7 @@ it('toggles state on click', () => {
 - **Asynchronous assertions**: Use the `waitFor` helper and set the timeout appropriately
   (considering that CI environments may be slower than local environments)
 
-## v2.4.0 Additional Tests (T1–T7)
+## v2.4.x Additional Tests
 
 | Test ID | File | Description |
 | --- | --- | --- |
@@ -268,8 +268,11 @@ it('toggles state on click', () => {
 | T5 | tests/integration/cli.test.js | list-factors: Output `factors` count and `paramKey` values match `FACTORS` |
 | T6 | tests/unit/headless.test.js | currency=USD: `result.currency === 'USD'`, no rate conversion applied |
 | T7 | tests/unit/headless.test.js | normalizeHeadlessParams: HEADLESS_DEFAULTS fallback, clamp boundaries, guardrail cross-validation, boolean defaults, simDfManual=false |
+| T8 | tests/unit/headless.test.js | Worker vs Headless equivalence: Bit-for-bit output match between `runWorkerHarness` (1, 3, 8 workers) and `runSimulationHeadless` |
+| T10 | tests/unit/params.test.js | Shared clamp helpers: Unit tests for pure clamp functions (`clampSimPaths`, `clampNonPositive`, `clampNonNegative`, `clampRange`, `clampMinDf`, `resolveGuardrailRelease`) |
 
 ### Test Data
 
 `tests/fixtures/headless-reference-results.json`: Reference data for T1. Regeneratable via `node tests/fixtures/generate-headless-reference.js`.
 Note: The generation script passes `simPaths: 1000`, which is clamped to `5000` by `normalizeHeadlessParams`.
+

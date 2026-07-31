@@ -178,6 +178,8 @@ repomix-output*
 repomix.config.json
 # Node modules
 node_modules/
+# git diff
+GitDiff*
 
 debug_screenshot.png
 coverage/

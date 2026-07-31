@@ -1,4 +1,4 @@
-# About Simulation Decision Timing (v2.4.0)
+# About Simulation Decision Timing (v2.4.1)
 
 ## Monthly Processing Order
 In this Monte Carlo simulator, the processing for each month is executed in the following order.
@@ -17,6 +17,7 @@ This reproduces in the simulation the actual action lag in real life of "confirm
 
 ## Document Version History
 
+- **v2.4.1**: No changes to the core monthly processing logic. Extracted unit-independent clamp pure functions (`js/core/params.js`) and added bit-for-bit equivalence validation tests.
 - **v2.4.0**: No changes to the core monthly processing logic. Added headless execution function (`runSimulationHeadless`) and CLI interface (`cli.js`).
 - **v2.3.2**: No changes to the core monthly processing logic. Finalized English translations for documentation and code comments.
 - **v2.2.0**: The "Comparison" tab was added, but there are no changes to the core monthly processing logic (market return → inflation → spending → determination).
