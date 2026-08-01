@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { buildCdfPoints } from '../../js/app/charts.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import { buildCdfPoints, formatAssetTooltipLabel } from '../../js/app/charts.js';
+import { setLanguage } from '../../js/i18n.js';
+
+afterEach(() => {
+    setLanguage('ja');
+});
 
 describe('buildCdfPoints with mode', () => {
     it('CDF mode: calculates (i+1)/N using last-wins', () => {
@@ -39,3 +44,30 @@ describe('buildCdfPoints with mode', () => {
         expect(result).toEqual([{ x: 0, y: 100 }]);
     });
 });
+
+describe('formatAssetTooltipLabel', () => {
+    it('returns label: — when value is null', () => {
+        setLanguage('ja');
+        const res = formatAssetTooltipLabel({ label: 'p50', value: null, allValues: [null], isJa: true });
+        expect(res).toBe('p50: —');
+    });
+
+    it('returns label: — when value is undefined', () => {
+        setLanguage('ja');
+        const res = formatAssetTooltipLabel({ label: 'p50', value: undefined, allValues: [undefined], isJa: true });
+        expect(res).toBe('p50: —');
+    });
+
+    it('formats correctly in Japanese mode (JA regression)', () => {
+        setLanguage('ja');
+        const res = formatAssetTooltipLabel({ label: 'p50', value: 150000000, allValues: [150000000], isJa: true });
+        expect(res).toBe('p50: 1.50 億円');
+    });
+
+    it('formats correctly in English mode (EN regression)', () => {
+        setLanguage('en');
+        const res = formatAssetTooltipLabel({ label: 'p50', value: 150000000, allValues: [150000000], isJa: false });
+        expect(res).toBe('p50: $1.5M');
+    });
+});
+
