@@ -155,6 +155,29 @@ export function buildCdfPoints(sortedData, simPaths, mode = 'ccdf') {
         .sort((a, b) => a.x - b.x);
 }
 
+/**
+ * Format asset tooltip label for Chart.js tooltips.
+ * Pure function independent of Chart.js / DOM. Works with arguments only.
+ * @param {Object} params
+ * @param {string} params.label
+ * @param {number|null|undefined} params.value
+ * @param {(number|null|undefined)[]} params.allValues
+ * @param {boolean} params.isJa
+ * @returns {string}
+ */
+export function formatAssetTooltipLabel({ label, value, allValues, isJa }) {
+    if (value === null || value === undefined) {
+        return `${label}: —`; // U+2014 em dash, shared across JA/EN
+    }
+    if (isJa) {
+        const oku = (value / 100000000).toFixed(2);
+        const maxLen = Math.max(...allValues.map(v =>
+            (v !== null && v !== undefined) ? (v / 100000000).toFixed(2).length : 1));
+        return `${label}:${oku.padStart(maxLen + 1)} 億円`;
+    }
+    return `${label}: ${formatCurrency(value, '億円')}`;
+}
+
 // ====================================================================
 // Asset trend chart rendering
 // ====================================================================
@@ -218,25 +241,15 @@ export function renderAssetChart(result, isLogScale) {
                             // Calculate the maximum number of characters in the label part (align digits for 1-digit vs 2-digit percentiles)
                             const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
                             const lbl = context.dataset.label.padStart(maxLblLen);
-
-                            // Use IIFE to avoid variable collisions with outer scope variables
-                            return (function () {
-                                const v = context.parsed.y;
-                                const lang = getLanguage() || '';
-                                const isJa = lang.startsWith('ja');
-                                if (v === null || v === undefined) {
-                                    return isJa ? `${lbl}:  億円` : `${lbl}:  B JPY`;
-                                }
-                                if (isJa) {
-                                    const oku = (v / 100000000).toFixed(2);
-                                    const maxLen = Math.max(...allItems.map(item => {
-                                        const iv = item.parsed.y;
-                                        return (iv !== null && iv !== undefined) ? (iv / 100000000).toFixed(2).length : 1;
-                                    }));
-                                    return `${lbl}:${oku.padStart(maxLen + 1)} 億円`;
-                                }
-                                return `${lbl}: ${formatCurrency(v, '億円')}`;
-                            })();
+                            const allValues = allItems.map(item => item.parsed.y);
+                            const lang = getLanguage() || '';
+                            const isJa = lang.startsWith('ja');
+                            return formatAssetTooltipLabel({
+                                label: lbl,
+                                value: context.parsed.y,
+                                allValues,
+                                isJa,
+                            });
                         },
                     },
                 },
