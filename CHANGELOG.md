@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.6.0]
+
+### Added
+- **Complete provenance params in CLI output**: The `params` field in all three `run` output modes (`--stdout`, file, and scalar summary) now contains the full set of normalized (post-clamp) input parameters, whitelist-picked from `HEADLESS_DEFAULTS` keys. Previously only four fields (`simPaths`, `simYears`, `seedNum`, `currency`) were included. Now all fields — including `expectedReturn`, `volatility`, `useTDistribution`, toggle flags, etc. — are present.
+- **Top-level `percentiles` in scalar summary**: The normalized percentiles array used in the run is now included as a top-level field in scalar summary output. (It was already present in `--stdout` and file outputs via the spread of `simResult`.)
+- **`meta` field in all output modes**: All three output modes now include a `meta` object with `toolVersion` (semver string) and `generatedAt` (ISO 8601 UTC timestamp, `YYYY-MM-DDTHH:mm:ss.sssZ`).
+- **Round-trip reproducibility**: Spreading the output `params` to the top level and attaching the top-level `percentiles` is sufficient to reproduce the exact same run. Clamp idempotency guarantees bit-identical results.
+- **CLI Responsibility Boundary documented**: Added a "CLI Responsibility Boundary (Design Policy)" section to `docs/cli-usage.md`, explicitly recording deliberately excluded features (`analyze`/`compare`/`sweep` subcommands, CSV/graph output, full per-path time-series, `--schema`, input auto-unwrap) as final decisions to prevent re-proposals.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+> The CLI output JSON schema change is an intentional backward-compatible extension:
+> new fields are added; no existing fields are removed or renamed.
+
 ## [v2.5.0]
 
 ### Removed
