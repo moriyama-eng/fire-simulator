@@ -34,7 +34,6 @@ js/
 ├── simulation-engine.js → (Covered indirectly by integration tests)
 ├── analysis-state.js    → tests/unit/analysis-state.test.js
 ├── analysis-runner.js   → tests/unit/analysis-runner.test.js
-├── analysis-output.js   → tests/unit/analysis-output.test.js
 ├── analysis-ui.js       → tests/integration/analysis-ui.test.js
 ├── comparison-state.js    → tests/unit/comparison-state.test.js
 ├── comparison-runner.js   → tests/unit/comparison-runner.test.js
@@ -121,8 +120,6 @@ They differ from actual simulation results (output from running with default par
 
 - **`runSimulation` (simulation-engine.js)**: Mocked in all tests.
   Does not start an actual Web Worker; uses the return value of `makeDummySimResult()` as a substitute.
-- **`generateAndDownloadZip` (analysis-output.js)**: Mocked in ZIP output tests.
-  Prevents side effects on the file system.
 - **`vi.resetAllMocks()`**: Executed in `beforeEach` of each test to completely remove
   the residual counter of `mockRejectedValueOnce`.
 
@@ -151,7 +148,7 @@ Since CI environments may be slower than local environments, extend the `timeout
 - Targets: DOM operations, UI state transitions, event delegation
 - Characteristics: Executed in a `jsdom` environment with fixture HTML injected into `document.body.innerHTML`
 - Naming: `{feature-name}.test.js`
-- Examples: Toggle behavior of the factor selection UI, state transitions of the analysis execution flow, enabled/disabled control of the ZIP output button
+- Examples: Toggle behavior of the factor selection UI, state transitions of the analysis execution flow
 
 ### 4.3 Reproducibility Tests (`tests/unit/simulation.test.js`)
 

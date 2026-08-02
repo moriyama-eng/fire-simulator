@@ -26,13 +26,6 @@ export function renderAnalysisTab() {
     renderFactorSelector();
     renderTargetTable();
 
-    // Enable/disable the ZIP export button
-    const exportBtn = document.getElementById('exportZipBtn');
-    if (exportBtn) {
-        exportBtn.disabled = !AS.getAnalysisResult();
-        exportBtn.textContent = t('analysis.exportZip');
-    }
-
     renderCompareCards();
 }
 
@@ -528,29 +521,6 @@ export function setupAnalysisEventDelegation() {
     });
 
     document.getElementById('runAnalysisBtn')?.addEventListener('click', executeAnalysis);
-
-    // Register ZIP export button event
-    document.getElementById('exportZipBtn')?.addEventListener('click', async () => {
-        const btn = document.getElementById('exportZipBtn');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.textContent = t('analysis.zipping');
-        try {
-            const { generateAndDownloadZip } = await import('./analysis-output.js');
-            await generateAndDownloadZip();
-            btn.textContent = t('zipDone');
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }, 2000);
-        } catch (e) {
-            console.error('ZIP output error:', e);
-            const reason = e.message.startsWith('error.') ? t(e.message) : e.message;
-            alert(t('error.zipFailed', [reason]));
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    });
 }
 
 // Test-only: reset the delegationDone flag

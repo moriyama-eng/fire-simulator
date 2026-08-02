@@ -155,9 +155,6 @@ export const TRANSLATIONS = {
     "analysis.estTimePrefix": "目安:",
     "analysis.run": "分析を実行",
     "analysis.running": "分析を実行中... {0}%",
-    "analysis.exportZip": "ZIP出力 (ベータ)",
-    "analysis.zipping": "ZIP生成中...",
-    "zipDone": "✅ ダウンロード完了",
     "analysis.noBaseContext": "主画面でシミュレーションを実行してください",
     "analysis.noFactors": "因子を選択してください",
     "analysis.successRateHigh": "FIRE成功率は95%以上であり既に十分高いため、改善対象外です。",
@@ -205,9 +202,6 @@ export const TRANSLATIONS = {
     "error.noBase": "Base条件が設定されていません。",
     "error.noFactors": "因子が選択されていません。",
     "error.simFailed": "シミュレーション中にエラーが発生しました。",
-    "error.noResult": "分析結果なし",
-    "error.noJSZip": "JSZipが読み込まれていません",
-    "error.zipFailed": "ZIP出力に失敗しました: {0}",
     "error.imageFailed": "画像の生成に失敗しました。シミュレーション完了後に実行してください。\n\n詳細: {0}",
     "capture.conditionTitle": "シミュレーション条件",
     "capture.riskAsset": "リスク資産:",
@@ -301,7 +295,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* In test environments, document may be special */ }
-  return '2.4.2'; // Fallback (sync with the actual latest version)
+  return '2.5.0'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION = getAppVersion();
 
@@ -508,9 +502,6 @@ TRANSLATIONS.en = {
   "analysis.estTimePrefix": "Est:",
   "analysis.run": "Run Analysis",
   "analysis.running": "Running analysis... {0}%",
-  "analysis.exportZip": "Export ZIP (beta)",
-  "analysis.zipping": "Generating ZIP...",
-  "zipDone": "✅ Download complete",
   "analysis.noBaseContext": "Run a simulation in the main tab first",
   "analysis.noFactors": "Select at least one factor",
   "analysis.successRateHigh": "Success rate is already ≥95% – no improvement target needed.",
@@ -558,9 +549,6 @@ TRANSLATIONS.en = {
   "error.noBase": "Base condition not set.",
   "error.noFactors": "No factors selected.",
   "error.simFailed": "Simulation error occurred.",
-  "error.noResult": "No analysis result",
-  "error.noJSZip": "JSZip library not loaded",
-  "error.zipFailed": "ZIP export failed: {0}",
   "error.imageFailed": "Image generation failed. Run simulation first.\n\nDetails: {0}",
   "capture.conditionTitle": "Simulation Conditions",
   "capture.riskAsset": "Risk assets:",

@@ -101,7 +101,6 @@ document.body.innerHTML = `
         <div id="cardTarget" class="hidden"></div>
         <div id="cardCompare" class="hidden"></div>
         <div id="compareCardsContainer"></div>
-        <button id="exportZipBtn"></button>
         <button id="simTabBtn"></button>
     </div>
     <div id="tooltip-container"></div>

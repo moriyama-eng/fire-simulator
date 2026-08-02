@@ -34,7 +34,6 @@ js/core/
 js/
 ├── analysis-state.js    → tests/unit/analysis-state.test.js
 ├── analysis-runner.js   → tests/unit/analysis-runner.test.js
-├── analysis-output.js   → tests/unit/analysis-output.test.js
 ├── analysis-ui.js       → tests/integration/analysis-ui.test.js
 ├── app.js               → (インテグレーションテストで間接的にカバー)
 ```
@@ -116,8 +115,6 @@ pull request 時に自動実行されます。実行環境は `ubuntu-latest` / 
 
 - **`runSimulation` (simulation-engine.js)**: 全テストでモック化。
   実際のWeb Workerを起動せず、`makeDummySimResult()` の戻り値で代用。
-- **`generateAndDownloadZip` (analysis-output.js)**: ZIP出力テストでモック化。
-  ファイルシステムへの副作用を防ぐ。
 - **`vi.resetAllMocks()`**: 各テストの `beforeEach` で実行し、
   `mockRejectedValueOnce` の残存カウンタを完全に除去。
 
