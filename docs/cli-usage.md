@@ -51,6 +51,15 @@ cat my-params.json | node cli.js run
 - **When `--stdout` is specified**: Outputs the complete result JSON to stdout. The `outputFile` field is **omitted** from this output, and no file is written.
 - **When `--stdout` is NOT specified**: Outputs a scalar summary JSON to stdout. This summary object **always includes** the `outputFile` field (`null` when `--no-file` is specified, or a file path string otherwise).
 
+All three output modes (stdout / file / summary) include the following provenance fields:
+
+- **`params`**: Complete normalized input snapshot, whitelist-picked from `HEADLESS_DEFAULTS` keys. Values are post-clamp (normalized). See [Round-Trip Reproducibility](#round-trip-reproducibility) below.
+- **`meta`**: Tool provenance metadata — `toolVersion` (semver string) and `generatedAt` (ISO 8601 UTC, `YYYY-MM-DDTHH:mm:ss.sssZ`).
+
+The summary mode additionally includes:
+
+- **`percentiles`** (top-level): The normalized percentiles array used in the run (e.g., `[10, 30, 50, 70, 90]`).
+
 **stdout (scalar summary)**:
 
 ```json
@@ -67,17 +76,61 @@ cat my-params.json | node cli.js run
   "usedDf": 4.2,
   "currency": "JPY",
   "outputFile": "/path/to/.temp/fire-sim/run-...-seed123456.json",
-  "params": { "simPaths": 10000, "simYears": 30, ... },
+  "percentiles": [10, 30, 50, 70, 90],
+  "params": {
+    "initialRiskAsset": 100000000,
+    "initialCashBuffer": 10000000,
+    "monthlyExpense": 300000,
+    "expectedReturn": 10.0,
+    "volatility": 18.0,
+    "inflationRate": 2.0,
+    "simYears": 30,
+    "simPaths": 10000,
+    "drawdownTrigger": -20.0,
+    "drawdownReplenish": -5.0,
+    "replenishPace": 5.0,
+    "guardrailTrigger": -20.0,
+    "guardrailReduction": -20.0,
+    "guardrailRelease": -15.0,
+    "infVol": 2.0,
+    "infAr": 0.5,
+    "simDfNum": 4.0,
+    "seedNum": 123456,
+    "targetAssetRatio": 100.0,
+    "cashBufferToggle": false,
+    "guardrailToggle": false,
+    "useArInflation": false,
+    "useTDistribution": false,
+    "simDfManual": false,
+    "currency": "JPY"
+  },
+  "meta": {
+    "toolVersion": "2.6.0",
+    "generatedAt": "2026-08-02T14:00:00.000Z"
+  },
   "dataLen": 361
 }
 ```
 
 **File (full result)**: In addition to the scalar summary, outputs a JSON file containing complete
 time-series data: `totalPercentileData`, `cashPercentileData`, `ddPercentileData`, `maxDdPerPath`, etc.
+The file also includes `params` and `meta` with the same provenance fields described above.
 
 > **Note**: `.temp/fire-sim/` is gitignored. If `--out` points outside `.temp/`,
 > the file will NOT be gitignored (user responsibility).
 
+#### Currency field semantics
+
+Two `currency` fields appear in the output and have distinct meanings:
+
+| Field | Source | Meaning |
+|---|---|---|
+| Top-level `currency` | `simResult.currency` (calculation result) | Currency actually used during the simulation run |
+| `params.currency` | `normalizeHeadlessParams()` output | Input parameter snapshot (post-normalization) |
+
+Both fields are preserved in output. They should always agree, but keeping them separate avoids conflating input snapshots with computation results.
+
+---
 
 ### `list-factors` — Output factor definitions
 
@@ -159,6 +212,64 @@ No fixed-rate conversion ($1 = 100 JPY) is applied.
 | `infAr` | number | 0.5 | AR-1 coefficient (0–1.0) |
 | `targetAssetRatio` | number | 100.0 | Target asset maintenance ratio (%, 0–500) |
 | `percentiles` | number[] | [10,30,50,70,90] | Percentiles to compute (max 5 entries) |
+
+## Round-Trip Reproducibility
+
+The CLI output is designed so that the exact same simulation run can be reproduced from the output JSON alone. This enables downstream AI agents or scripts to replay any past run without external state.
+
+### How to reproduce a run
+
+1. Take the output JSON from any run mode (summary, file, or `--stdout`).
+2. Spread the top-level `params` object to the top level of a new input JSON.
+3. Attach the top-level `percentiles` array (from summary or `--stdout` mode) to the new input.
+4. Feed the reconstructed JSON into `cli.js run`.
+
+```bash
+# First run
+node cli.js run original.json --no-file > summary.json
+
+# Reconstruct input for reproduction (example using jq)
+jq '(.params) + {percentiles: .percentiles}' summary.json > reproduce.json
+
+# Reproduce — yields identical usedSeed and all scalar metrics
+node cli.js run reproduce.json --no-file
+```
+
+> **Note**: The input parser does NOT automatically unwrap nested `params` objects.
+> The caller is responsible for spreading `params` to the top level when reconstructing input.
+
+### Why clamp-idempotency guarantees reproducibility
+
+The `params` snapshot in the output contains post-clamp (normalized) values. Running
+`normalizeHeadlessParams()` on already-clamped values is idempotent — applying clamps
+twice yields the same result as applying them once. This means reproduction via
+round-trip is guaranteed to produce bit-identical results.
+
+## CLI Responsibility Boundary (Design Policy)
+
+This section documents deliberate design decisions that define what the CLI is
+**not** responsible for. These are final decisions; do not re-propose them.
+
+### Intentionally excluded features
+
+The following features are explicitly out of scope for `cli.js`. They are either
+the caller's (AI agent's) responsibility or excluded to avoid double-maintenance cost.
+
+| Feature | Reason for exclusion |
+|---|---|
+| `analyze` subcommand | Caller (AI agent) responsibility — post-processing of output JSON |
+| `compare` subcommand | Caller responsibility — diff of two output JSONs |
+| `sweep` subcommand | Caller responsibility — loop over parameter ranges |
+| CSV / graph output | Caller responsibility — format conversion from JSON |
+| Full per-path time-series output | Memory / file size concern; raw path data is not aggregated |
+| `--schema` (machine-readable input schema) | Double-maintenance cost; `HEADLESS_DEFAULTS` in source is the canonical schema |
+| Input auto-unwrap (`params` nesting) | Caller responsibility — reconstructing flat input from output JSON |
+
+### Rationale
+
+The CLI's role is a **single-run executor**: accept flat JSON params → normalize → simulate → emit JSON results.
+All orchestration, analysis, comparison, and format conversion belong to the caller.
+This boundary keeps the CLI small, testable, and free of framework dependencies.
 
 ## Exit Codes
 

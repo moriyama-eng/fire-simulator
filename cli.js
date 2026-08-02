@@ -7,7 +7,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
-import { normalizeHeadlessParams, normalizeHeadlessPercentiles } from './js/core/headless-params.js';
+import { normalizeHeadlessParams, normalizeHeadlessPercentiles, HEADLESS_DEFAULTS } from './js/core/headless-params.js';
 import { runSimulationHeadless } from './js/headless.js';
 import { FACTORS } from './js/core/factors.js';
 
@@ -31,6 +31,36 @@ function toPlain(v) {
         return o;
     }
     return v;
+}
+
+// ---- buildProvenanceParams: whitelist-pick normalized params using HEADLESS_DEFAULTS keys ----
+/**
+ * Returns a new object containing only the keys defined in HEADLESS_DEFAULTS,
+ * taken from the already-normalized params object.
+ * This ensures provenance params are stable across unknown-key noise and stay
+ * in sync with HEADLESS_DEFAULTS automatically (no hand-maintained key list).
+ * @param {Object} normalizedParams - Output of normalizeHeadlessParams()
+ * @returns {Object} Whitelist-picked provenance snapshot
+ */
+function buildProvenanceParams(normalizedParams) {
+    const result = {};
+    for (const key of Object.keys(HEADLESS_DEFAULTS)) {
+        result[key] = normalizedParams[key];
+    }
+    return result;
+}
+
+// ---- buildMeta: construct tool metadata for output provenance ----
+/**
+ * Returns a metadata object with tool version and ISO8601 UTC timestamp.
+ * Call once per run and share the same object across all output modes.
+ * @returns {{ toolVersion: string, generatedAt: string }}
+ */
+function buildMeta() {
+    return {
+        toolVersion: VERSION,
+        generatedAt: new Date().toISOString(),
+    };
 }
 
 // ---- readStdin: read UTF-8 text from stdin with TTY detection ----
@@ -184,19 +214,20 @@ async function main() {
     const isCompact = flags.has('--compact');
     const indent    = isCompact ? 0 : 2;
 
+    // Build provenance params and meta once; shared across all output modes
+    const provenanceParams = buildProvenanceParams(params);
+    const meta = buildMeta();
+
     // --stdout: output full result to stdout; skip file write (overrides --out)
     if (isStdout) {
         if (outPath) {
             process.stderr.write('Warning: --stdout overrides --out. File will not be written.\n');
         }
+        // outputFile is intentionally omitted from --stdout output (existing tests rely on this)
         const output = {
             ...plainResult,
-            params: {
-                simPaths: params.simPaths,
-                simYears: params.simYears,
-                seedNum:  params.seedNum,
-                currency: params.currency,
-            },
+            params: provenanceParams,
+            meta,
             dataLen: simResult.dataLen,
         };
         process.stdout.write(JSON.stringify(output, null, indent) + '\n');
@@ -213,12 +244,8 @@ async function main() {
     // Full result JSON (toPlain already applied)
     const fullOutput = {
         ...plainResult,
-        params: {
-            simPaths: params.simPaths,
-            simYears: params.simYears,
-            seedNum:  params.seedNum,
-            currency: params.currency,
-        },
+        params: provenanceParams,
+        meta,
         dataLen: simResult.dataLen,
     };
 
@@ -248,13 +275,10 @@ async function main() {
         usedDf:                  simResult.usedDf,
         currency:                simResult.currency,
         outputFile:              isNoFile ? null : outputPath,
-        params: {
-            simPaths: params.simPaths,
-            simYears: params.simYears,
-            seedNum:  params.seedNum,
-            currency: params.currency,
-        },
-        dataLen: simResult.dataLen,
+        percentiles,
+        params:                  provenanceParams,
+        meta,
+        dataLen:                 simResult.dataLen,
     };
     process.stdout.write(JSON.stringify(summary, null, indent) + '\n');
 }
