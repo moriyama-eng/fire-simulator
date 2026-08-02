@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE モンテカルロ・シミュレータ (v2.4.2)
+# FIRE モンテカルロ・シミュレータ (v2.5.0)
 
 本ツールは、ブラウザ単体で手軽に実行できる個人の資産形成・取崩しシミュレータです。
 確率論的なアプローチ（モンテカルロ・シミュレーション）を用いて、運用資産の枯渇リスクや長期的な資産推移を可視化することを目的に制作しました。
@@ -35,9 +35,9 @@
 
 ## 主な更新履歴
 
-### 最新版ハイライト (v2.4.2)
-- 総資産グラフツールチップにおける null 表示の JA/EN 統一 (`—`) および純粋関数の抽出
-- 言語切替ボタンからの `(experimental)` 表記削除および更新履歴の CHANGELOG 分離
+### 最新版ハイライト (v2.5.0)
+- 分析タブの「ZIP出力 (ベータ)」ボタンおよび `js/analysis-output.js` を削除。JSZip CDN依存を除去。分析結果は引き続き比較カードで確認可能。
+- 前バージョン: 総資産グラフツールチップにおける null 表示の JA/EN 統一および言語切替ボタンからの `(experimental)` 表記削除。
 
 過去の詳しい変更履歴は [CHANGELOG-ja.md](./CHANGELOG-ja.md) をご覧ください。月次処理順序の詳細は [docs/decision-timing.md](./docs/decision-timing.md) を参照してください。
 

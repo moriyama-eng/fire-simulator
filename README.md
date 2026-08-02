@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.4.2)
+# FIRE Monte Carlo Simulator (v2.5.0)
 
 This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
@@ -34,9 +34,9 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
 
 ## Update History
 
-### Latest Highlights (v2.4.2)
-- Unified null value display to `label: —` in Total Asset chart tooltips and extracted pure formatting helper.
-- Removed `(experimental)` label from language switcher button and separated update history to CHANGELOG.
+### Latest Highlights (v2.5.0)
+- Removed "ZIP Export (Beta)" button and `js/analysis-output.js`; eliminated JSZip CDN dependency. Analysis results remain available via comparison cards.
+- Previous: Unified null value display to `label: —` in Total Asset chart tooltips; removed `(experimental)` label from language switcher.
 
 For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details on monthly processing order, see [docs/decision-timing.md](./docs/decision-timing.md).
 

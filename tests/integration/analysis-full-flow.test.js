@@ -5,7 +5,6 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { runSimulation } from '../../js/simulation-engine.js';
-import { generateAndDownloadZip } from '../../js/analysis-output.js';
 import * as AS from '../../js/analysis-state.js';
 import * as AUI from '../../js/analysis-ui.js';
 import {
@@ -15,7 +14,6 @@ import {
 import { waitFor } from '../helpers/async-utils.js';
 
 vi.mock('../../js/simulation-engine.js');
-vi.mock('../../js/analysis-output.js');
 
 const fixtureHtml = readFileSync('tests/fixtures/analysis-dom-snippet.html', 'utf-8');
 
@@ -31,7 +29,6 @@ describe('Analysis tab full flow (E2E alternative)', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     runSimulation.mockResolvedValue(makeDummySimResult());
-    generateAndDownloadZip.mockResolvedValue(undefined);
     AS._resetStateForTest();
     AUI._resetDelegationForTest();
     document.body.innerHTML = fixtureHtml;
@@ -51,7 +48,7 @@ describe('Analysis tab full flow (E2E alternative)', () => {
     );
   });
 
-  it('full flow: select factor, run analysis, show compare table, ZIP output, toggle metric', async () => {
+  it('full flow: select factor, run analysis, show compare table, toggle metric', async () => {
     // Step 1: Select factor
     AS.setSelectedFactors(['expected_return_pct']);
     AUI.renderAnalysisTab();
@@ -69,17 +66,6 @@ describe('Analysis tab full flow (E2E alternative)', () => {
       expect(document.getElementById('cardCompare').classList.contains('hidden')).toBe(false);
     });
     expect(document.querySelectorAll('.compare-card').length).toBe(1);
-
-    // Step 3: ZIP output button is enabled
-    expect(document.getElementById('exportZipBtn').disabled).toBe(false);
-
-    // Step 4: Run ZIP output
-    // Note: In the actual generateAndDownloadZip, the button text is restored after 2 seconds,
-    // but this test only verifies the call and does not wait for the restoration to complete.
-    document.getElementById('exportZipBtn').click();
-    await waitFor(() => {
-      expect(generateAndDownloadZip).toHaveBeenCalledTimes(1);
-    });
 
     // Step 5: Metric switching (after verifying targetTableBody exists)
     expect(document.getElementById('targetTableBody')).not.toBeNull();

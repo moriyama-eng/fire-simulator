@@ -5,6 +5,14 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.5.0]
+
+### 削除
+- **分析タブの「ZIP出力 (ベータ)」機能**: 「ZIP出力 (ベータ)」ボタンおよび関連する全機能（`js/analysis-output.js`、`analysis-ui.js` の ZIP イベントハンドラ、`exportZipBtn` DOM 要素）を削除しました。
+  - **理由**: CLI ツールの追加によりより堅牢なデータエクスポート経路が提供されたため、ブラウザベースの ZIP 出力機能を削除してツールを簡素化し、JSZip サードパーティ依存を除去しました。
+  - **ユーザー影響**: 分析結果は引き続き分析タブの比較カードで確認できます。シミュレーション・分析ロジックへの影響はありません。
+  - **技術的変更**: `index.html` から JSZip CDN `<script>` タグを削除。`analysis.exportZip`、`analysis.zipping`、`zipDone`、`error.noResult`、`error.noJSZip`、`error.zipFailed` の i18n キーを削除。
+
 ## [v2.4.2]
 
 ### 変更

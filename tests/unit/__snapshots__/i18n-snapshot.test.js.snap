@@ -19,7 +19,6 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "analysis.editBase": "シミュレーションタブで条件を編集",
   "analysis.estTime": "目安: {0}秒",
   "analysis.estTimePrefix": "目安:",
-  "analysis.exportZip": "ZIP出力 (ベータ)",
   "analysis.factorBaseSuffix": "基準",
   "analysis.factors.drawdown_trigger_pct": "ドローダウン閾値<br>（取崩し判定）",
   "analysis.factors.expected_return_pct": "期待リターン",
@@ -59,7 +58,6 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "analysis.target.need": "必要な変更量",
   "analysis.target.title": "指標の改善に必要な因子変動量",
   "analysis.target.tooltip": "5つの水準のシミュレーション結果をもとに、指標の改善に必要な因子の変動量を<b>線形補間</b>で計算しています。<br>改善後の指標値が隣接する2水準の間に位置する場合、その区間内で線形補間して必要な因子値を求めます。<br>改善後の指標値が水準の範囲外の場合、「この因子の範囲では改善後の指標値に届きません。」と表示します。<br>FIRE成功率の改善後の指標値は、現在の成功率に応じて自動的に調整されます。<br><b class=\\"text-amber-300\\">⚠️ 線形補間は簡易的な近似計算であり、実際のシミュレーション結果は非線形に変化する場合があります。参考値としてご利用ください。</b>",
-  "analysis.zipping": "ZIP生成中...",
   "asset.cashBuffer": "初期現金バッファ",
   "asset.cashBuffer.tooltip": "シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合には、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。<br><span class=\\"text-amber-300\\">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>",
   "asset.expense": "初期月間取崩し額",
@@ -185,11 +183,8 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "error.imageFailed": "画像の生成に失敗しました。シミュレーション完了後に実行してください。\\n\\n詳細: {0}",
   "error.noBase": "Base条件が設定されていません。",
   "error.noFactors": "因子が選択されていません。",
-  "error.noJSZip": "JSZipが読み込まれていません",
-  "error.noResult": "分析結果なし",
   "error.simFailed": "シミュレーション中にエラーが発生しました。",
   "error.simulationFailed": "シミュレーション中にエラーが発生しました",
-  "error.zipFailed": "ZIP出力に失敗しました: {0}",
   "footer.copyright": "© 2026 もりやま",
   "footer.title": "FIRE モンテカルロ・シミュレータ",
   "gr.off": "OFF",
@@ -291,7 +286,6 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "unit.times": "倍",
   "unit.years": "年",
   "url.tooltipCopy": "現在の入力条件・シード値・自動実行フラグ（auto=1）を含むURLをクリップボードにコピーします。<br>このURLをブラウザで開くと、同じ条件でシミュレーションが自動的に実行されます。<br>シミュレーション結果の保存や共有に活用できます。",
-  "url.tooltipOpenCompare": "現在の入力条件と同じ乱数シード値に固定したURLを別タブで開きます。<br>別タブ側で一部の条件を変えてシミュレーションすることで、条件変更による影響を同じ乱数で比較できます。<br>別タブを開いた後は、入力値を変更して「シミュレーション実行」ボタンを押してください。",
-  "zipDone": "✅ ダウンロード完了"
+  "url.tooltipOpenCompare": "現在の入力条件と同じ乱数シード値に固定したURLを別タブで開きます。<br>別タブ側で一部の条件を変えてシミュレーションすることで、条件変更による影響を同じ乱数で比較できます。<br>別タブを開いた後は、入力値を変更して「シミュレーション実行」ボタンを押してください。"
 }"
 `;

@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.5.0]
+
+### Removed
+- **ZIP Export (Beta) from Analysis Tab**: Removed the "Export ZIP (Beta)" button and all related functionality (`js/analysis-output.js`, ZIP event handler in `analysis-ui.js`, `exportZipBtn` DOM element).
+  - **Reason**: Addition of the CLI tool provides a more robust data export path; removing the browser-based ZIP export simplifies the tool and eliminates the JSZip third-party dependency.
+  - **User impact**: Analysis results remain fully accessible via the comparison cards in the Analysis tab. No simulation or analysis logic is affected.
+  - **Technical change**: Removed JSZip CDN `<script>` tag from `index.html`; removed `analysis.exportZip`, `analysis.zipping`, `zipDone`, `error.noResult`, `error.noJSZip`, and `error.zipFailed` i18n keys.
+
 ## [v2.4.2]
 
 ### Changed
