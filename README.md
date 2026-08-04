@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.6.0)
+# FIRE Monte Carlo Simulator (v2.6.1)
 
 This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
@@ -34,10 +34,20 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
 
 ## Update History
 
-### Latest Highlights (v2.6.0)
+### Latest Highlights (v2.6.1)
+- **Design Philosophy documented**: Added a "Design Philosophy" section to the README (psychological-load focus, intentional scope limits, three interfaces by depth of use). Documentation-only change; no simulation logic or output changes.
 - **Complete provenance params in CLI output**: All 3 run output modes (`--stdout`, file, summary) now include fully normalized input parameters (`params`), top-level `percentiles`, and execution `meta` (tool version and ISO 8601 UTC timestamp) for complete run provenance and round-trip reproducibility.
 
 For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details on monthly processing order, see [docs/decision-timing.md](./docs/decision-timing.md).
+
+## Design Philosophy
+
+- **Psychological load as the core axis**  
+  This simulator is designed around the psychological burden of the drawdown phase — the anxiety of watching invested assets decline after retirement — rather than around maximizing returns. Features such as the cash buffer, spending guardrail, and tail-risk visualization (maximum drawdown / stagnation period) all exist to make this psychological risk tangible and manageable.
+- **Intentional scope limits (tax, currency exchange, social security)**  
+  Taxation, foreign-exchange conversion, and social-security systems are intentionally out of scope. These are highly jurisdiction- and individual-specific, and embedding them would blur the tool's focus and make results harder to interpret. Keeping them out preserves a clear, self-contained model that users can reason about.
+- **Three interfaces matched to depth of use**  
+  The tool offers three interfaces matched to how deeply a user engages: the browser UI for interactive exploration, the Analysis / Comparison tabs for side-by-side scenario study, and the headless CLI for automation (designed for AI agents to generate, run, and aggregate many scenarios at high speed). The CLI is deliberately kept to a single-run executor; analysis, comparison, and format conversion are the caller's responsibility. See [CLI Responsibility Boundary (Design Policy)](./docs/cli-usage.md#cli-responsibility-boundary-design-policy) for details.
 
 ## Development Background
 
