@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.6.1]
+
+### Added
+- **Design Philosophy documented in README**: Added a "Design Philosophy" section to `README.md` and `README-ja.md` documenting the simulator's core axis (psychological load during drawdown), intentional scope limits (taxation, currency exchange, social security), and three interfaces matched to depth of use (browser UI, Analysis / Comparison tabs, headless CLI).
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+> Documentation-only update and version sync; no logic, CLI, or output schema changes.
+
 ## [v2.6.0]
 
 ### Added
