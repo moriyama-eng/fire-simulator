@@ -5,6 +5,21 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.7.0]
+
+### 追加
+- **ドキュメント体系の再構築**: ドキュメントを4つの明確なカテゴリに分類・整理しました (`guide/` Getting Started, CLI Usage Guide / `reference/` Parameter Reference, Metrics Glossary, Headless API Reference / `explanation/` Mathematical Model, Reproducibility, Analysis Methodology, Simulation Decision Timing / `internal/` Release Checklist)。
+- **汎用 Markdown ビューア (`docs.html`) の新設**: ビルドステップ不要で自己完結型のCDN駆動SPAビューアを構築しました。サイドバーナビゲーション、目次（TOC）自動生成、KaTeX数式レンダリング、`internal/` ドキュメントのセキュリティ遮断機能を備えています。
+- **ヘッダーへの Docs リンク追加**: `index.html` のヘッダーバーに区切り線付きの視覚的に独立した "Docs" リンクを追加しました。
+
+### 変更
+- **タイトル表記とデザインの統一**: 全ドキュメントのタイトルを「FIRE Monte Carlo Simulator Docs」系へ統一し、ヘッダータイトルのグラデーション文字切り抜きを廃止して単色化クラス `.app-title` へ共通化しました。
+- **数式導出の厳密化**: `docs/explanation/mathematical-model.md` の伊藤ドリフト調整の導出部を訂正し、12か月ホライズンの対数正規期待値公式 \(E[\exp(\mu_{\text{annual}} + \sigma_{\text{annual}} Z)] = 1 + \mu_{\text{arith}}\) および厳密な幾何成長率式を明記しました。
+- **ドキュメント・コード整合性検証**: 全9本の公開ドキュメントをシミュレーションコアおよび乱数生成器 (`js/core/**`) と照合し、SoTファイル参照および Student-t アルゴリズムの表記を訂正しました。
+
+> **シミュレーションアルゴリズム・計算結果はビット単位で不変**（100% ビット一致）です。
+> ドキュメント・UIタイトルデザイン・バージョン整合の更新であり、計算ロジックおよびCLI出力スキーマの変更はありません。
+
 ## [v2.6.1]
 
 ### 追加

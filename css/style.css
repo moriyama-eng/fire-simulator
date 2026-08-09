@@ -5,6 +5,12 @@ body {
     min-height: 100vh;
 }
 
+.app-title {
+    color: #a5b4fc;
+    font-weight: 800;
+    text-decoration: none;
+}
+
 .glass-card {
     background: rgba(30, 41, 59, 0.7);
     backdrop-filter: blur(16px);
