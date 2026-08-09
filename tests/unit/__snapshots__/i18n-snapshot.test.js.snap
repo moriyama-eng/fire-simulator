@@ -197,6 +197,7 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "gr.trigger": "ドローダウン閾値（ガードレール発動）",
   "gr.trigger.tooltip": "総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% = 資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。<br><span class=\\"text-amber-300\\">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>",
   "header.description": "モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。",
+  "header.docs": "Docs",
   "header.title": "FIRE モンテカルロ・シミュレータ",
   "market.dfAuto": "自動",
   "market.dfAutoDisplay": "ボラティリティから自動計算: {0}",

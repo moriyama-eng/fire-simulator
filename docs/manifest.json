@@ -1,0 +1,31 @@
+{
+  "categories": [
+    {
+      "id": "guide",
+      "label": "Guide",
+      "docs": [
+        { "id": "getting-started", "title": "Getting Started" },
+        { "id": "cli-usage", "title": "CLI Usage Guide" }
+      ]
+    },
+    {
+      "id": "reference",
+      "label": "Reference",
+      "docs": [
+        { "id": "parameter-reference", "title": "Parameter Reference" },
+        { "id": "metrics-glossary", "title": "Metrics Glossary" },
+        { "id": "headless-api", "title": "Headless API Reference" }
+      ]
+    },
+    {
+      "id": "explanation",
+      "label": "Explanation",
+      "docs": [
+        { "id": "mathematical-model", "title": "Mathematical Model" },
+        { "id": "reproducibility", "title": "Reproducibility" },
+        { "id": "analysis-methodology", "title": "Analysis Methodology" },
+        { "id": "decision-timing", "title": "Simulation Decision Timing" }
+      ]
+    }
+  ]
+}

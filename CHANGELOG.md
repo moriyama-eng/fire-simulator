@@ -5,6 +5,21 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.7.0]
+
+### Added
+- **Documentation Restructuring**: Organized docs into 4 clear categories: `guide/` (Getting Started, CLI Usage Guide), `reference/` (Parameter Reference, Metrics Glossary, Headless API Reference), `explanation/` (Mathematical Model, Reproducibility, Analysis Methodology, Simulation Decision Timing), and `internal/` (Release Checklist).
+- **Standalone Documentation Viewer (`docs.html`)**: Built a CDN-driven, zero-build single-page markdown viewer with sidebar navigation, table of contents (TOC) auto-generation, KaTeX math rendering, and security isolation for internal docs.
+- **Header Link to Documentation**: Added a prominent "Docs" link to the header bar of `index.html` with visual separator.
+
+### Changed
+- **Unified Branding & Title Styling**: Standardized all documentation titles to "FIRE Monte Carlo Simulator Docs" and introduced a `.app-title` CSS class for clean single-color headers without gradient text clipping.
+- **Mathematical Derivation Accuracy**: Corrected the Ito drift adjustment derivation in `docs/explanation/mathematical-model.md` to explicitly state the 12-month log-normal expectation horizon formula \(E[\exp(\mu_{\text{annual}} + \sigma_{\text{annual}} Z)] = 1 + \mu_{\text{arith}}\) and exact geometric growth rate.
+- **Documentation-to-Code Audit**: Verified all 9 public documentation files against the core simulation engine and random number generator (`js/core/**`), fixing SoT references and Student-t algorithm naming.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+> Documentation, UI title styling, and version sync update; no calculation logic or CLI output schema changes.
+
 ## [v2.6.1]
 
 ### Added

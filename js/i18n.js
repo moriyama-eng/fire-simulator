@@ -2,6 +2,7 @@ export const TRANSLATIONS = {
   ja: {
     "header.title": "FIRE モンテカルロ・シミュレータ",
     "header.description": "モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。",
+    "header.docs": "Docs",
     "asset.title": "資産設定",
     "asset.riskAsset": "初期リスク資産",
     "asset.riskAsset.tooltip": "シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値（取崩し判定）未満ならば、月間取崩し額をリスク資産から取崩します。",
@@ -295,7 +296,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* In test environments, document may be special */ }
-  return '2.6.1'; // Fallback (sync with the actual latest version)
+  return '2.7.0'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION = getAppVersion();
 
@@ -348,6 +349,7 @@ TRANSLATIONS.en = {
   "analysis.category.guardrail": "Guardrail",
   // ===== Main UI =====
   "header.title": "FIRE Monte Carlo Simulator",
+  "header.docs": "Docs",
   "asset.title": "Asset Settings",
   "asset.riskAsset": "Initial risk assets",
   "asset.riskAsset.tooltip": "Total amount of risk assets (stocks, investments) at the start of the simulation.<br>If the total asset drawdown falls below the drawdown threshold, monthly withdrawals are taken from risk assets.",

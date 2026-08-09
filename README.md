@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.6.1)
+# FIRE Monte Carlo Simulator (v2.7.0)
 
 This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
@@ -23,7 +23,7 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
 - **Inflation fluctuation model (AR-1 model)**  
   In addition to a simple fixed inflation rate, an AR-1 (autoregressive) model referencing the characteristics of statistical data (such as US CPI) can be selected.
 - **Headless / Command-line interface (CLI)**  
-  Run simulations directly from the terminal without a browser. Ideal for automation, batch processing, and parameter sweeps. Outputs full JSON results (including percentile time-series) for further analysis. See the [CLI Usage Guide](./docs/cli-usage.md) for details and examples.
+  Run simulations directly from the terminal without a browser. Ideal for automation, batch processing, and parameter sweeps. Outputs full JSON results (including percentile time-series) for further analysis. See the [CLI Usage Guide](./docs/guide/cli-usage.md) for details and examples.
 
 ## Currency Semantics
 
@@ -34,11 +34,11 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
 
 ## Update History
 
-### Latest Highlights (v2.6.1)
-- **Design Philosophy documented**: Added a "Design Philosophy" section to the README (psychological-load focus, intentional scope limits, three interfaces by depth of use). Documentation-only change; no simulation logic or output changes.
-- **Complete provenance params in CLI output**: All 3 run output modes (`--stdout`, file, summary) now include fully normalized input parameters (`params`), top-level `percentiles`, and execution `meta` (tool version and ISO 8601 UTC timestamp) for complete run provenance and round-trip reproducibility.
+### Latest Highlights (v2.7.0)
+- **Documentation Restructuring & Markdown Viewer (`docs.html`)**: Complete documentation hierarchy with 9 public markdown documents (Getting Started, CLI Usage, Parameter Reference, Metrics Glossary, Headless API Reference, Mathematical Model, Reproducibility, Analysis Methodology, Decision Timing) and a standalone CDN-driven SPA viewer.
+- **UI/CSS Refinement & Mathematical Derivation Accuracy**: Unified brand naming to "FIRE Monte Carlo Simulator Docs", introduced `.app-title` single-color styling across header/title elements, corrected 12-month horizon volatility drag derivations, and validated all documentation against simulation core code.
 
-For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details on monthly processing order, see [docs/decision-timing.md](./docs/decision-timing.md).
+For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details on monthly processing order, see [docs/explanation/decision-timing.md](./docs/explanation/decision-timing.md).
 
 ## Design Philosophy
 
@@ -47,7 +47,7 @@ For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details o
 - **Intentional scope limits (tax, currency exchange, social security)**  
   Taxation, foreign-exchange conversion, and social-security systems are intentionally out of scope. These are highly jurisdiction- and individual-specific, and embedding them would blur the tool's focus and make results harder to interpret. Keeping them out preserves a clear, self-contained model that users can reason about.
 - **Three interfaces matched to depth of use**  
-  The tool offers three interfaces matched to how deeply a user engages: the browser UI for interactive exploration, the Analysis / Comparison tabs for side-by-side scenario study, and the headless CLI for automation (designed for AI agents to generate, run, and aggregate many scenarios at high speed). The CLI is deliberately kept to a single-run executor; analysis, comparison, and format conversion are the caller's responsibility. See [CLI Responsibility Boundary (Design Policy)](./docs/cli-usage.md#cli-responsibility-boundary-design-policy) for details.
+  The tool offers three interfaces matched to how deeply a user engages: the browser UI for interactive exploration, the Analysis / Comparison tabs for side-by-side scenario study, and the headless CLI for automation (designed for AI agents to generate, run, and aggregate many scenarios at high speed). The CLI is deliberately kept to a single-run executor; analysis, comparison, and format conversion are the caller's responsibility. See [CLI Responsibility Boundary (Design Policy)](./docs/guide/cli-usage.md#cli-responsibility-boundary-design-policy) for details.
 
 ## Development Background
 
@@ -76,7 +76,7 @@ node cli.js run params.json --stdout
 node cli.js run params.json --out .temp/my-result.json
 ```
 
-For complete CLI documentation, parameter schema, and advanced options, see the **[CLI Usage Guide](./docs/cli-usage.md)** and **[Headless API Reference](./docs/headless-api.md)**.
+For complete CLI documentation, parameter schema, and advanced options, see the **[CLI Usage Guide](./docs/guide/cli-usage.md)** and **[Headless API Reference](./docs/reference/headless-api.md)**.
 
 ### Testing
 

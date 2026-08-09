@@ -47,15 +47,17 @@ The return value of `aggregateResultsProduction()` with the following meta field
 | `ddPercentileData` | `Float32Array[]` | Drawdown percentile time series |
 | `maxDdPerPath` | `Float32Array` | Maximum drawdown per path |
 | `maxUwPerPath` | `Float32Array` | Longest stagnation period per path |
+| `belowInitPeriods` | `Float32Array` | Longest period below initial total assets per path (months) |
+| `consecutiveSellPeriods` | `Float32Array` | Longest risk asset sell period per path (months) |
 | `targetAssetMaintainRate` | `number` | Target asset maintenance rate (%) |
+| `targetAssetRatio` | `number` | Target asset ratio configured (%) |
 | `usedSeed` | `number` | Seed value used |
 | `modelType` | `'log-normal' \| 'log-t'` | Fluctuation model used |
 | `usedDf` | `number` | Degrees of freedom used |
 | `currency` | `'JPY' \| 'USD'` | Currency label (no conversion applied) |
 | `dataLen` | `number` | Time series length (`simYears * 12 + 1`) |
 
-> **Important**: `Float32Array` fields cannot be serialized by `JSON.stringify` directly.
-> Apply `toPlain()` (implemented in `cli.js`) before JSON output.
+> **Important**: `Float32Array` fields (time series and per-path arrays `maxDdPerPath`, `maxUwPerPath`, `belowInitPeriods`, `consecutiveSellPeriods`) cannot be serialized by `JSON.stringify` directly. Apply `toPlain()` (implemented in `cli.js`) before JSON output. In `cli.js` `--no-file` / scalar summary mode, large per-path TypedArrays are intentionally omitted during serialization.
 
 ## Parameter Normalization
 
@@ -94,7 +96,7 @@ and `comparison-runner`. Returns a fully normalized params object.
 - `currency` is a label (metadata) only. It does not affect any monetary calculations.
 - No fixed-rate conversion ($1 = 100 JPY) is applied.
 - When running in USD mode, pass monetary values in dollar units as-is.
-- For a comparison between Browser UI and CLI/Headless currency handling, see the [Currency Semantics table in README.md](../README.md#currency-semantics).
+- For a comparison between Browser UI and CLI/Headless currency handling, see the [Currency Semantics table in README.md](../../README.md#currency-semantics).
 
 
 ## Usage Example
