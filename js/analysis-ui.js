@@ -33,9 +33,12 @@ export function renderAnalysisTab() {
 // Card 1: Base scenario
 // ====================================================================
 function renderBaseCard() {
+    if (typeof document === 'undefined') return;
+    const summaryEl = document.getElementById('card1Summary');
+    if (!summaryEl) return;
     const bp = AS.getBaseEffectiveParams();
     if (!bp) {
-        document.getElementById('card1Summary').innerHTML = `<p class="text-slate-500 text-sm">${t('analysis.noBaseContext')}</p>`;
+        summaryEl.innerHTML = `<p class="text-slate-500 text-sm">${t('analysis.noBaseContext')}</p>`;
         const detailEl = document.getElementById('card1Detail');
         if (detailEl) detailEl.classList.add('hidden');
         return;

@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { buildSimulationUrl } from '../../js/core/url.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { buildSimulationUrl, parseQueryParams } from '../../js/core/url.js';
+
+beforeEach(() => {
+    // Prevent __currentLang from leaking between tests
+    delete globalThis.__currentLang;
+});
 
 const sampleParams = {
     initialRiskAsset: 100_000_000, initialCashBuffer: 10_000_000, monthlyExpense: 300_000,
@@ -36,5 +41,40 @@ describe('buildSimulationUrl - targetAssetRatio (tar)', () => {
         delete params.targetAssetRatio;
         const url = buildSimulationUrl(params, { baseUrl: 'https://example.com/', percentileRaw: '10, 50, 90', seed: 123456 });
         expect(url.searchParams.has('tar')).toBe(false);
+    });
+});
+
+// ===== URL round-trip tests (v2.7.1: verifies cash/expense encoding per language mode) =====
+describe('buildSimulationUrl + parseQueryParams round-trip', () => {
+    it('JA mode: encodes cash as 10,000-yen units (1000 = 10,000,000 JPY)', () => {
+        // Internal JPY: 10,000,000 (1000 man-yen cash), 300,000 (30 man-yen expense)
+        const url = buildSimulationUrl(sampleParams, {
+            baseUrl: 'https://example.com/',
+            lang: 'ja',
+            percentileRaw: '50',
+            seed: 123456,
+        });
+        const parsed = parseQueryParams(url.search);
+        // In JA mode: cash URL param = internal_JPY / 10,000 = 10,000,000 / 10,000 = 1000
+        expect(parsed['cash']).toBe('1000');
+        // expense URL param = 300,000 / 10,000 = 30
+        expect(parsed['expense']).toBe('30');
+    });
+
+    it('EN mode: encodes cash as K-dollar units (100 = 10,000,000 JPY at $1=100JPY)', () => {
+        // Same internal JPY values, but in EN mode: cash = internal / 100,000 = 100 K$
+        const url = buildSimulationUrl(sampleParams, {
+            baseUrl: 'https://example.com/',
+            lang: 'en',
+            percentileRaw: '50',
+            seed: 123456,
+        });
+        const parsed = parseQueryParams(url.search);
+        // EN mode: cash URL param = 10,000,000 / 100,000 = 100
+        expect(parsed['cash']).toBe('100');
+        // expense URL param = 300,000 / 100,000 = 3
+        expect(parsed['expense']).toBe('3');
+        // lang param is set
+        expect(parsed['lang']).toBe('en');
     });
 });

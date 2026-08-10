@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE モンテカルロ・シミュレータ (v2.7.0)
+# FIRE モンテカルロ・シミュレータ (v2.7.1)
 
 本ツールは、ブラウザ単体で手軽に実行できる個人の資産形成・取崩しシミュレータです。
 確率論的なアプローチ（モンテカルロ・シミュレーション）を用いて、運用資産の枯渇リスクや長期的な資産推移を可視化することを目的に制作しました。
@@ -35,9 +35,11 @@
 
 ## 主な更新履歴
 
-### 最新版ハイライト (v2.7.0)
-- **ドキュメント体系化と汎用 Markdown ビューア新設 (`docs.html`)**: 全9本の公開ドキュメント（Getting Started、CLI Usage、Parameter Reference、Metrics Glossary、Headless API Reference、Mathematical Model、Reproducibility、Analysis Methodology、Decision Timing）によるドキュメント体系の構築と、CDN駆動の自己完結型SPAビューアを導入しました。
-- **UI/CSS 保守性改善と数式導出の厳密化**: ブランド名を「FIRE Monte Carlo Simulator Docs」へ統一し、`.app-title` による単色デザインのヘッダータイトル統一、ボラティリティ・ドラッグの12か月ホライズン導出式の厳密化、および実コードとの全ドキュメント整合性検証を実施しました。
+### 最新版ハイライト (v2.7.1)
+- **初期表示言語の Boot-time 確定と `navigator.language` 対応**: 初回ペイント前に同期スクリプトで言語を確定し、初回訪問者のブラウザ言語（`navigator.language`）を反映するとともに、言語状態を `globalThis.__currentLang` へ一本化しました。
+- **URL 再現バグ（二重通貨変換）の修正**: 「結果URLをコピー」や「同じ条件で別タブを開く」を実行した際に、URLパース時の言語切り替えイベントにより英語モードで金額が二重換算される問題を修正しました。
+- **Docs 導線の改善**: ヘッダーの Docs リンクにドキュメント SVG アイコンを追加し、言語切り替えボタンから視覚的に分離してアクセシビリティを向上させました。
+- **コード掃除とレイアウト安定化**: 重複していた Chart.js CDN スクリプトタグを削除し、サマリカード表示時の Cumulative Layout Shift (CLS) を軽減する高さラッパーを追加しました。
 
 過去の詳しい変更履歴は [CHANGELOG-ja.md](./CHANGELOG-ja.md) をご覧ください。月次処理順序の詳細は [docs/explanation/decision-timing.md](./docs/explanation/decision-timing.md) を参照してください。
 

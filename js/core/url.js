@@ -3,7 +3,6 @@
 // ====================================================================
 
 import { formatPercentileInput } from './format.js';
-import { setLanguage } from '../i18n.js';
 
 export function buildSimulationUrl(params, options = {}) {
     const {
@@ -135,11 +134,11 @@ export function applyQueryParams(runMainFn) {
     const parsed = parseQueryParams(window.location.search);
     if (Object.keys(parsed).length === 0) return;
 
-    // [IMPORTANT] Language settings must be applied before numeric conversion (applyParsedParams)
-    // This ensures that cash buffer and monthly expenses are interpreted correctly in USD units even for English mode URLs
-    if (parsed['lang'] && (parsed['lang'] === 'ja' || parsed['lang'] === 'en')) {
-        setLanguage(parsed['lang']);
-    }
+    // Initialization order contract (v2.7.1+):
+    // boot script (lang resolved) -> i18n.js guard passthrough -> step 17 (translate + render)
+    // -> step 18 (EN: convertCurrencyInputs HTML defaults) -> step 23 (applyQueryParams URL values)
+    // Language is already set at boot; setLanguage must NOT be called here to avoid
+    // double-conversion of currency inputs (the URL reproduction bug fixed in v2.7.1).
 
     applyParsedParams(parsed);
     if (parsed['auto'] === '1') setTimeout(() => runMainFn(), 150);

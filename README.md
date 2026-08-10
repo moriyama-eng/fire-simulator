@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.7.0)
+# FIRE Monte Carlo Simulator (v2.7.1)
 
 This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
 
@@ -34,9 +34,11 @@ This tool is a personal asset accumulation and drawdown simulator that can be ea
 
 ## Update History
 
-### Latest Highlights (v2.7.0)
-- **Documentation Restructuring & Markdown Viewer (`docs.html`)**: Complete documentation hierarchy with 9 public markdown documents (Getting Started, CLI Usage, Parameter Reference, Metrics Glossary, Headless API Reference, Mathematical Model, Reproducibility, Analysis Methodology, Decision Timing) and a standalone CDN-driven SPA viewer.
-- **UI/CSS Refinement & Mathematical Derivation Accuracy**: Unified brand naming to "FIRE Monte Carlo Simulator Docs", introduced `.app-title` single-color styling across header/title elements, corrected 12-month horizon volatility drag derivations, and validated all documentation against simulation core code.
+### Latest Highlights (v2.7.1)
+- **Boot-time Language Resolution & `navigator.language` Support**: The initial display language is now synchronously resolved before initial page render, respecting browser locale (`navigator.language`) for first-time visitors while keeping single-source-of-truth (`globalThis.__currentLang`).
+- **URL Reproduction Bug Fix (Double Currency Conversion)**: Resolved a double-conversion issue where "Copy Result URL" and "Open same conditions" produced mismatched values in English mode due to premature language events during URL query parsing.
+- **Improved Documentation Navigation**: Redesigned header "Docs" link with a dedicated document SVG icon for clear visual separation from language switchers.
+- **Cleanup & Layout Stability**: Removed duplicate Chart.js CDN script imports and added layout height constraints to mitigate summary card Cumulative Layout Shift (CLS).
 
 For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details on monthly processing order, see [docs/explanation/decision-timing.md](./docs/explanation/decision-timing.md).
 

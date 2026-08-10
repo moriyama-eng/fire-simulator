@@ -5,6 +5,26 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.7.1]
+
+### 修正
+- **URL再現バグ（二重通貨変換）の修正**: 「結果URLをコピー」/「同じ条件で別タブを開く」で、コピー先タブのキャッシュ・支出値が元と異なる問題を修正しました。根本原因は `applyQueryParams` 内で `setLanguage` が呼ばれ `languageChanged` を dispatch、`applyParsedParams` がURL値を設定する前に `convertCurrencyInputs` が発火して二重変換が発生していたことです。
+
+### 変更
+- **言語のboot-time確定**: ページ読み込み時、ESMモジュール初期化より前に同期的に言語を確定するよう変更しました。`localStorage` 未設定のユーザーでは `navigator.language` を参照します。`localStorage` に言語設定済みの既存ユーザーの体験は不変です。
+- **言語SSOT統一**: `globalThis.__currentLang` を言語状態の唯一の真実の源として統一しました。`params.js` が `localStorage` を直接参照していた問題を解消し、`i18n.js` の `getLanguage()` 経由で取得することでSSOT迂回と未捕捉例外リスクの両方を解消します。
+
+### 追加
+- **ヘッダーDocsリンクの拡張（SVGアイコン付与）**: ヘッダーのDocsリンクにドキュメントSVGアイコンを追加し、言語切替ボタンと視覚的に分離した独立スタイルへ変更しました。
+- **`js/lang-detect.js`**: boot-time言語解決ロジックと同一仕様を持つ、純粋でテスト可能な `resolveInitialLang()` 関数をエクスポートする新規モジュールを追加しました。
+
+### 変更（掃除）
+- **Chart.js重複ロードの削除**: 無版のChart.js CDN `<script>` タグを削除しました（`@4.4.1` 固定版は維持）。
+- **サマリーカードのCLS緩和**: `#summaryCardContainer` に外側ラッパー `div`（`min-height: 220px`）を追加し、シミュレーション結果表示前のCumulative Layout Shiftを軽減しました。
+
+> **シミュレーションアルゴリズム・計算結果はビット単位で不変**（100% ビット一致）です。
+> 言語解決の boot-time 化・URL再現バグ修正・Docs導線改善・バージョン整合の更新であり、計算ロジックおよびCLI出力スキーマの変更はありません。
+
 ## [v2.7.0]
 
 ### 追加
