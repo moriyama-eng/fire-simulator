@@ -5,6 +5,26 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.7.1]
+
+### Fixed
+- **URL Reproduction Bug (Double Currency Conversion)**: Fixed a bug where "Copy Result URL" / "Open same conditions" caused the copied tab to show different cash/expense values and results from the original. The root cause was `setLanguage` being called inside `applyQueryParams`, which dispatched `languageChanged` and triggered `convertCurrencyInputs` before `applyParsedParams` could set the URL values — causing a double-conversion.
+
+### Changed
+- **Boot-time Language Resolution**: Initial display language is now resolved synchronously at page load, before any ESM module initializes. `navigator.language` is respected for first-time visitors with no `localStorage` entry. Existing users with a stored language preference are unaffected.
+- **Language SSOT Unified**: `globalThis.__currentLang` is now the single source of truth for language state. `params.js` no longer reads `localStorage` directly — it calls `getLanguage()` from `i18n.js`, eliminating the SSOT bypass and uncaught exception risk.
+
+### Added
+- **Header Docs Link with SVG Icon**: Enhanced the Docs link in the header with a dedicated document SVG icon and distinct styling, separating it from language-switch buttons.
+- **`js/lang-detect.js`**: New module exporting `resolveInitialLang()` as a pure, testable function mirroring the boot-time language resolution logic.
+
+### Changed (cleanup)
+- **Chart.js Duplicate Load Removed**: Removed the unversioned `chart.js` CDN `<script>` tag (the pinned `@4.4.1` version is retained).
+- **Summary Card CLS Mitigated**: Added an outer wrapper `div` with `min-height: 220px` around `#summaryCardContainer` to reduce Cumulative Layout Shift before simulation results are displayed.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+> Language resolution, URL reproduction bug fix, docs navigation, and version sync update; no calculation logic or CLI output schema changes.
+
 ## [v2.7.0]
 
 ### Added

@@ -2,6 +2,8 @@
 // js/core/params.js
 // ====================================================================
 
+import { getLanguage } from '../i18n.js';
+
 export const DEFAULTS = Object.freeze({
     initialRiskAsset: 1.0,
     initialCashBuffer: 1000,
@@ -40,7 +42,7 @@ export function calcAutoDf(volatility) {
 
 export function getParamsFromInputs(inputs) {
     const raw = (key) => safeNumber(inputs[key] ?? DEFAULTS[key], DEFAULTS[key]);
-    const lang = (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'ja';
+    const lang = getLanguage();
     const isEn = lang === 'en';
 
     let cashBufferVal = raw('initialCashBufferNum');

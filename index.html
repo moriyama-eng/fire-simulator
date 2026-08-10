@@ -5,11 +5,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="header.title">FIRE モンテカルロ・シミュレータ</title>
-    <meta name="app-version" content="2.7.0">
+    <meta name="app-version" content="2.7.1">
     <meta name="description"
         content="Using Monte Carlo simulation with risk assets and a cash buffer, calculate the probability of achieving FIRE.">
+    <!-- Boot-time language resolution (v2.7.1+) -->
+    <!-- KEEP-IN-SYNC: This logic must match resolveInitialLang() in js/lang-detect.js. -->
+    <!-- Priority: URL ?lang= (exact 'ja'/'en', single occurrence) > localStorage > navigator > 'ja' -->
+    <script>
+        (function () {
+            var resolved = (function () {
+                // 1. URL ?lang= parameter
+                try {
+                    var sp = new URLSearchParams(location.search);
+                    var langValues = sp.getAll('lang');
+                    if (langValues.length === 1) {
+                        var urlLang = String(langValues[0]).toLowerCase();
+                        if (urlLang === 'ja' || urlLang === 'en') {
+                            try { localStorage.setItem('lang', urlLang); } catch (e) {}
+                            return urlLang;
+                        }
+                    }
+                } catch (e) {}
+                // 2. localStorage
+                try {
+                    var stored = localStorage.getItem('lang');
+                    if (stored === 'ja' || stored === 'en') { return stored; }
+                } catch (e) {}
+                // 3. navigator.languages
+                // Note: Languages resolved via navigator are NOT persisted to localStorage (by design).
+                try {
+                    var navLang = (navigator.languages && navigator.languages.length > 0)
+                        ? navigator.languages[0]
+                        : (navigator.language || '');
+                    if (/^ja\b/i.test(navLang)) { return 'ja'; }
+                    if (navLang) { return 'en'; }
+                } catch (e) {}
+                // 4. Fallback
+                return 'ja';
+            })();
+            globalThis.__currentLang = resolved;
+            document.documentElement.lang = resolved;
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- SortableJS - for drag & drop column reordering in the Comparison tab -->
@@ -37,7 +75,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=2.7.0">
+    <link rel="stylesheet" href="css/style.css?v=2.7.1">
 </head>
 
 <body class="text-slate-100 min-h-screen">
@@ -59,7 +97,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-1 ml-auto">
-                <a href="docs.html" class="lang-btn mr-2" data-i18n="header.docs" aria-label="Documentation">Docs</a>
+                <a href="docs.html" class="text-sm font-medium text-slate-300 hover:text-slate-100 transition-colors px-2 py-1 rounded hover:bg-slate-700/50 flex items-center gap-1.5" aria-label="Documentation">
+                    <svg class="w-4 h-4 fill-current opacity-80" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    <span data-i18n="header.docs">Docs</span>
+                </a>
                 <span class="border-l border-slate-600 h-5 mx-1" aria-hidden="true"></span>
                 <button data-lang="ja" class="lang-btn active" aria-label="日本語">日本語</button>
                 <button data-lang="en" class="lang-btn" aria-label="English">English</button>
@@ -815,8 +856,10 @@
 
                 <!-- Right column: Result display -->
                 <section class="lg:col-span-8 xl:col-span-9 space-y-6">
-                    <!-- Summary card container -->
-                    <div id="summaryCardContainer" class="hidden transition-all duration-500 ease-in-out"></div>
+                    <!-- Summary card container (outer wrapper provides min-height for CLS mitigation; v2.7.1) -->
+                    <div class="min-h-[220px]">
+                        <div id="summaryCardContainer" class="hidden transition-all duration-500 ease-in-out"></div>
+                    </div>
 
 
 
@@ -1145,7 +1188,8 @@
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2" data-i18n="footer.title">FIRE モンテカルロ・シミュレータ
             </p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v2.7.0</span>
+                <span>v2.7.1</span>
+
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
                     class="hover:text-slate-300 transition-colors flex items-center gap-1.5">
@@ -1320,7 +1364,7 @@
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
                 <span id="capFooterUrl" class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/
-                    | v2.7.0</span>
+                    | v2.7.1</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">

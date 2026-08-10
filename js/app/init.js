@@ -167,12 +167,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // v2.3.0: Redraw new indicator charts on language switch
             if (getBelowInitChart() && lastSimResult) renderBelowInitCdfChart(lastSimResult);
             if (getSellChart() && lastSimResult) renderConsecutiveSellCdfChart(lastSimResult);
-            import('../analysis-ui.js').then(AUI => AUI.renderAnalysisTab());
+            import('../analysis-ui.js').then(AUI => {
+                if (typeof document !== 'undefined') AUI.renderAnalysisTab();
+            }).catch(() => {});
             // Redraw if comparison tab is open
             import('../comparison-ui.js').then(CUI => {
-                const compTab = document.getElementById('comparisonTab');
-                if (compTab && !compTab.classList.contains('hidden')) {
-                    CUI.renderComparisonTab();
+                if (typeof document !== 'undefined') {
+                    const compTab = document.getElementById('comparisonTab');
+                    if (compTab && !compTab.classList.contains('hidden')) {
+                        CUI.renderComparisonTab();
+                    }
                 }
             }).catch(() => {});
             updateActiveLangButton();
