@@ -667,8 +667,13 @@ export function setLanguage(lang) {
   if (typeof globalThis !== 'undefined') {
     globalThis.__currentLang = lang;
   }
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = lang;
+  }
   try { localStorage.setItem('lang', lang); } catch (e) { }
-  document.dispatchEvent(new CustomEvent('languageChanged'));
+  if (typeof document !== 'undefined') {
+    document.dispatchEvent(new CustomEvent('languageChanged'));
+  }
 }
 
 export function getLanguage() { return getCurrentLang(); }

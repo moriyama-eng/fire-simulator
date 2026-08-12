@@ -55,6 +55,13 @@ The state management (`comparison-state.js`) and execution logic (`comparison-ru
 
 ## 2. How to Run Tests
 
+### 2.0 Build CSS (Tailwind CLI)
+
+```bash
+npm run build:css    # Build minified css/tailwind.css using Tailwind CLI (v3.4.17)
+npm run watch:css    # Watch mode for CSS development
+```
+
 ### 2.1 Run All Tests
 
 ```bash
@@ -81,7 +88,12 @@ npx vitest run --coverage
 
 ### 2.4 Automatic Execution in CI
 
-GitHub Actions (`.github/workflows/test.yml`) automatically runs on push to the `main` branch and pull requests. The execution environment is `ubuntu-latest` / `node 24`.
+GitHub Actions (`.github/workflows/test.yml`) automatically runs on push to the `main` branch and pull requests. The execution environment is `ubuntu-latest` / `node 24`. CI verifies CSS freshness before running tests:
+```bash
+npm run build:css
+git diff --exit-code -- css/tailwind.css
+npm test
+```
 
 ## 3. Test Design Philosophy
 

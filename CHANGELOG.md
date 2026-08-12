@@ -5,6 +5,24 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.0]
+
+### Changed
+- **Tailwind Static Build Setup**: Removed Tailwind Play CDN (`cdn.tailwindcss.com`) and switched to pre-compiled `css/tailwind.css` built via Tailwind CLI strictly pinned to `3.4.17`. JavaScript remains 100% zero-build (ES Modules).
+- **Self-Hosted Inter Fonts**: Subsetting 6 weights (300, 400, 500, 600, 700, 800) from Inter v4.1 via `pyftsubset` into `css/fonts/Inter-*.woff2` with SIL OFL license (`css/fonts/OFL.txt`). Completely removed Google Fonts (`fonts.googleapis.com` / `fonts.gstatic.com`) from both `index.html` and `docs.html`.
+- **HTML Lang Synchronization**: `setLanguage(lang)` in `js/i18n.js` now updates `document.documentElement.lang` synchronously.
+
+### Fixed
+- **FOUC Prevention Gate**: Implemented an inline paint-gate style (`html.app-loading body { visibility: hidden; }`) and boot script in `index.html`, preventing initial render flicker for non-default languages. Gate is removed immediately after query parameter application in `js/app/init.js` with a 3000ms safety timeout.
+
+### Refactored
+- **Pure URL Options Functions**: Extracted URL options creation into `js/app/actions-url-options.js` (`getCopyUrlOptions`, `getShareUrlOptions`, `getCompareUrlOptions`), removing duplicate inline object literals in `js/app/actions.js`.
+
+### Changed (CI)
+- **CI Workflow & CSS Freshness Verification**: Updated `.github/workflows/test.yml` to `actions/checkout@v5` and `actions/setup-node@v5` (Node 24 native). Added `npm run build:css` and `git diff --exit-code -- css/tailwind.css` freshness verification step prior to running unit/integration tests.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+
 ## [v2.7.1]
 
 ### Fixed

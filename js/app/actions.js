@@ -9,6 +9,7 @@
 import { getParamsFromInputs } from '../core/params.js';
 import { formatPercentileInput, parsePercentiles } from '../core/format.js';
 import { buildSimulationUrl } from '../core/url.js';
+import { getCopyUrlOptions, getShareUrlOptions, getCompareUrlOptions } from './actions-url-options.js';
 import { runSimulation, setProgressCallback } from '../simulation-engine.js';
 import { markResultClean, markInputChanged as coreMarkInputChanged } from '../core/state.js';
 import { t, formatCurrency, formatPercent, formatDate, formatYears, formatNumber, getLanguage } from '../i18n.js';
@@ -346,13 +347,11 @@ export function shareToX() {
     if (!lastSimResult || getIsResultDirty()) return;
     const p = getParamsFromDom();
     const s = lastSimResult.successRate.toFixed(1);
-    const url = buildSimulationUrl(p, {
-        autoRun: true, fixedSeed: true,
+    const url = buildSimulationUrl(p, getShareUrlOptions({
         seed: lastSimResult.usedSeed,
         percentileRaw: document.getElementById('percentileInput').value,
-        baseUrl: 'https://moriyama-eng.github.io/fire-simulator/',
         lang: getLanguage()
-    });
+    }));
     const text = t('share.x.template', [
         formatCurrency(p.initialRiskAsset, '億円'),
         formatCurrency(p.initialCashBuffer, '万円'),
@@ -374,12 +373,11 @@ export function openCompareTab() {
     const lastSimResult = getLastSimResult();
     if (!lastSimResult || getIsResultDirty()) return;
     const p = getParamsFromDom();
-    const url = buildSimulationUrl(p, {
-        autoRun: false, fixedSeed: true,
+    const url = buildSimulationUrl(p, getCompareUrlOptions({
         seed: lastSimResult.usedSeed,
         percentileRaw: document.getElementById('percentileInput').value,
         lang: getLanguage()
-    });
+    }));
     window.open(url.toString(), '_blank');
 }
 
@@ -393,12 +391,11 @@ export async function copySimUrl() {
     if (btn.disabled) return;
     const originalHtml = btn.innerHTML;
     const p = getParamsFromDom();
-    const url = buildSimulationUrl(p, {
-        autoRun: true, fixedSeed: true,
+    const url = buildSimulationUrl(p, getCopyUrlOptions({
         seed: lastSimResult.usedSeed,
         percentileRaw: document.getElementById('percentileInput').value,
         lang: getLanguage()
-    });
+    }));
     try {
         await navigator.clipboard.writeText(url.toString());
         btn.disabled = true;
