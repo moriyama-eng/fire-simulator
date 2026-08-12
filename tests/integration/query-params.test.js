@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
-import { applyParsedParams, applyQueryParams } from '../../js/core/url.js';
+import { applyParsedParams, applyQueryParams, parseQueryParams, buildSimulationUrl } from '../../js/core/url.js';
 import { getParamsFromInputs } from '../../js/core/params.js';
 import { setLanguage } from '../../js/i18n.js';
 
@@ -224,5 +224,39 @@ describe('applyQueryParams full flow with auto=1, languageChanged spy & double-c
         expect(runMainStub).toHaveBeenCalledTimes(1);
 
         document.removeEventListener('languageChanged', langChangedSpy);
+    });
+});
+
+describe('v2.8.0 query-params & html lang sync enhancements', () => {
+    it('parses lang and auto query parameters correctly via parseQueryParams', () => {
+        const query = '?lang=en&auto=1&asset=2&cash=500';
+        const parsed = parseQueryParams(query);
+        expect(parsed.lang).toBe('en');
+        expect(parsed.auto).toBe('1');
+        expect(parsed.asset).toBe('2');
+        expect(parsed.cash).toBe('500');
+    });
+
+    it('synchronizes document.documentElement.lang on setLanguage', () => {
+        setLanguage('ja');
+        expect(document.documentElement.lang).toBe('ja');
+
+        setLanguage('en');
+        expect(document.documentElement.lang).toBe('en');
+    });
+
+    it('round-trips auto=0 query parameter correctly via buildSimulationUrl and parseQueryParams', () => {
+        const sampleParams = {
+            initialRiskAsset: 100_000_000, initialCashBuffer: 10_000_000, monthlyExpense: 300_000,
+            expectedReturn: 10.0, volatility: 18.0, inflationRate: 2.0, simYears: 30, simPaths: 10000,
+            cashBufferToggle: true, drawdownTrigger: -20.0, drawdownReplenish: -5.0, replenishPace: 5.0,
+            guardrailToggle: false, guardrailTrigger: -20.0, guardrailReduction: -20.0, guardrailRelease: -15.0,
+            useArInflation: false, infVol: 2.0, infAr: 0.5, useTDistribution: true, simDfManual: false, simDfNum: 4.0,
+            seedNum: 123456
+        };
+        const url = buildSimulationUrl(sampleParams, { autoRun: false, baseUrl: 'https://example.com/', lang: 'ja' });
+        const parsed = parseQueryParams(url.search);
+        expect(parsed.auto).toBe('0');
+        expect(parsed.lang).toBe('ja');
     });
 });

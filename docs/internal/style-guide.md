@@ -23,6 +23,14 @@ A more comprehensive guide is out of scope for v2.7.0 and will be added in a fut
 All documentation in `docs/` is written in English.
 Exceptions: `README-ja.md` (Japanese README) and the `TRANSLATIONS.ja` values in `js/i18n.js` (UI strings).
 
+## CSS Architecture & Build Pipeline
+
+- **Tailwind CLI (v3.4.17)**: Pre-compiles CSS statically (`npm run build:css`). Tailwind Play CDN (`cdn.tailwindcss.com`) is strictly prohibited.
+- **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./js/**/*.js`).
+- **Generated Bundle**: `css/tailwind.css` (minified bundle, committed to repository).
+- **Custom App Styles**: `css/style.css` (custom CSS rules, `@font-face` definitions, animations, and non-utility CSS).
+- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=2.8.0">` followed by `<link rel="stylesheet" href="css/style.css?v=2.8.0">`.
+
 ## Code References
 
 When referencing source code, use the format `filename:functionName` or `filename L<n>–L<n>` (line range).

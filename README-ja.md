@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE モンテカルロ・シミュレータ (v2.7.1)
+# FIRE モンテカルロ・シミュレータ (v2.8.0)
 
 本ツールは、ブラウザ単体で手軽に実行できる個人の資産形成・取崩しシミュレータです。
 確率論的なアプローチ（モンテカルロ・シミュレーション）を用いて、運用資産の枯渇リスクや長期的な資産推移を可視化することを目的に制作しました。

@@ -5,9 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="header.title">FIRE モンテカルロ・シミュレータ</title>
-    <meta name="app-version" content="2.7.1">
+    <meta name="app-version" content="2.8.0">
     <meta name="description"
         content="Using Monte Carlo simulation with risk assets and a cash buffer, calculate the probability of achieving FIRE.">
+    <!-- FOUC Prevention Gate -->
+    <style>
+        html.app-loading body { visibility: hidden; }
+    </style>
     <!-- Boot-time language resolution (v2.7.1+) -->
     <!-- KEEP-IN-SYNC: This logic must match resolveInitialLang() in js/lang-detect.js. -->
     <!-- Priority: URL ?lang= (exact 'ja'/'en', single occurrence) > localStorage > navigator > 'ja' -->
@@ -45,37 +49,28 @@
             })();
             globalThis.__currentLang = resolved;
             document.documentElement.lang = resolved;
+            document.documentElement.classList.add('app-loading');
+            setTimeout(function () {
+                document.documentElement.classList.remove('app-loading');
+            }, 3000);
         })();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Preloads (Self-Hosted Inter) -->
+    <link rel="preload" as="font" type="font/woff2" href="css/fonts/Inter-400.woff2" crossorigin>
+    <link rel="preload" as="font" type="font/woff2" href="css/fonts/Inter-700.woff2" crossorigin>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- SortableJS - for drag & drop column reordering in the Comparison tab -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                },
-            },
-        };
-    </script>
     <!-- Favicon -->
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=2.7.1">
+    <!-- App CSS -->
+    <link rel="stylesheet" href="css/tailwind.css?v=2.8.0">
+    <link rel="stylesheet" href="css/style.css?v=2.8.0">
 </head>
 
 <body class="text-slate-100 min-h-screen">
@@ -856,8 +851,8 @@
 
                 <!-- Right column: Result display -->
                 <section class="lg:col-span-8 xl:col-span-9 space-y-6">
-                    <!-- Summary card container (outer wrapper provides min-height for CLS mitigation; v2.7.1) -->
-                    <div class="min-h-[220px]">
+                    <!-- Summary card container (outer wrapper provides min-height for CLS mitigation; v2.8.0) -->
+                    <div class="summary-card-wrap">
                         <div id="summaryCardContainer" class="hidden transition-all duration-500 ease-in-out"></div>
                     </div>
 
@@ -1188,7 +1183,7 @@
             <p class="text-slate-300 text-sm font-bold tracking-wider mb-2" data-i18n="footer.title">FIRE モンテカルロ・シミュレータ
             </p>
             <p class="text-slate-500 text-xs mb-4 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-                <span>v2.7.1</span>
+                <span>v2.8.0</span>
 
                 <span class="hidden sm:inline text-slate-700">|</span>
                 <a href="https://github.com/moriyama-eng/fire-simulator" target="_blank" rel="noopener noreferrer"
@@ -1364,7 +1359,7 @@
             <div class="flex flex-row items-center gap-3">
                 <span class="text-[24px]">🌐</span>
                 <span id="capFooterUrl" class="text-[22px] font-semibold">https://moriyama-eng.github.io/fire-simulator/
-                    | v2.7.1</span>
+                    | v2.8.0</span>
             </div>
             <div class="flex flex-row items-center gap-3">
                 <svg viewBox="0 0 24 24" class="w-8 h-8 fill-current">

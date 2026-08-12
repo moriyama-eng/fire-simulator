@@ -395,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 23. Automatic setting of URL query parameters
     applyQueryParams(runMain);
+    document.documentElement.classList.remove('app-loading');
 
     // 24. Tab switch processing
     const simTabBtn = document.getElementById('simTabBtn');

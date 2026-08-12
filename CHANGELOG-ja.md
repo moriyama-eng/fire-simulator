@@ -5,6 +5,24 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.8.0]
+
+### 変更
+- **Tailwind CLI静的ビルド移行**: Tailwind Play CDN（`cdn.tailwindcss.com`）を完全撤去し、Tailwind CLI（`3.4.17` 完全固定）で事前ビルドした `css/tailwind.css` へ切り替えました（JS は100% ゼロビルドを維持）。
+- **Inter フォントのセルフホスト化**: Inter v4.1 から 6 ウェイト（300, 400, 500, 600, 700, 800）を `pyftsubset` でサブセット化し `css/fonts/Inter-*.woff2` へ配置（SIL OFL ライセンス `css/fonts/OFL.txt` 同梱）。`index.html`・`docs.html` の両ページから Google Fonts（`fonts.googleapis.com` / `fonts.gstatic.com`）の参照を完全撤去しました。
+- **`<html lang>` の同期**: `js/i18n.js` の `setLanguage(lang)` 実行時に `document.documentElement.lang` を同期更新するよう強化しました。
+
+### 修正
+- **FOUC（初回描画ちらつき）防止ゲート**: boot-time inline script とインライン CSS ゲート（`html.app-loading body { visibility: hidden; }`）を実装。手順23 `applyQueryParams(runMain)` 完了直後にゲートを解除（＋3000ms の安全弁）することで、非デフォルト言語での初回ペイント時のちらつきを完全に解消しました。
+
+### リファクタリング
+- **URL Options 純粋関数の分離**: URLパラメータ構築オプション生成処理を純粋関数 (`js/app/actions-url-options.js`: `getCopyUrlOptions`, `getShareUrlOptions`, `getCompareUrlOptions`) に分離し、`js/app/actions.js` 内の重複オブジェクトリテラルを排除しました。
+
+### 変更 (CI)
+- **CI ワークフロー & CSS 鮮度検証**: `.github/workflows/test.yml` を `actions/checkout@v5` および `actions/setup-node@v5` (Node 24 native) に更新。テスト実行前に `npm run build:css` と `git diff --exit-code -- css/tailwind.css` による生成物鮮度チェックを追加しました。
+
+> **シミュレーションアルゴリズム・計算結果はビット単位で不変**（100% ビット一致）です。
+
 ## [v2.7.1]
 
 ### 修正
