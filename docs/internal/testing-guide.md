@@ -14,8 +14,9 @@ This project uses two layers of automated testing with Vitest + jsdom.
 
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
 |----|-------------|----------|-------------|------|
-| Unit tests | `tests/unit/` | Vitest + jsdom | Pure functions, core logic, state management | 15 (approximately 110 test cases) |
-| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 5 (approximately 46 test cases) |
+| Unit tests | `tests/unit/` | Vitest + jsdom | Pure functions, core logic, state management | 18 files (200 test cases) |
+| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 7 files (62 test cases) |
+| **Total** | `tests/` | Vitest + jsdom | Full test suite coverage | **25 files (262 test cases)** |
 
 ### 1.1 Test Target Module Map
 
@@ -27,19 +28,28 @@ js/core/
 ├── percentile.js        → tests/unit/percentile.test.js
 ├── random.js            → tests/unit/random.test.js
 ├── simulation.js        → tests/unit/simulation.test.js
-├── state.js             → tests/integration/ui-state.test.js (※ Classified as an integration test because the button control logic depends on DOM IDs.)
+├── state.js             → tests/integration/ui-state.test.js
 ├── url.js               → tests/unit/url.test.js, tests/integration/query-params.test.js
+├── headless-params.js   → tests/unit/headless.test.js
+└── chart-helpers.js     → tests/unit/chart-helpers.test.js
+
+js/app/
+├── actions-url-options.js → tests/unit/actions-url-options.test.js
 
 js/
 ├── simulation-engine.js → (Covered indirectly by integration tests)
 ├── analysis-state.js    → tests/unit/analysis-state.test.js
 ├── analysis-runner.js   → tests/unit/analysis-runner.test.js
-├── analysis-ui.js       → tests/integration/analysis-ui.test.js
-├── comparison-state.js    → tests/unit/comparison-state.test.js
-├── comparison-runner.js   → tests/unit/comparison-runner.test.js
-├── comparison-ui.js       → tests/unit/comparison-ui.test.js
-├── i18n.js             → tests/unit/i18n.test.js, tests/unit/i18n-snapshot.test.js
-├── app.js               → (Covered indirectly by integration tests)
+├── analysis-ui.js       → tests/integration/analysis-ui.test.js, tests/integration/analysis-full-flow.test.js
+├── comparison-state.js  → tests/unit/comparison-state.test.js
+├── comparison-runner.js → tests/unit/comparison-runner.test.js
+├── comparison-ui.js     → tests/unit/comparison-ui.test.js, tests/integration/comparison-ui.test.js
+├── lang-detect.js       → tests/unit/lang-detect.test.js
+├── i18n.js              → tests/unit/i18n.test.js, tests/unit/i18n-snapshot.test.js
+└── app.js               → (Covered indirectly by integration tests)
+
+Repository root
+└── cli.js               → tests/integration/cli.test.js
 ```
 
 ### 1.2 Coverage Targets
@@ -66,7 +76,7 @@ npm run watch:css    # Watch mode for CSS development
 
 ```bash
 npm install   # First time only
-npm test      # Run all tests with Vitest (with coverage)
+npm test      # Run all tests with Vitest
 ```
 
 ### 2.2 Run Specific Tests Only
@@ -82,7 +92,7 @@ npx vitest run tests/unit/format.test.js
 ### 2.3 Check Coverage Report
 
 ```bash
-npx vitest run --coverage
+npm run test:coverage   # Run tests with coverage report (npx vitest run --coverage)
 # Open coverage/index.html in browser
 ```
 

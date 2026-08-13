@@ -24,8 +24,8 @@ const SAMPLE_PARAMS = {
 };
 
 // Temporary directories
-const TMP_DIR = join(ROOT, '.temp', 'test-cli-tmp');
-const CUSTOM_OUT_DIR = join(ROOT, '.temp', 'custom-dir');
+const TMP_DIR = join(ROOT, '.agent', 'scratch', 'test-cli-tmp');
+const CUSTOM_OUT_DIR = join(ROOT, '.agent', 'scratch', 'custom-dir');
 let tmpParamsPath;
 let createdFiles = [];
 
@@ -50,11 +50,12 @@ afterEach(() => {
 });
 
 afterAll(() => {
-    // Clean up temporary directories under .temp/
-    try { rmSync(join(ROOT, '.temp', 'fire-sim'), { recursive: true, force: true }); } catch (_) {}
-    try { rmSync(join(ROOT, '.temp', 'custom-dir'), { recursive: true, force: true }); } catch (_) {}
+    // Clean up temporary directories under .agent/scratch/
+    try { rmSync(join(ROOT, '.agent', 'scratch', 'fire-sim'), { recursive: true, force: true }); } catch (_) {}
+    try { rmSync(join(ROOT, '.agent', 'scratch', 'custom-dir'), { recursive: true, force: true }); } catch (_) {}
     try { rmSync(TMP_DIR, { recursive: true, force: true }); } catch (_) {}
 });
+
 
 /**
  * Execute node cli.js via execFileSync and return stdout string.

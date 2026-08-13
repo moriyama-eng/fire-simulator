@@ -42,7 +42,7 @@ cat my-params.json | node cli.js run
 | Option | Description |
 |---|---|
 | `--stdout` | Output full result to stdout. No file is written (overrides `--out`). |
-| `--out <path>` | Specify output file path. Default: `.temp/fire-sim/run-<timestamp>-seed<seed>.json`. |
+| `--out <path>` | Specify output file path. Default: `.agent/scratch/fire-sim/run-<timestamp>-seed<seed>.json`. |
 | `--no-file` | Skip file write. Only output scalar summary to stdout. |
 | `--compact` | Output JSON without indentation (single line). |
 
@@ -75,7 +75,7 @@ The summary mode additionally includes:
   "modelType": "log-normal",
   "usedDf": 4.2,
   "currency": "JPY",
-  "outputFile": "/path/to/.temp/fire-sim/run-...-seed123456.json",
+  "outputFile": "/path/to/.agent/scratch/fire-sim/run-...-seed123456.json",
   "percentiles": [10, 30, 50, 70, 90],
   "params": {
     "initialRiskAsset": 100000000,
@@ -105,7 +105,7 @@ The summary mode additionally includes:
     "currency": "JPY"
   },
   "meta": {
-    "toolVersion": "2.6.0",
+    "toolVersion": "2.8.1",
     "generatedAt": "2026-08-02T14:00:00.000Z"
   },
   "dataLen": 361
@@ -116,7 +116,7 @@ The summary mode additionally includes:
 time-series data: `totalPercentileData`, `cashPercentileData`, `ddPercentileData`, `maxDdPerPath`, etc.
 The file also includes `params` and `meta` with the same provenance fields described above.
 
-> **Note**: `.temp/fire-sim/` is gitignored. If `--out` points outside `.temp/`,
+> **Note**: `.agent/scratch/fire-sim/` is gitignored. If `--out` points outside `.agent/scratch/`,
 > the file will NOT be gitignored (user responsibility).
 
 #### Currency field semantics
@@ -262,7 +262,7 @@ node cli.js run params.json
 node cli.js run params.json --stdout
 
 # Custom output path
-node cli.js run params.json --out .temp/my-result.json
+node cli.js run params.json --out .agent/scratch/my-result.json
 
 # Skip file write (summary only)
 node cli.js run params.json --no-file

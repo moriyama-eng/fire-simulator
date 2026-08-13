@@ -2,112 +2,188 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/moriyama-eng/fire-simulator)
 
-# FIRE Monte Carlo Simulator (v2.8.0)
+# FIRE Monte Carlo Simulator
 
-This tool is a personal asset accumulation and drawdown simulator that can be easily run in a browser without any installation. It was created with the goal of visualizing the risk of running out of invested assets and long-term asset trends using a probabilistic approach (Monte Carlo simulation).
+A browser-based Monte Carlo simulator for exploring retirement asset sustainability under uncertain market returns, inflation, spending, and portfolio conditions.
 
-## Features
+---
 
-- **Fat-tail risk-aware fluctuation model (log-t distribution)**  
-  You can select the log-t distribution model, which accounts for "fat-tail risks" that can occur in real financial markets — such as a "Lehman shock-level crash" — that tend to be underestimated by conventional normal distribution models.
-- **Risk simulation based on statistical price fluctuation models**  
-  Using a log-normal distribution model or a log-t distribution model as the price fluctuation model, the tool simulates the progression of market prices based on the configured expected return and volatility.
-- **Introduction of a cash buffer feature**  
-  It is possible to simulate a "cash buffer strategy" that automatically draws from a cash buffer when the total assets fall by a certain percentage from their all-time high. This is useful for verifying specific operational guidelines for improving crash resilience.
-- **Introduction of drawdown spending reduction (spending guardrail feature)**  
-  It is possible to simulate a "spending guardrail strategy" that automatically reduces spending from the following month when total assets fall by a certain percentage from their all-time high. This is useful for verifying specific operational guidelines for improving crash resilience.
-- **Rigorous drift adjustment based on Ito's Lemma (Ito Calculus)**  
-  The input parameter "expected return" is redefined as the arithmetic mean. The phenomenon where the geometric mean return decreases due to volatility (volatility drag) is now mathematically correctly handled inside the simulation.
-- **Visualization of tail risks (maximum drawdown / stagnation period)**  
-  In addition to simple asset progression, the worst-case drawdown and time to recovery can be intuitively grasped using cumulative probability distribution graphs (CDF/CCDF).
-- **Inflation fluctuation model (AR-1 model)**  
-  In addition to a simple fixed inflation rate, an AR-1 (autoregressive) model referencing the characteristics of statistical data (such as US CPI) can be selected.
-- **Headless / Command-line interface (CLI)**  
-  Run simulations directly from the terminal without a browser. Ideal for automation, batch processing, and parameter sweeps. Outputs full JSON results (including percentile time-series) for further analysis. See the [CLI Usage Guide](./docs/guide/cli-usage.md) for details and examples.
+## Overview
 
-## Currency Semantics
+FIRE Monte Carlo Simulator is a browser-based tool that runs Monte Carlo simulations to explore retirement asset sustainability under user-defined financial assumptions.
+
+Users provide inputs including initial assets, monthly spending, expected return, volatility, inflation rate, and related strategy settings. The simulator produces probabilistic retirement-asset outcomes across thousands of simulated paths.
+
+The browser UI supports interactive exploration of results. The headless CLI provides reproducible single-run execution with JSON output. Detailed mathematics and operational rules are delegated to the existing documentation linked in the [Documentation](#documentation) section.
+
+### Psychological Load
+
+This simulator is designed around the psychological burden of the drawdown phase — the anxiety of watching invested assets decline after retirement — rather than around maximizing returns. Features such as the cash buffer, spending guardrail, and tail-risk visualization (maximum drawdown / stagnation period) all exist to make this psychological risk tangible and manageable.
+
+---
+
+## Screenshot
+
+![FIRE Monte Carlo Simulator — Simulation tab with completed results](./docs/assets/readme/fire-simulator-overview.png)
+
+---
+
+## Simulation Model
+
+The simulator uses **one simulation model** composed of the following seven concepts:
+
+- **Log-normal return model** — Models standard asset return variability using a log-normal distribution. See [`docs/explanation/mathematical-model.md`](./docs/explanation/mathematical-model.md).
+- **Ito drift adjustment** — Reconciles arithmetic expected return with geometric return reduced by volatility drag (volatility drag correction per Ito's Lemma). See [`docs/explanation/mathematical-model.md`](./docs/explanation/mathematical-model.md).
+- **Log-t / Student-t return model** — Provides a heavier-tailed return distribution to capture fat-tail market risks that the log-normal model underestimates. See [`docs/explanation/mathematical-model.md`](./docs/explanation/mathematical-model.md).
+- **AR-1 inflation model** — Models inflation dynamics using a first-order autoregressive (AR-1) process, capturing mean-reversion observed in historical inflation data. See [`docs/explanation/mathematical-model.md`](./docs/explanation/mathematical-model.md).
+- **Cash-buffer dynamics** — Governs asset drawdown rules using a cash buffer: when total assets fall below a drawdown trigger threshold, spending is drawn from the cash buffer rather than directly from risk assets. See [`docs/explanation/decision-timing.md`](./docs/explanation/decision-timing.md).
+- **Spending guardrail mechanics** — Adjusts monthly spending in response to drawdown events: spending is reduced when total assets fall below the guardrail trigger and restored when recovery conditions are met. See [`docs/explanation/decision-timing.md`](./docs/explanation/decision-timing.md).
+- **Drawdown / stagnation measurement** — Measures and visualizes maximum drawdown from all-time highs and stagnation / recovery periods across simulated paths.
+
+---
+
+## Ways to Use It
+
+**One simulation model, multiple ways to use it.**
+
+### Browser UI
+
+Available at [GitHub Pages](https://moriyama-eng.github.io/fire-simulator/) — no installation required.
+
+- **Simulation** — Run the core Monte Carlo simulation interactively and explore probabilistic retirement-asset outcomes.
+- **Analysis** — Analyze simulation results in depth within the browser UI.
+- **Comparison** — Compare multiple scenarios side by side within the browser UI.
+
+Analysis and Comparison are features within the Browser UI, not separate simulation engines.
+
+### Headless CLI
+
+The CLI provides headless access to the same simulation model without opening a browser. Two subcommands are available:
+
+- **`run`** — Single-run simulation executor. Accepts a JSON parameter file and outputs full simulation results as JSON (including percentile time-series). Multi-run orchestration, parameter sweeps, graph generation, and format conversion are the caller's responsibility.
+- **`list-factors`** — Outputs the factor definitions used by the Analysis UI. Useful for understanding or scripting against the factor schema without launching the browser.
+
+For complete CLI documentation and examples, see the [CLI](#cli) section below.
+
+<a name="currency-semantics"></a>
+### Currency Semantics
 
 | Execution Mode | Currency Conversion | Monetary Input/Output Units | Internal Calculation Unit |
 |---|---|---|---|
 | **Browser UI (English Mode)** | Display-only fixed rate ($1 = ¥100) | $1, ¥10K, ¥100M UI units | JPY |
 | **CLI / Headless Mode** | None (label-only `currency` metadata) | Base currency units (JPY or USD as-is) | Base currency units |
 
-## Update History
+---
 
-### Latest Highlights (v2.7.1)
-- **Boot-time Language Resolution & `navigator.language` Support**: The initial display language is now synchronously resolved before initial page render, respecting browser locale (`navigator.language`) for first-time visitors while keeping single-source-of-truth (`globalThis.__currentLang`).
-- **URL Reproduction Bug Fix (Double Currency Conversion)**: Resolved a double-conversion issue where "Copy Result URL" and "Open same conditions" produced mismatched values in English mode due to premature language events during URL query parsing.
-- **Improved Documentation Navigation**: Redesigned header "Docs" link with a dedicated document SVG icon for clear visual separation from language switchers.
-- **Cleanup & Layout Stability**: Removed duplicate Chart.js CDN script imports and added layout height constraints to mitigate summary card Cumulative Layout Shift (CLS).
+## Features
 
-For detailed past change logs, see [CHANGELOG.md](./CHANGELOG.md). For details on monthly processing order, see [docs/explanation/decision-timing.md](./docs/explanation/decision-timing.md).
+1. **Monte Carlo retirement sustainability simulation** — Probabilistically evaluates retirement asset sustainability by simulating thousands of market return and spending paths to estimate the distribution of long-term asset outcomes.
+2. **Log-normal and log-t return models** — Supports two return distribution models: a log-normal model for standard return variability and a log-t (Student-t) model for heavier-tailed distributions that better capture fat-tail market risks.
+3. **Cash-buffer management** — Controls asset drawdown using a cash buffer strategy: when total assets fall below a threshold, spending is drawn from the buffer rather than directly liquidating risk assets.
+4. **Spending guardrails** — Automatically reduces spending when drawdown exceeds the guardrail trigger threshold and restores spending when recovery conditions are met.
+5. **Ito drift adjustment** — Reconciles arithmetic expected return with the geometric return reduced by volatility drag, using Ito's Lemma to ensure mathematically consistent drift inside the simulation.
+6. **Drawdown and stagnation analysis** — Measures and visualizes maximum drawdown from all-time highs and stagnation / recovery periods using cumulative probability distribution charts (CDF/CCDF).
+7. **Tail-risk and AR-1 inflation modeling** — Captures fat-tail return risk via the log-t distribution and models inflation dynamics using a first-order autoregressive (AR-1) process referencing statistical inflation characteristics.
+8. **Headless CLI execution (single-run executor with JSON output)** — The CLI `run` subcommand executes a single simulation run in headless mode and outputs full results as JSON, enabling automation and downstream analysis without a browser.
 
-## Design Philosophy
+---
 
-- **Psychological load as the core axis**  
-  This simulator is designed around the psychological burden of the drawdown phase — the anxiety of watching invested assets decline after retirement — rather than around maximizing returns. Features such as the cash buffer, spending guardrail, and tail-risk visualization (maximum drawdown / stagnation period) all exist to make this psychological risk tangible and manageable.
-- **Intentional scope limits (tax, currency exchange, social security)**  
-  Taxation, foreign-exchange conversion, and social-security systems are intentionally out of scope. These are highly jurisdiction- and individual-specific, and embedding them would blur the tool's focus and make results harder to interpret. Keeping them out preserves a clear, self-contained model that users can reason about.
-- **Three interfaces matched to depth of use**  
-  The tool offers three interfaces matched to how deeply a user engages: the browser UI for interactive exploration, the Analysis / Comparison tabs for side-by-side scenario study, and the headless CLI for automation (designed for AI agents to generate, run, and aggregate many scenarios at high speed). The CLI is deliberately kept to a single-run executor; analysis, comparison, and format conversion are the caller's responsibility. See [CLI Responsibility Boundary (Design Policy)](./docs/guide/cli-usage.md#cli-responsibility-boundary-design-policy) for details.
+## Privacy
 
-## Development Background
+### Local Processing
 
-I am a mechanical designer by profession and not a financial expert, but I developed this simulator because I needed a tool that could intuitively perform complex calculations in a browser to more realistically assess the risks of my own asset formation. I hope it will be a reference for those who are also aiming for FIRE.
+All simulation calculations are performed in the browser. No simulation inputs or results are sent to a server as part of normal simulation execution.
 
-## Usage
+### External Resources
 
-> [!TIP]
-> **[Run the simulator now (GitHub Pages)](https://moriyama-eng.github.io/fire-simulator/)**
-> No installation or environment setup required; you can use it as is.
+The application loads the following external libraries at runtime:
 
-When running by cloning the repository in a local environment, it is highly likely that it will not work by directly opening `index.html` in a browser due to the use of Web Workers (due to security restrictions). If you are using VS Code, install the **Live Server extension**, right-click `index.html`, select "Open with Live Server", and verify operation in the browser that opens.
+- [Chart.js](https://www.chartjs.org/) — chart rendering
+- [SortableJS](https://sortablejs.github.io/Sortable/) — drag-and-drop UI
+- [html2canvas](https://html2canvas.hertzen.com/) — in-browser screenshot export
 
-### Command-line Interface (CLI)
+Loading these external libraries is distinct from any transmission of simulation input data or results.
 
-Run simulations in headless mode without opening a browser.
+### Explicit Sharing
+
+The Share URL feature encodes simulation settings — including parameter values, seed, percentiles, language, and other reproduction-related URL parameters — directly into the URL as query parameters. Recipients who open the URL can reproduce the same simulation conditions in their own browser. No result data is uploaded to or stored on a server.
+
+### Automatic Transmission
+
+Simulation inputs and results are not automatically uploaded to a server during normal simulation execution.
+
+---
+
+## Deliberate Scope
+
+The following are intentional scope limitations, not planned future features:
+
+- **Taxation** — Tax rules are highly jurisdiction- and individual-specific. Embedding them would blur the model's focus and make results harder to interpret independently of local tax context.
+- **Variable foreign-exchange modeling** — Currency exchange modeling is outside the scope of this simulator. Monetary values are treated in a single base currency unit.
+- **Social security / pension systems** — Pension and social security systems vary significantly across jurisdictions and individual situations and are intentionally excluded to preserve a self-contained, clearly bounded model.
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Getting Started](./docs/guide/getting-started.md) | Local development setup and running the simulator |
+| [CLI Usage Guide](./docs/guide/cli-usage.md) | CLI subcommands, parameters, and examples |
+| [Headless API Reference](./docs/reference/headless-api.md) | Headless API schema and output format |
+| [Parameter Reference](./docs/reference/parameter-reference.md) | Full parameter definitions and valid ranges |
+| [Mathematical Model](./docs/explanation/mathematical-model.md) | Return models, Ito drift, AR-1 inflation mathematics |
+| [Decision Timing](./docs/explanation/decision-timing.md) | Monthly processing order, cash buffer, and guardrail mechanics |
+| [Testing](./tests/README.md) | Testing documentation entry point |
+| [Changelog (EN)](./CHANGELOG.md) | Full English update history |
+| [Changelog (JA)](./CHANGELOG-ja.md) | Full Japanese update history |
+
+---
+
+## Version / Update History
+
+**Current release: v2.8.1**
+
+For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
+
+---
+
+## CLI
+
+The CLI provides headless simulation execution using the same simulation model as the Browser UI.
 
 ```bash
-# Basic usage
+# Single-run simulation — outputs results to a JSON file
 node cli.js run params.json
 
-# Full result to stdout (no file)
+# Output results to stdout instead of a file
 node cli.js run params.json --stdout
 
-# Custom output directory
-node cli.js run params.json --out .temp/my-result.json
+# Specify a custom output path
+node cli.js run params.json --out .agent/scratch/my-result.json
+
+
+# List factor definitions used by the Analysis UI
+node cli.js list-factors
 ```
 
-For complete CLI documentation, parameter schema, and advanced options, see the **[CLI Usage Guide](./docs/guide/cli-usage.md)** and **[Headless API Reference](./docs/reference/headless-api.md)**.
+### Subcommands
 
-### Testing
+**`run`** — Executes a single simulation run using the provided parameter JSON file. Outputs full simulation results (including percentile time-series) as JSON. Multi-run orchestration, parameter sweeps, graph generation, scenario comparison, and CSV conversion are the caller's responsibility.
 
-This project uses two layers of automated testing with Vitest:
+**`list-factors`** — Outputs the factor definitions used by the Analysis UI. No simulation is run; this is an information output command for scripting or inspection.
 
-- **Unit tests** (`tests/unit/` — 15 files): Verifies the correctness of pure functions and core logic
-- **Integration tests** (`tests/integration/` — 5 files): Verifies DOM operations and UI state transitions
+For complete documentation, parameter schema, and advanced options, see:
+- [CLI Usage Guide](./docs/guide/cli-usage.md)
+- [Headless API Reference](./docs/reference/headless-api.md)
 
-```bash
-# Install dependencies (first time only)
-npm install
-
-# Run all tests
-npm test
-
-# Run with coverage report
-npm run test:coverage
-
-# Run specific tests only
-npx vitest run tests/unit/format.test.js
-```
-
-For the test design philosophy and how to add tests, refer to [`tests/README.md`](./tests/README.md).
-
-In CI, GitHub Actions automatically runs tests on push to the `main` branch and pull requests, preventing regressions.
+---
 
 ## Disclaimer
 
 This tool was created for personal learning and verification purposes, and does not guarantee future investment performance. The author cannot be held responsible for any damages arising from investment decisions or asset management based on simulation results. Make your final investment decisions at your own responsibility. This does not guarantee the optimal strategy for the type and period of invested assets or individual financial situations.
+
+---
 
 ## License
 

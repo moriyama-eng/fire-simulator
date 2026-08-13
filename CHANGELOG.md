@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.1]
+
+### Changed
+- **README 3.0**: Redesigned `README.md` and `README-ja.md` as a documentation gateway. New 13-section structure: Hero, Overview (with Psychological Load subsection), Screenshot, Simulation Model (7 concepts explicitly as one model), Ways to Use It (Browser UI / Analysis / Comparison / Headless CLI hierarchy with `run` + `list-factors`), Features (8 fixed taxonomy with semantic purposes), Privacy (4 sections: Local Processing, External Resources, Explicit Sharing, Automatic Transmission), Deliberate Scope (Taxation, Variable foreign-exchange modeling, Social security / pension systems), Documentation (9 exact destinations), Version / Update History, CLI, Disclaimer, License. English/Japanese parity maintained throughout.
+
+### Added
+- **Screenshot asset** (`docs/assets/readme/fire-simulator-overview.png`): Product-oriented screenshot at 1400×869, Simulation tab, fixed seed 123456, HEADLESS_DEFAULTS parameter values, log-normal return model, percentiles [10, 30, 50, 70, 90], showing FIRE Success Rate, Final Assets (Median), Target Asset Maintenance Rate, and Total Assets (Percentiles) chart.
+
+
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+> README-only release: no application code, simulation engine, worker, headless implementation, CLI, CSS, tests, or existing documentation body changes.
+
 ## [v2.8.0]
 
 ### Changed
