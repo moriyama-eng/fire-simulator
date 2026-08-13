@@ -1,7 +1,7 @@
 # Style Guide
 
 This is a minimal writing guide for documentation in this repository.
-A more comprehensive guide is out of scope for v2.7.0 and will be added in a future release.
+A more comprehensive guide may be added in a future release as needed.
 
 ## Core Principles
 
@@ -29,7 +29,7 @@ Exceptions: `README-ja.md` (Japanese README) and the `TRANSLATIONS.ja` values in
 - **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./js/**/*.js`).
 - **Generated Bundle**: `css/tailwind.css` (minified bundle, committed to repository).
 - **Custom App Styles**: `css/style.css` (custom CSS rules, `@font-face` definitions, animations, and non-utility CSS).
-- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=2.8.0">` followed by `<link rel="stylesheet" href="css/style.css?v=2.8.0">`.
+- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=2.8.1">` followed by `<link rel="stylesheet" href="css/style.css?v=2.8.1">`.
 
 ## Code References
 

@@ -98,7 +98,7 @@ Subcommands:
 
 Options (run subcommand):
   --stdout         Output full result to stdout (no file write)
-  --out <path>     Specify output file path (default: .temp/fire-sim/run-<timestamp>-seed<seed>.json)
+  --out <path>     Specify output file path (default: .agent/scratch/fire-sim/run-<timestamp>-seed<seed>.json)
   --no-file        Skip file write; output summary to stdout only
   --compact        Output JSON without indentation (single line)
   --help           Show this help
@@ -110,9 +110,10 @@ Input JSON (base currency units):
   Example: { "initialRiskAsset": 100000000, "monthlyExpense": 300000 }
 
 Output:
-  The .temp/fire-sim/ directory is gitignored.
-  If --out points outside .temp/, the file is NOT gitignored (user responsibility).
+  The .agent/scratch/fire-sim/ directory is gitignored.
+  If --out points outside .agent/scratch/, the file is NOT gitignored (user responsibility).
 `);
+
 }
 
 // ---- main: entry point ----
@@ -238,7 +239,7 @@ async function main() {
     // Generate timestamped default filename
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const defaultFileName = `run-${ts}-seed${params.seedNum}.json`;
-    const defaultOutputPath = join('.temp', 'fire-sim', defaultFileName);
+    const defaultOutputPath = join('.agent', 'scratch', 'fire-sim', defaultFileName);
     const outputPath = outPath ? resolve(outPath) : resolve(defaultOutputPath);
 
     // Full result JSON (toPlain already applied)
