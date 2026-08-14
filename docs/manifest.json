@@ -4,6 +4,7 @@
       "id": "guide",
       "label": "Guide",
       "docs": [
+        { "id": "overview", "title": "Overview" },
         { "id": "getting-started", "title": "Getting Started" },
         { "id": "cli-usage", "title": "CLI Usage Guide" }
       ]

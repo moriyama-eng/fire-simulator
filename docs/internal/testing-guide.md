@@ -210,6 +210,7 @@ This project **intentionally does not adopt** End-to-End tests using Puppeteer/P
 - When the number of monthly active users exceeds 1,000 and the limitations of manual testing are felt
 
 For manual test procedures before release, refer to [Release Checklist](./release-checklist.md).
+Start each release-prep cycle from `release-checklist.template.md` (overwrite the working ticket; do not edit the template in place).
 
 ## 5. Guide to Adding Tests
 

@@ -128,6 +128,7 @@ The following are intentional scope limitations, not planned future features:
 
 | Document | Description |
 |---|---|
+| [Overview](./docs/guide/overview.md) | Product overview: psychological load, privacy, deliberate scope, and disclaimer |
 | [Getting Started](./docs/guide/getting-started.md) | Local development setup and running the simulator |
 | [CLI Usage Guide](./docs/guide/cli-usage.md) | CLI subcommands, parameters, and examples |
 | [Headless API Reference](./docs/reference/headless-api.md) | Headless API schema and output format |
@@ -142,7 +143,7 @@ The following are intentional scope limitations, not planned future features:
 
 ## Version / Update History
 
-**Current release: v2.8.1**
+**Current release: v2.8.2**
 
 For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
 
