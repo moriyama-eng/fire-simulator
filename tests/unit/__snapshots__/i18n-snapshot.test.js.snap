@@ -33,7 +33,6 @@ exports[`i18n translation snapshot > TRANSLATIONS.ja should match snapshot (comp
   "analysis.factorsHelp": "因子をクリックすると分析対象に追加されます。<br>各因子は基準値から段階的に値を変えた5水準でシミュレーションを実行します。",
   "analysis.factorsTitle": "分析対象因子",
   "analysis.noBaseContext": "主画面でシミュレーションを実行してください",
-  "analysis.noFactors": "因子を選択してください",
   "analysis.outOfRange": "この因子の範囲では改善後の指標値に届きません。",
   "analysis.run": "分析を実行",
   "analysis.running": "分析を実行中... {0}%",

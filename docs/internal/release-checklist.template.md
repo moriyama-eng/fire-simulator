@@ -170,7 +170,7 @@ When releasing a new version, please perform manual verification using the follo
 Note: `.github/` contains no release workflow; P6 (release) is operated manually.
 
 - [ ] `node cli.js run <sample.json>` generates a full result JSON under `.agent/scratch/fire-sim/` and outputs a scalar summary to stdout — <result or reason>
-- [ ] Scalar summary output matches specification (`FIRE Success Rate`, `Median Final Assets`, `Target Maintenance Rate`, `Execution Time`) — <result or reason>
+- [ ] Scalar summary output matches specification (JSON fields `successRate`, `finalMedian`, `targetAssetMaintainRate`, etc. per `docs/guide/cli-usage.md`) — <result or reason>
 - [ ] Confirm that `.agent/scratch/` output files do **not** appear in `git status` (`.agent/` is gitignored) — <result or reason>
 - [ ] `node cli.js run <file> --no-file` outputs summary to stdout without creating any output file — <result or reason>
 - [ ] `node cli.js run <file> --stdout` outputs full result JSON directly to stdout — <result or reason>
