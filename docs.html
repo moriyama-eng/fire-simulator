@@ -14,7 +14,7 @@
     <!-- KaTeX CSS (patch-pinned) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <!-- Existing app styles (dark mode tokens) -->
-    <link rel="stylesheet" href="css/style.css?v=2.8.1">
+    <link rel="stylesheet" href="css/style.css?v=2.8.2">
 
     <style>
         /* ============================================================
@@ -314,7 +314,7 @@
         <div id="not-found-card" style="display:none;">
             <h2>Page not found</h2>
             <p>The requested documentation page does not exist or is not publicly available.</p>
-            <p><a href="docs.html?doc=guide/getting-started">← Back to Getting Started</a></p>
+            <p><a href="docs.html?doc=guide/overview">← Back to Overview</a></p>
         </div>
     </main>
 </div>
@@ -620,14 +620,14 @@
 
         // Determine which doc to load
         let docParam = getDocParam();
-        if (!docParam || docParam === '') docParam = 'guide/getting-started';
+        if (!docParam || docParam === '') docParam = 'guide/overview';
 
         loadDoc(docParam);
     }
 
     // Handle browser back/forward
     window.addEventListener('popstate', () => {
-        const docParam = getDocParam() || 'guide/getting-started';
+        const docParam = getDocParam() || 'guide/overview';
         loadDoc(docParam);
     });
 

@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.2]
+
+### Added
+- **GitHub Pages Overview document** (`docs/guide/overview.md`): README excerpt for visitors who land on `docs.html` without opening the GitHub README. Covers Overview, Psychological Load, Privacy (Local Processing / External Resources / Explicit Sharing / Automatic Transmission), Deliberate Scope (Taxation / Variable foreign-exchange modeling / Social security / pension systems), and Disclaimer. `README.md` remains the single source of truth (one-way sync). Developer-only README sections (Features, CLI, License, Documentation, and others) are intentionally excluded.
+
+### Changed
+- **docs.html default document**: Opening `docs.html` with no `?doc=` now loads `guide/overview` instead of `guide/getting-started`. Explicit `?doc=guide/getting-started` is unchanged. The 404 recovery link points to Overview.
+- **Documentation manifest**: `overview` is the first Guide entry so the Pages nav matches the new landing document.
+- **README Documentation gateway**: Added Overview as a destination in `README.md` and `README-ja.md` (10 destinations; English/Japanese parity maintained).
+- **Release checklist process**: Each release-prep cycle now overwrites `docs/internal/release-checklist.md` from `docs/internal/release-checklist.template.md`. Marks are `[x]` (one-line result required), `[N/A]` (structural reason only), and `[ ]` (leave the literal `<result or reason>` suffix). Carrying `[x]` or prior results from the previous version is forbidden. Clearing remaining `[ ]` is P7 (last tracked-file updates, then commit). P8 creates the pull request without further repo edits: squash draft commits into one commit whose message equals the PR title (`Release vX.Y.Z: A, B, and C`, copied from the latest merged Release PR); CHANGELOG supplies the body substance and that previous PR supplies the body form (`Summary of Changes` / `Key Features & Updates` / `Verification Status`). The GitHub release draft is P9 after merge.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+
 ## [v2.8.1]
 
 ### Changed
