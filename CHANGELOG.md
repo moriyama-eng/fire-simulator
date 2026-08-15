@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.3]
+
+### Fixed
+- **Analysis tab factor deselection**: Removed unreachable dead code for 0-factor branch in result cards (`#cardTarget`, `#cardCompare`) and cleaned up unused `analysis.noFactors` i18n key. Confirmed and tested that deselecting all factors properly hides both result cards and disables the "Run Analysis" button.
+- **CLI smoke test checklist specification**: Updated `docs/internal/release-checklist.template.md` to match the canonical JSON scalar summary specification (`successRate`, `finalMedian`, `targetAssetMaintainRate`, etc. per `docs/guide/cli-usage.md`).
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+
 ## [v2.8.2]
 
 ### Added

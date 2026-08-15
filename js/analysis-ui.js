@@ -287,11 +287,6 @@ function updateTargetTableContent(baseMetrics, perFactorResults) {
     const factorOrder = AS.FACTORS.map(f => f.key);
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
 
-    if (selected.length === 0) {
-        body.innerHTML = `<tr><td colspan="5" class="text-center text-slate-500 p-4">${t('analysis.noFactors')}</td></tr>`;
-        return;
-    }
-
     let html = '';
     for (const key of selected) {
         const factor = AS.FACTORS.find(f => f.key === key);
@@ -378,11 +373,6 @@ function renderCompareCards() {
     // Sort in FACTORS definition order
     const factorOrder = AS.FACTORS.map(f => f.key);
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
-
-    if (selected.length === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-sm p-4">${t('analysis.noFactors')}</p>`;
-        return;
-    }
 
     // Get base metrics (#9)
     const baseMetrics = result.baseScenario.metrics;

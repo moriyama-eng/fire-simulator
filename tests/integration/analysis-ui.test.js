@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderAnalysisTab, setupAnalysisEventDelegation, _resetDelegationForTest } from '../../js/analysis-ui.js';
 import * as AS from '../../js/analysis-state.js';
 import { setLanguage, t } from '../../js/i18n.js';
+import { makeAnalysisResult, makeScenarioPoint } from '../helpers/analysis-fixtures.js';
 
 const makeBaseEffectiveParams = (overrides = {}) => ({
   initialRiskAsset: 100000000,
@@ -92,4 +93,26 @@ describe('Factor selection UI', () => {
     expect(selectedCards.length).toBe(1);
     expect(document.getElementById('selectedFactorCount').textContent).toContain('1');
   });
+
+  it('hides result cards and disables run button when all factors are deselected', () => {
+    AS.setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true, guardrailToggle: true }));
+    AS.setSelectedFactors(['initial_risk_asset_jpy']);
+    const factorPoints = [-2, -1, 1, 2].map(level => makeScenarioPoint(level));
+    AS.setAnalysisResult(makeAnalysisResult({
+      initial_risk_asset_jpy: factorPoints
+    }));
+    renderAnalysisTab();
+    expect(document.getElementById('cardTarget').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('cardCompare').classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('runAnalysisBtn').disabled).toBe(false);
+
+    // Deselect the factor (0 selected)
+    const card = document.querySelector('[data-factor-key="initial_risk_asset_jpy"]');
+    card.click();
+    expect(document.getElementById('selectedFactorCount').textContent).toContain('0');
+    expect(document.getElementById('runAnalysisBtn').disabled).toBe(true);
+    expect(document.getElementById('cardTarget').classList.contains('hidden')).toBe(true);
+    expect(document.getElementById('cardCompare').classList.contains('hidden')).toBe(true);
+  });
 });
+

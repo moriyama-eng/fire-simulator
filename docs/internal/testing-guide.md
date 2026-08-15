@@ -15,8 +15,8 @@ This project uses two layers of automated testing with Vitest + jsdom.
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
 |----|-------------|----------|-------------|------|
 | Unit tests | `tests/unit/` | Vitest + jsdom | Pure functions, core logic, state management | 18 files (200 test cases) |
-| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 7 files (62 test cases) |
-| **Total** | `tests/` | Vitest + jsdom | Full test suite coverage | **25 files (262 test cases)** |
+| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 7 files (63 test cases) |
+| **Total** | `tests/` | Vitest + jsdom | Full test suite coverage | **25 files (263 test cases)** |
 
 ### 1.1 Test Target Module Map
 
