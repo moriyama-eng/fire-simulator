@@ -9,32 +9,32 @@ When releasing a new version, please perform manual verification using the follo
 - `[ ]` = not yet verified. Leave the suffix exactly as `<result or reason>`.
 - Check-item line form: `- [ ] <item> — <result or reason>`
 - The token `<result or reason>` is literal. Do not translate or abbreviate it.
-- Placeholder detection applies only to checkbox lines (`- [ ] ` / `- [x] ` / `- [N/A] `). Occurrences of `<result or reason>` in this Legend, How to start P6, and Release Scope are not residual.
+- Placeholder detection applies only to checkbox lines (`- [ ] ` / `- [x] ` / `- [N/A] `). Occurrences of `<result or reason>` in this Legend, How to start release preparation, and Release Scope are not residual.
 - For `npm test`, the result must be transcribed from the raw vitest log: `Test Files N passed` / `Tests M passed`. Do not reconstruct or estimate.
 
-## How to start P6
+## How to start release preparation
 
 - Run commands from the repository root.
 - Overwrite `docs/internal/release-checklist.md` with a copy of `docs/internal/release-checklist.template.md`. On Windows the canonical command is `Copy-Item docs/internal/release-checklist.template.md docs/internal/release-checklist.md -Force`. On non-Windows: `cp docs/internal/release-checklist.template.md docs/internal/release-checklist.md`. Do not use unforced `cp` on Windows.
 - Change only the H1 `(template)` → `(vX.Y.Z)` and, if needed, the CLI heading. Do not global-replace the path `release-checklist.template.md`.
-- Do not blank the working ticket by hand. A full-file replacement each P6 is expected and is not a regression.
-- Then fill Release Scope and record only items you actually ran. Remaining `[ ]` rows are allowed at the end of P6.
+- Do not blank the working ticket by hand. A full-file replacement each release preparation is expected and is not a regression.
+- Then fill Release Scope and record only items you actually ran. Remaining `[ ]` rows are allowed at the end of release preparation.
 
-## P7 release gate (last tracked-file updates)
+## Release gate (last tracked-file updates)
 
-- P7 is a separate phase: execute every remaining check-item `[ ]` until none remain. Record results on this working ticket. Do not open a pull request in P7.
-- P7 is the last phase that may edit git-tracked files (this ticket, CHANGELOG, or other repo files). Commit those updates before leaving P7.
-- P7 is complete only when every check-item line is `[x]` with a one-line result or `[N/A]` with a structural reason, no check-item line still has `<result or reason>`, and there are no remaining required uncommitted tracked-file changes.
-- Starting P8 before P7 is complete is forbidden. If tracked files must change after P8 has started, interrupt P8, finish those edits in a resumed P7, recommit, then redo P8.
+- The release gate is a separate step: execute every remaining check-item `[ ]` until none remain. Record results on this working ticket. Do not open a pull request during the release gate.
+- The release gate is the last phase that may edit git-tracked files (this ticket, CHANGELOG, or other repo files). Commit those updates before leaving the release gate.
+- The release gate is complete only when every check-item line is `[x]` with a one-line result or `[N/A]` with a structural reason, no check-item line still has `<result or reason>`, and there are no remaining required uncommitted tracked-file changes.
+- Starting the pull request before the release gate is complete is forbidden. If tracked files must change after the pull request has started, interrupt the pull request, finish those edits in a resumed release gate, recommit, then redo the pull request.
 
-## P8 pull request (no tracked-file edits)
+## Pull request (no tracked-file edits)
 
-- P8 creates the GitHub pull request only. Do not edit tracked files in P8.
+- The pull request step creates the GitHub pull request only. Do not edit tracked files in the pull request step.
 - Before `gh pr create`, squash the release-branch draft commits into exactly one commit. Do not open a pull request that still lists `draft1` / `draft2` / … commits.
 - The squash commit message and the PR title must be identical. Copy the form from the latest merged `Release vX.Y.Z:` pull request (`gh pr view`): `Release vX.Y.Z: A, B, and C` (Title Case).
-- CHANGELOG supplies the PR substance. The last merged Release PR supplies the PR form: `## Summary of Changes in vX.Y.Z`, opening paragraph, bit-identical sentence, `### Key Features & Updates`, `### Verification Status`. Fill Key Features from CHANGELOG and Verification Status from this ticket's P7 results.
+- CHANGELOG supplies the PR substance. The last merged Release PR supplies the PR form: `## Summary of Changes in vX.Y.Z`, opening paragraph, bit-identical sentence, `### Key Features & Updates`, `### Verification Status`. Fill Key Features from CHANGELOG and Verification Status from this ticket's release-gate results.
 - Do not paste CHANGELOG English/Japanese entries as the PR body.
-- Release-note substance belongs in CHANGELOG (P6, or P7 if verification requires a last edit). Creating the GitHub release draft (`gh release create`) is P9 only, after the PR is merged. Do not run it in P7 or P8.
+- Release-note substance belongs in CHANGELOG (release preparation, or the release gate if verification requires a last edit). Creating the GitHub release draft (`gh release create`) is the GitHub release draft only, after the PR is merged. Do not run it during the release gate or the pull request.
 
 ## Release Scope
 
@@ -167,7 +167,7 @@ When releasing a new version, please perform manual verification using the follo
 
 ## CLI Smoke Test
 
-Note: `.github/` contains no release workflow; P6 (release) is operated manually.
+Note: `.github/` contains no release workflow; release preparation is operated manually.
 
 - [ ] `node cli.js run <sample.json>` generates a full result JSON under `.agent/scratch/fire-sim/` and outputs a scalar summary to stdout — <result or reason>
 - [ ] Scalar summary output matches specification (JSON fields `successRate`, `finalMedian`, `targetAssetMaintainRate`, etc. per `docs/guide/cli-usage.md`) — <result or reason>

@@ -5,6 +5,13 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.4]
+
+### Changed
+- **Public release-checklist wording**: Replaced implementation-flow identifiers in the canonical `docs/internal/release-checklist.template.md` with public process names. The procedure is unchanged: overwrite the working ticket from the template at release preparation and record only items actually run (leftover unchecked rows are allowed there); the release gate runs remaining checks and is the last tracked-file update, then commit; the pull request does not edit tracked files and requires draft commits to be squashed to one; the GitHub release draft is created only after the pull request is merged. Historical changelog entries are unchanged.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+
 ## [v2.8.3]
 
 ### Fixed
