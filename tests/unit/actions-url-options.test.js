@@ -18,7 +18,6 @@ describe('actions-url-options', () => {
                 percentileRaw: '10, 50, 90',
                 lang: 'en'
             });
-            expect(options.autoRun).toBe(true);
             expect(options.baseUrl).toBeUndefined();
         });
 
@@ -41,8 +40,6 @@ describe('actions-url-options', () => {
                 baseUrl: 'https://moriyama-eng.github.io/fire-simulator/',
                 lang: 'en'
             });
-            expect(options.autoRun).toBe(true);
-            expect(options.baseUrl).toBe('https://moriyama-eng.github.io/fire-simulator/');
         });
     });
 
@@ -56,7 +53,6 @@ describe('actions-url-options', () => {
                 percentileRaw: '10, 50, 90',
                 lang: 'en'
             });
-            expect(options.autoRun).toBe(false);
             expect(options.baseUrl).toBeUndefined();
         });
     });

@@ -5,6 +5,18 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.8.5]
+
+### 追加
+- **エンジンとアプリ接着の自動テスト**: RNG 生成器、`js/worker.js` の `runWorkerBatch` export、通貨入力変換、破産後 remaining months と AR インフレ完走、UI と headless の既定パーセンタイル差、分析の `error.noBase` / `error.noFactors` とレベル別 params、分析 UI の高成功率・範囲外表示、比較タブの削除 confirm キャンセル、`params-accessor`、日本語 URL の現金・支出フルループ、simulation-engine の Worker スタブ分割、サマリカード、init の dirty 配線（表示トグル除外を含む）。
+
+### 変更
+- **テストスイートの衛生**: 信号の薄い重複（i18n 全文スナップショットや analysis-full-flow の代替など）を削除・統合した。金カナリア JSON は再生成していない。
+- **testing-guide の現在形**: 件数とモジュール地図を Vitest 実測（28 ファイル / 263 件）に合わせた。大多数は `runSimulation` を mock し、engine スタブファイルを例外と明記。比較タブの削除 confirm キャンセルはカバー済みと記載。
+- **Worker バッチの export**: `js/worker.js` のパス処理を `runWorkerBatch` として export。`onmessage` は薄いラッパで、Worker グローバルでのみ付く。`progress` / `complete` のメッセージ契約は変えていない。
+
+> **シミュレーション計算アルゴリズムおよび計算結果に変更はありません**（100% 完全一致）。
+
 ## [v2.8.4]
 
 ### 変更

@@ -1,4 +1,4 @@
-# Pre-Release Smoke Test Manual (v2.8.4)
+# Pre-Release Smoke Test Manual (v2.8.5)
 
 When releasing a new version, please perform manual verification using the following checklist.
 
@@ -38,41 +38,43 @@ When releasing a new version, please perform manual verification using the follo
 
 ## Release Scope
 
-- Target version: 2.8.4
+- Target version: 2.8.5
 - What changed in this release:
-  - Replaced implementation-flow identifiers in `docs/internal/release-checklist.template.md` with public process names. Procedure meaning is unchanged.
-  - Remapped the gitignore-side public heading quote in `AGENTS.md` section 9 (a) and the orchestration template section 0 public-heading sentence. Historical v2.2 sentence kept.
-  - Added CHANGELOG EN/JA latest entries for v2.8.4 (no implementation-flow identifiers).
-  - Synchronized version numbers to `v2.8.4` on metadata and documentation display surfaces.
+  - Test suite hygiene (drop low-signal cases, merge duplicates). Gold-canary JSON not regenerated.
+  - Automated tests for remaining engine and app gaps (RNG, worker batch export, currency conversion, analysis/comparison/URL/summary/init dirty).
+  - `js/worker.js` exports `runWorkerBatch`; `onmessage` attaches only in a worker global; message contract unchanged.
+  - testing-guide counts and current-tense notes (28 files / 263 cases).
+  - Public version markers and CHANGELOG latest entries synchronized to v2.8.5.
 - What did not change:
   - Simulation core calculation engine, random number generation, chart rendering, and mathematical outputs (bit-for-bit).
-  - Application JS, tests, CSS, CLI behavior.
-  - Historical CHANGELOG v2.8.2 wording (old tokens remain by design).
-  - Closed `.agent/tools/` filenames.
+  - Gold-canary reference JSON contents.
+  - Playwright / new E2E stack.
+  - Historical CHANGELOG entries through v2.8.4.
 - Document-impact table:
 
 | Path | Impact this release |
 |---|---|
-| `docs/internal/release-checklist.template.md` | Public headings and process names (implementation) |
-| `docs/internal/release-checklist.md` | Full overwrite from template; v2.8.4 H1 and this scope |
-| `CHANGELOG.md` / `CHANGELOG-ja.md` | New latest v2.8.4 entry only |
+| `package.json` / `package-lock.json` | Version 2.8.5 |
 | `README.md` / `README-ja.md` | Current-release marker only |
-| `package.json` / `package-lock.json` | Version 2.8.4 |
-| `index.html` / `docs.html` | Version meta, CSS queries, footer |
+| `CHANGELOG.md` / `CHANGELOG-ja.md` | New latest v2.8.5 entry only |
+| `index.html` | meta, CSS queries, footer, `#capFooterUrl` |
+| `docs.html` | CSS query |
 | `docs/internal/style-guide.md` | Example CSS query strings |
-| `docs/guide/cli-usage.md` | Example `toolVersion` 2.8.4 |
+| `docs/guide/cli-usage.md` | Example `toolVersion` 2.8.5 |
+| `docs/internal/testing-guide.md` | Counts and current-tense notes (already on branch) |
+| `js/worker.js` | `runWorkerBatch` export (already on branch) |
+| `tests/**` | Hygiene and gap coverage (already on branch) |
+| `docs/internal/release-checklist.md` | Full overwrite from template; v2.8.5 H1 and this scope |
 | `docs/guide/overview.md` | None (body unchanged) |
-| `AGENTS.md` (gitignored) | Public heading quote (a) only |
-| `.agent/templates/orchestration_template_v2.3.md` | Public-heading sentence only |
 
 ## Release Identity / Metadata
-- [x] package.json version is the target release version — verified: "version": "2.8.4"
-- [x] package-lock.json top-level version is the target release version — verified: "version": "2.8.4"
-- [x] package-lock.json packages[""].version is the target release version — verified: "version": "2.8.4"
-- [x] README.md current release marker is the target release version — verified: "**Current release: v2.8.4**"
-- [x] README-ja.md current release marker is the target release version — verified: "**現行リリース: v2.8.4**"
-- [x] CHANGELOG.md latest entry is the target release heading — verified: "## [v2.8.4]"
-- [x] CHANGELOG-ja.md latest entry is the target release heading — verified: "## [v2.8.4]"
+- [x] package.json version is the target release version — verified: "version": "2.8.5"
+- [x] package-lock.json top-level version is the target release version — verified: "version": "2.8.5"
+- [x] package-lock.json packages[""].version is the target release version — verified: "version": "2.8.5"
+- [x] README.md current release marker is the target release version — verified: "**Current release: v2.8.5**"
+- [x] README-ja.md current release marker is the target release version — verified: "**現行リリース: v2.8.5**"
+- [x] CHANGELOG.md latest entry is the target release heading — verified: "## [v2.8.5]"
+- [x] CHANGELOG-ja.md latest entry is the target release heading — verified: "## [v2.8.5]"
 
 ## README 3.0 Release Gate
 - [x] README.md and README-ja.md have identical section structure and order — verified: 12 ## headings in matching order plus hero (13-section README 3.0)
@@ -83,29 +85,29 @@ When releasing a new version, please perform manual verification using the follo
 - [x] Documentation Gateway contains all required destinations — verified: 10 dest rows in Documentation table
 - [x] #currency-semantics anchor resolves — verified: `<a name="currency-semantics"></a>` present
 - [x] README screenshot asset exists at docs/assets/readme/fire-simulator-overview.png — verified: file present
-- [x] Current release marker in both README files is the target release version — verified: v2.8.4 in README.md and README-ja.md
+- [x] Current release marker in both README files is the target release version — verified: v2.8.5 in README.md and README-ja.md
 - [x] Disclaimer unchanged — verified: disclaimer section intact
 - [x] License unchanged — verified: MIT License intact
 
 ## Documentation Integrity
 - [x] All README documentation links resolve — verified: 10 Documentation table paths exist on disk
 - [x] No forbidden obsolete documentation path is used by current README links — verified: current dests are guide/reference/explanation/tests/CHANGELOG only
-- [x] testing-guide.md matches actual test structure — verified: 25 files / 263 cases; disk has 25 *.test.js; npm test 263 passed
-- [x] cli-usage.md examples match current CLI implementation — verified: toolVersion 2.8.4; run/list-factors and flags match cli.js
-- [x] No stale current-version marker remains — verified: remaining 2.8.3 are CHANGELOG historical headings and AGENTS.md example cycle_id only
-- [x] CHANGELOG EN/JA latest entries describe the target release — verified: v2.8.4 Public release-checklist wording entries present in both changelogs
+- [x] testing-guide.md matches actual test structure — verified: 28 files / 263 cases; unit 21/214 integration 7/49; npm test 28 passed / 263 passed
+- [x] cli-usage.md examples match current CLI implementation — verified: toolVersion 2.8.5; run/list-factors and flags match cli.js
+- [x] No stale current-version marker remains — verified: remaining 2.8.4 are CHANGELOG historical headings and this ticket's historical-changelog notes
+- [x] CHANGELOG EN/JA latest entries describe the target release — verified: v2.8.5 Added/Changed (EN) and 追加/変更 (JA) for tests, worker export, and guide; historical v2.8.4 remains
 - [x] docs/guide/overview.md is content-consistent with README.md source sections (Overview, Psychological Load, Privacy, Deliberate Scope, Disclaimer); README.md is the single source of truth and overview.md is synced one-way (developer-only sections such as Features / CLI / License / Documentation are intentionally excluded) — verified: overview.md has Overview, Psychological Load, Privacy 4 sections, Deliberate Scope 3, Disclaimer
 
 ## CSS & Build Freshness Verification
-- [x] `npm run build:css` executes cleanly — verified: tailwindcss build completed (Done in 508ms)
+- [x] `npm run build:css` executes cleanly — verified: tailwindcss build completed (Done in 790ms)
 - [x] `git diff --exit-code -- css/tailwind.css` passes with zero diff (CSS freshness OK) — verified: CSS_DIFF_EXIT:0
 
 ## Automated Tests
-- [x] `npm test` passes all tests — verified: Test Files 25 passed (25) / Tests 263 passed (263)
+- [x] `npm test` passes all tests — verified: Test Files 28 passed (28) / Tests 263 passed (263)
 
 ## Simulation Tab
 - [x] Results are displayed by clicking the "Run Simulation" button — verified: p7_browser_smoke sim.run PASS; summary visible
-- [x] The summary card displays the success rate, final total assets median, and target asset maintenance probability — verified: Chrome smoke 成功率 92.9% / 中央値 5.1億円 / 目標資産維持確率 82.4%
+- [x] The summary card displays the success rate, final total assets median, and target asset maintenance probability — verified: Chrome smoke FIRE success rate 93.8% / median 5.1 oku JPY / target-asset maintenance 83.2%
 - [x] The total assets progression graph is rendered — verified: sim.assetChart PASS
 - [x] The downside focus toggle works (show only 50% or below) — verified: sim.downside toggled false -> true
 - [x] "Save image" succeeds — verified: sim.saveImage save button enabled after run
@@ -123,11 +125,11 @@ When releasing a new version, please perform manual verification using the follo
 - [x] Language switching (Japanese ⇔ English) correctly switches the title, tooltip, and axis labels of the new graphs — verified: en.switch PASS; i18n.test.js passed
 
 ## Analysis Tab
-- [x] Opening the Analysis tab displays the base scenario card — verified: an.base PASS with FIRE成功率 92.9%
-- [x] Clicking a factor card selects/deselects it — verified: an.select 選択中: 1因子
-- [x] The number of selected factors and scenarios is updated correctly — verified: an.count 選択中: 1因子
-- [x] "Run Analysis" displays the comparison table — verified: an.run clicked; analysis-full-flow.test.js passed
-- [x] The target table is displayed correctly — verified: analysis-full-flow.test.js passed
+- [x] Opening the Analysis tab displays the base scenario card — verified: an.base PASS with FIRE success rate 93.8%
+- [x] Clicking a factor card selects/deselects it — verified: an.select selected 1 factor
+- [x] The number of selected factors and scenarios is updated correctly — verified: an.count selected 1 factor
+- [x] "Run Analysis" displays the comparison table — verified: an.run clicked; analysis-ui.test.js passed
+- [x] The target table is displayed correctly — verified: analysis-ui.test.js passed
 - [x] Switching the evaluation metric updates the table and labels — verified: an.metric PASS; analysis-ui.test.js passed
 - [x] Deselecting all factors displays "Please select a factor" — verified: analysis-ui.test.js passed (deselect hides cards / disables run)
 - [x] The "Edit conditions in Simulation tab" button switches tabs — verified: an.edit switched to simulation
@@ -145,8 +147,8 @@ When releasing a new version, please perform manual verification using the follo
 - [x] All operation buttons are disabled during execution — verified: cmp.runAll runAll disabled=true
 - [x] Confirm that common settings (seed, path count) cannot be changed during execution — verified: cmp.runAll pathsDisabled=true
 - [x] The progress display is updated during execution (the table is redrawn and the button text is updated upon completion of each scenario) — verified: comparison-runner.test.js passed
-- [x] In Japanese mode, "億円" is displayed to the right of the initial risk assets — verified: cmp.oku 億円 visible
-- [x] In Japanese mode, "万円" is displayed to the right of the initial cash buffer — verified: cmp.man 万円 or cash column
+- [x] In Japanese mode, "億円" is displayed to the right of the initial risk assets — verified: cmp.oku oku-yen unit visible
+- [x] In Japanese mode, "万円" is displayed to the right of the initial cash buffer — verified: cmp.man man-yen unit or cash column
 - [x] In Japanese mode, "倍" is displayed to the right of the replenishment pace — verified: cmp.bai pace unit
 - [x] In English mode, the currency unit is displayed correctly such as "M" or "K" — verified: format.test.js passed
 - [x] In English mode, "x" is displayed to the right of the replenishment pace — verified: format.test.js passed
@@ -163,7 +165,7 @@ When releasing a new version, please perform manual verification using the follo
 - [x] When the "Run All" button is pressed while editing a scenario name, execution starts after the edited content is confirmed — verified: comparison-ui.test.js passed
 - [x] Even if select boxes (fluctuation model, t-distribution degrees of freedom, inflation fluctuation model) are changed, the simulation can run without errors (no NaN errors in the console) — verified: cmp.selects PASS; console.errors none
 - [x] Repeatedly switching tabs (Simulation ⇔ Analysis ⇔ Comparison) does not cause tab content to overlap, and only one tab is always displayed — verified: ui-state.test.js passed
-- [x] Analysis tab sync check: Run in the Simulation tab → Confirm that the base scenario matches in the Analysis tab — verified: an.base matches sim.summary 92.9%
+- [x] Analysis tab sync check: Run in the Simulation tab → Confirm that the base scenario matches in the Analysis tab — verified: an.base matches sim.summary success rate 93.8%
 - [x] Variable declaration check: Confirm that no `ReferenceError` occurs in the browser's developer console (in particular, that no `comparisonTabBtn` undefined error occurs) — verified: console.ref no ReferenceError/getParams
 - [x] Language switch double-execution prevention: Confirm that even if the language switch button is clicked multiple times, redraws are not executed in duplicate — verified: lang-detect.test.js passed
 - [x] Final confirmation of table closing tags: Confirm that the order of `</tbody><tr></div>` is correct in the developer tools — verified: comparison-ui.js generates correct tag nesting
@@ -192,7 +194,7 @@ When releasing a new version, please perform manual verification using the follo
 
 Note: `.github/` contains no release workflow; release preparation is operated manually.
 
-- [x] `node cli.js run <sample.json>` generates a full result JSON under `.agent/scratch/fire-sim/` and outputs a scalar summary to stdout — verified: run-2026-08-18T14-13-17-seed123456.json created
+- [x] `node cli.js run <sample.json>` generates a full result JSON under `.agent/scratch/fire-sim/` and outputs a scalar summary to stdout — verified: run-2026-08-20T16-18-19-seed123456.json created
 - [x] Scalar summary output matches specification (JSON fields `successRate`, `finalMedian`, `targetAssetMaintainRate`, etc. per `docs/guide/cli-usage.md`) — verified: successRate 90.12 finalMedian 477095552 targetAssetMaintainRate 80.28
 - [x] Confirm that `.agent/scratch/` output files do **not** appear in `git status` (`.agent/` is gitignored) — verified: GITIGNORE_OK; git status --short has no .agent/scratch paths
 - [x] `node cli.js run <file> --no-file` outputs summary to stdout without creating any output file — verified: p7_cli_smoke --no-file created no extra files
@@ -202,17 +204,17 @@ Note: `.github/` contains no release workflow; release preparation is operated m
 
 ## Version Consistency & Exhaustive Search (Prevention of Missed Updates)
 
-- [x] `package.json` version matches the target release version — verified: 2.8.4
-- [x] `index.html` all version occurrences match target release version: — verified: all 5 occurrences match 2.8.4
-  - [x] `<meta name="app-version">` — verified: content="2.8.4"
-  - [x] `<link rel="stylesheet" href="css/tailwind.css?v=...">` — verified: ?v=2.8.4
-  - [x] `<link rel="stylesheet" href="css/style.css?v=...">` — verified: ?v=2.8.4
-  - [x] Modal / Footer version span `<span>vX.Y.Z</span>` — verified: <span>v2.8.4</span>
-  - [x] Image capture footer element `#capFooterUrl` (`| vX.Y.Z`) — verified: | v2.8.4
-- [x] `{VERSION}` placeholders resolve to the `meta[name="app-version"]` target release version — verified: i18n.js replace {VERSION} from meta content="2.8.4"
-- [x] `docs.html` CSS query strings match target release version — verified: ?v=2.8.4
-- [x] `docs/internal/style-guide.md` example query strings match target release version — verified: ?v=2.8.4
-- [x] Run exhaustive workspace grep (`grep_search` for previous version string `vX.Y.Z-1`) to physically prove 0 missed occurrences across all source files — verified: remaining 2.8.3 are CHANGELOG v2.8.3 headings and AGENTS.md example cycle_id only
+- [x] `package.json` version matches the target release version — verified: 2.8.5
+- [x] `index.html` all version occurrences match target release version: — verified: all 5 occurrences match 2.8.5
+  - [x] `<meta name="app-version">` — verified: content="2.8.5"
+  - [x] `<link rel="stylesheet" href="css/tailwind.css?v=...">` — verified: ?v=2.8.5
+  - [x] `<link rel="stylesheet" href="css/style.css?v=...">` — verified: ?v=2.8.5
+  - [x] Modal / Footer version span `<span>vX.Y.Z</span>` — verified: <span>v2.8.5</span>
+  - [x] Image capture footer element `#capFooterUrl` (`| vX.Y.Z`) — verified: | v2.8.5
+- [x] `{VERSION}` placeholders resolve to the `meta[name="app-version"]` target release version — verified: i18n.js replace {VERSION} from meta content="2.8.5"
+- [x] `docs.html` CSS query strings match target release version — verified: ?v=2.8.5
+- [x] `docs/internal/style-guide.md` example query strings match target release version — verified: ?v=2.8.5
+- [x] Run exhaustive workspace grep (`grep_search` for previous version string `vX.Y.Z-1`) to physically prove 0 missed occurrences across all source files — verified: remaining 2.8.4 are CHANGELOG v2.8.4 headings and this ticket's historical-changelog notes only
 
 ## README 3.0 & Documentation Human Inspection Preview
 

@@ -89,19 +89,10 @@ describe('resolveInitialLang - navigator normalized string (third priority)', ()
     it('returns en when navigator normalized string is fr-FR (non-ja defaults to en)', () => {
         expect(resolveInitialLang('', 'fr-FR', null)).toBe('en');
     });
-
-    it('returns en when navigator normalized string is zh-CN', () => {
-        expect(resolveInitialLang('', 'zh-CN', null)).toBe('en');
-    });
 });
 
 describe('resolveInitialLang - fallback behavior', () => {
     it('falls back to ja when all sources are empty/null', () => {
-        expect(resolveInitialLang('', '', null)).toBe('ja');
-    });
-
-    it('falls back to ja when localStorage threw (storedLang=null) and no navigator', () => {
-        // Simulates localStorage exception scenario: storedLang passed as null
         expect(resolveInitialLang('', '', null)).toBe('ja');
     });
 });
@@ -146,18 +137,6 @@ describe('Boot inline vs Pure resolveInitialLang consistency (KEEP-IN-SYNC)', ()
             window.location = origLocation;
         });
     }
-
-    testCase('Case 1: navigator.languages=["ja-JP"]', {
-        search: '', stored: null, navLangs: ['ja-JP'], navLang: 'ja-JP'
-    });
-
-    testCase('Case 2: navigator.languages=["en-US"]', {
-        search: '', stored: null, navLangs: ['en-US'], navLang: 'en-US'
-    });
-
-    testCase('Case 3: navigator.languages=["fr-FR"]', {
-        search: '', stored: null, navLangs: ['fr-FR'], navLang: 'fr-FR'
-    });
 
     testCase('Case 4 (Fixed discrepancy case): navigator.languages=[], navigator.language="en-US"', {
         search: '', stored: null, navLangs: [], navLang: 'en-US'

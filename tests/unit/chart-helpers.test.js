@@ -46,15 +46,9 @@ describe('buildCdfPoints with mode', () => {
 });
 
 describe('formatAssetTooltipLabel', () => {
-    it('returns label: — when value is null', () => {
+    it.each([null, undefined])('returns label: — when value is %s', (value) => {
         setLanguage('ja');
-        const res = formatAssetTooltipLabel({ label: 'p50', value: null, allValues: [null], isJa: true });
-        expect(res).toBe('p50: —');
-    });
-
-    it('returns label: — when value is undefined', () => {
-        setLanguage('ja');
-        const res = formatAssetTooltipLabel({ label: 'p50', value: undefined, allValues: [undefined], isJa: true });
+        const res = formatAssetTooltipLabel({ label: 'p50', value, allValues: [value], isJa: true });
         expect(res).toBe('p50: —');
     });
 

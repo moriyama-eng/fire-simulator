@@ -72,20 +72,17 @@ function runCli(args, options = {}) {
 
 // ===== T5: list-factors =====
 describe('T5: list-factors', () => {
-    it('--list-factors option: outputs JSON matching FACTORS length and paramKey', () => {
-        const stdout = runCli(['--list-factors']);
+    it.each([
+        ['--list-factors'],
+        ['list-factors'],
+    ])('%s outputs JSON matching FACTORS length and paramKey', (alias) => {
+        const stdout = runCli([alias]);
         const parsed = JSON.parse(stdout);
         expect(Array.isArray(parsed.factors)).toBe(true);
         expect(parsed.factors.length).toBe(FACTORS.length);
         FACTORS.forEach((f, i) => {
             expect(parsed.factors[i].paramKey).toBe(f.paramKey);
         });
-    });
-
-    it('list-factors subcommand: outputs JSON matching FACTORS length', () => {
-        const stdout = runCli(['list-factors']);
-        const parsed = JSON.parse(stdout);
-        expect(parsed.factors.length).toBe(FACTORS.length);
     });
 });
 
@@ -155,120 +152,32 @@ describe('T3: CLI run subcommand', () => {
         rmSync(badParamsPath, { force: true });
     });
 
-    it('summary params contains all HEADLESS_DEFAULTS keys (full provenance params)', () => {
+    it.each([
+        ['summary --no-file', ['--no-file'], 'stdout'],
+        ['stdout', ['--stdout'], 'stdout'],
+        ['written file', [], 'file'],
+    ])('provenance params, percentiles, and meta (%s)', (_label, extraArgs, source) => {
         const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--no-file']);
-        const parsed = JSON.parse(stdout);
-
-        // Verify that params contains all HEADLESS_DEFAULTS keys
-        const defaultKeys = Object.keys(HEADLESS_DEFAULTS);
-        for (const key of defaultKeys) {
-            expect(parsed.params).toHaveProperty(key);
-        }
-
-        // Verify key params beyond the old 4-field subset are present
-        expect(parsed.params).toHaveProperty('expectedReturn');
-        expect(parsed.params).toHaveProperty('volatility');
-        expect(parsed.params).toHaveProperty('useTDistribution');
-        expect(parsed.params).toHaveProperty('inflationRate');
-        expect(parsed.params).toHaveProperty('cashBufferToggle');
-        expect(parsed.params).toHaveProperty('guardrailToggle');
-    });
-
-    it('summary output includes top-level percentiles array', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--no-file']);
-        const parsed = JSON.parse(stdout);
-
-        expect(Array.isArray(parsed.percentiles)).toBe(true);
-        expect(parsed.percentiles.length).toBeGreaterThan(0);
-    });
-
-    it('summary output includes meta with toolVersion and generatedAt', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--no-file']);
-        const parsed = JSON.parse(stdout);
-
-        expect(parsed).toHaveProperty('meta');
-        expect(parsed.meta).toHaveProperty('toolVersion');
-        expect(parsed.meta).toHaveProperty('generatedAt');
-        expect(typeof parsed.meta.toolVersion).toBe('string');
-        expect(parsed.meta.toolVersion).toMatch(/^\d+\.\d+\.\d+$/);
-    });
-
-    it('meta.generatedAt is a valid ISO8601 UTC timestamp (YYYY-MM-DDTHH:mm:ss.sssZ)', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--no-file']);
-        const parsed = JSON.parse(stdout);
-
-        const iso8601UtcRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-        expect(parsed.meta.generatedAt).toMatch(iso8601UtcRegex);
-        // Also verify it parses as a valid date
-        expect(Number.isNaN(Date.parse(parsed.meta.generatedAt))).toBe(false);
-    });
-
-    it('--stdout mode: contains complete provenance params with all HEADLESS_DEFAULTS keys', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--stdout']);
-        const parsed = JSON.parse(stdout);
-
-        // params must exist and contain every key from HEADLESS_DEFAULTS
-        const defaultKeys = Object.keys(HEADLESS_DEFAULTS);
-        for (const key of defaultKeys) {
-            expect(parsed.params).toHaveProperty(key);
-        }
-        // Spot-check keys beyond the old 4-field subset
-        expect(parsed.params).toHaveProperty('expectedReturn');
-        expect(parsed.params).toHaveProperty('volatility');
-        expect(parsed.params).toHaveProperty('useTDistribution');
-        expect(parsed.params).toHaveProperty('inflationRate');
-        expect(parsed.params).toHaveProperty('cashBufferToggle');
-        expect(parsed.params).toHaveProperty('guardrailToggle');
-    });
-
-    it('--stdout mode: includes top-level percentiles array and meta', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--stdout']);
-        const parsed = JSON.parse(stdout);
-
-        // Top-level percentiles must be a non-empty array
-        expect(Array.isArray(parsed.percentiles)).toBe(true);
-        expect(parsed.percentiles.length).toBeGreaterThan(0);
-
-        // meta must contain toolVersion (semver) and generatedAt (ISO 8601 UTC)
-        expect(parsed).toHaveProperty('meta');
-        expect(typeof parsed.meta.toolVersion).toBe('string');
-        expect(parsed.meta.toolVersion).toMatch(/^\d+\.\d+\.\d+$/);
-        const iso8601UtcRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-        expect(parsed.meta.generatedAt).toMatch(iso8601UtcRegex);
-    });
-
-    it('file mode (default): written file contains complete provenance params, percentiles, and meta', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile]);
+        const stdout = runCli(['run', paramsFile, ...extraArgs]);
         const summary = JSON.parse(stdout);
-
-        // Track the output file for cleanup
-        expect(typeof summary.outputFile).toBe('string');
-        createdFiles.push(summary.outputFile);
-
-        // Read the full JSON written to disk using already-imported readFileSync
-        const fullOutput = JSON.parse(readFileSync(summary.outputFile, 'utf-8'));
-
-        // params must contain all HEADLESS_DEFAULTS keys
+        let payload = summary;
+        if (source === 'file') {
+            expect(typeof summary.outputFile).toBe('string');
+            createdFiles.push(summary.outputFile);
+            payload = JSON.parse(readFileSync(summary.outputFile, 'utf-8'));
+        }
         const defaultKeys = Object.keys(HEADLESS_DEFAULTS);
         for (const key of defaultKeys) {
-            expect(fullOutput.params).toHaveProperty(key);
+            expect(payload.params).toHaveProperty(key);
         }
-
-        // top-level percentiles
-        expect(Array.isArray(fullOutput.percentiles)).toBe(true);
-        expect(fullOutput.percentiles.length).toBeGreaterThan(0);
-
-        // meta
-        expect(fullOutput).toHaveProperty('meta');
-        expect(typeof fullOutput.meta.toolVersion).toBe('string');
-        expect(typeof fullOutput.meta.generatedAt).toBe('string');
+        expect(Array.isArray(payload.percentiles)).toBe(true);
+        expect(payload.percentiles.length).toBeGreaterThan(0);
+        expect(payload).toHaveProperty('meta');
+        expect(typeof payload.meta.toolVersion).toBe('string');
+        expect(payload.meta.toolVersion).toMatch(/^\d+\.\d+\.\d+$/);
+        const iso8601UtcRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+        expect(payload.meta.generatedAt).toMatch(iso8601UtcRegex);
+        expect(Number.isNaN(Date.parse(payload.meta.generatedAt))).toBe(false);
     });
 });
 
@@ -280,13 +189,6 @@ describe('T4: Float32Array conversion with --stdout', () => {
         const parsed = JSON.parse(stdout);
         expect(Array.isArray(parsed.totalPercentileData)).toBe(true);
         expect(Array.isArray(parsed.totalPercentileData[0])).toBe(true);
-    });
-
-    it('maxDdPerPath elements are numbers', () => {
-        const paramsFile = setupTmpParams();
-        const stdout = runCli(['run', paramsFile, '--stdout']);
-        const parsed = JSON.parse(stdout);
-        expect(typeof parsed.maxDdPerPath[0]).toBe('number');
     });
 
     it('skips file write when --stdout is specified (outputFile is undefined)', () => {

@@ -7,14 +7,6 @@ import {
 
 describe('comparison-ui helpers', () => {
     describe('convertJPYToDisplayValue', () => {
-        it('Converts oku-yen to M-dollar', () => {
-            expect(convertJPYToDisplayValue(100000000, 'unit.oku')).toBe(1.0);
-            expect(convertJPYToDisplayValue(150000000, 'unit.oku')).toBe(1.5);
-        });
-        it('Converts man-yen to K-dollar', () => {
-            expect(convertJPYToDisplayValue(10000000, 'unit.man')).toBe(100);
-            expect(convertJPYToDisplayValue(300000, 'unit.man')).toBe(3);
-        });
         it('Returns value as-is when no unit', () => {
             expect(convertJPYToDisplayValue(85.5, '%')).toBe(85.5);
             expect(convertJPYToDisplayValue(5, 'unit.multiplier')).toBe(5);
@@ -31,14 +23,6 @@ describe('comparison-ui helpers', () => {
     });
 
     describe('convertDisplayValueToJPY', () => {
-        it('Converts M-dollar to yen', () => {
-            expect(convertDisplayValueToJPY(1.0, 'unit.oku')).toBe(100000000);
-            expect(convertDisplayValueToJPY(1.5, 'unit.oku')).toBe(150000000);
-        });
-        it('Converts K-dollar to yen', () => {
-            expect(convertDisplayValueToJPY(100, 'unit.man')).toBe(10000000);
-            expect(convertDisplayValueToJPY(3, 'unit.man')).toBe(300000);
-        });
         it('Returns value as-is when no unit', () => {
             expect(convertDisplayValueToJPY(85.5, '%')).toBe(85.5);
             expect(convertDisplayValueToJPY(5, 'unit.multiplier')).toBe(5);

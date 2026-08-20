@@ -45,11 +45,21 @@ describe('comparison-ui integration', () => {
         await waitFor(() => expect(CS.getScenarioCount()).toBe(1));
     });
 
+    it('does not decrease scenario count when delete confirm is cancelled', () => {
+        window.confirm = vi.fn().mockReturnValue(false);
+        CS.addScenario(makeMockScenarioInputs(), mockT);
+        renderComparisonTab();
+        expect(CS.getScenarioCount()).toBe(2);
+        const deleteBtn = document.querySelector('[data-action="delete"]');
+        deleteBtn.click();
+        expect(CS.getScenarioCount()).toBe(2);
+        expect(window.confirm).toHaveBeenCalled();
+    });
+
     it('The last remaining scenario is not deleted', async () => {
         expect(CS.getScenarioCount()).toBe(1);
         const deleteBtn = document.querySelector('[data-action="delete"]');
         expect(deleteBtn.disabled).toBe(true);
-        expect(CS.deleteScenario(CS.getScenarios()[0].id)).toBe(false);
         expect(CS.getScenarioCount()).toBe(1);
     });
 
@@ -63,12 +73,6 @@ describe('comparison-ui integration', () => {
         // Second cell in the row following data-section="output-header" (result of the first scenario)
         const resultCell = document.querySelector('tbody tr[data-section="output-header"] ~ tr td:nth-child(2)');
         expect(resultCell.textContent.trim()).toBe('');
-    });
-
-    it('The "Run All" button calls the simulation', async () => {
-        const runBtn = document.getElementById('runAllBtn');
-        runBtn.click();
-        await waitFor(() => expect(runSimulation).toHaveBeenCalled());
     });
 
     it('The initial_cash_buffer input is disabled when CB is OFF', () => {

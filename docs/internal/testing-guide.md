@@ -14,9 +14,9 @@ This project uses two layers of automated testing with Vitest + jsdom.
 
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
 |----|-------------|----------|-------------|------|
-| Unit tests | `tests/unit/` | Vitest + jsdom | Pure functions, core logic, state management | 18 files (200 test cases) |
-| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 7 files (63 test cases) |
-| **Total** | `tests/` | Vitest + jsdom | Full test suite coverage | **25 files (263 test cases)** |
+| Unit tests | `tests/unit/` | Vitest + jsdom | Pure functions, core logic, state management | 21 files (214 test cases) |
+| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 7 files (49 test cases) |
+| **Total** | `tests/` | Vitest + jsdom | Full test suite coverage | **28 files (263 test cases)** |
 
 ### 1.1 Test Target Module Map
 
@@ -31,22 +31,27 @@ js/core/
 ├── state.js             → tests/integration/ui-state.test.js
 ├── url.js               → tests/unit/url.test.js, tests/integration/query-params.test.js
 ├── headless-params.js   → tests/unit/headless.test.js
-└── chart-helpers.js     → tests/unit/chart-helpers.test.js
 
 js/app/
+├── charts.js            → tests/unit/chart-helpers.test.js
 ├── actions-url-options.js → tests/unit/actions-url-options.test.js
+├── ui-helpers.js        → tests/unit/ui-helpers-currency.test.js
+├── summary.js           → tests/unit/summary.test.js
+├── init.js              → tests/integration/init-dirty.test.js
 
 js/
-├── simulation-engine.js → (Covered indirectly by integration tests)
+├── worker.js            → tests/unit/headless.test.js (T8 runWorkerBatch), tests/unit/simulation-engine.test.js
+├── simulation-engine.js → tests/unit/simulation-engine.test.js
+├── params-accessor.js   → tests/unit/params-accessor.test.js
 ├── analysis-state.js    → tests/unit/analysis-state.test.js
 ├── analysis-runner.js   → tests/unit/analysis-runner.test.js
-├── analysis-ui.js       → tests/integration/analysis-ui.test.js, tests/integration/analysis-full-flow.test.js
+├── analysis-ui.js       → tests/integration/analysis-ui.test.js
 ├── comparison-state.js  → tests/unit/comparison-state.test.js
 ├── comparison-runner.js → tests/unit/comparison-runner.test.js
 ├── comparison-ui.js     → tests/unit/comparison-ui.test.js, tests/integration/comparison-ui.test.js
 ├── lang-detect.js       → tests/unit/lang-detect.test.js
-├── i18n.js              → tests/unit/i18n.test.js, tests/unit/i18n-snapshot.test.js
-└── app.js               → (Covered indirectly by integration tests)
+├── i18n.js              → tests/unit/i18n.test.js
+└── app.js               → tests/integration/init-dirty.test.js (boot)
 
 Repository root
 └── cli.js               → tests/integration/cli.test.js
@@ -116,6 +121,7 @@ and their purpose is not to reproduce actual output. This is for the following r
   parameter adjustments (including bug fixes) will frequently break the tests
 - A design that verifies **the correctness of the logic** such as interpolation calculations and factor scale conversions,
   rather than the values themselves, is adopted
+- Two frozen-seed gold canaries are the exception: UI `reference-results.json` (log-t, 1000 paths) and headless `headless-reference-results.json` (log-normal, input 1000 clamped to 5000). Do not mix their numbers. Do not add further numerical locks from unused JSON fields.
 
 ### 3.2 Test Fixture Design Guidelines
 
@@ -140,8 +146,8 @@ They differ from actual simulation results (output from running with default par
 
 ### 3.3 Mock Strategy
 
-- **`runSimulation` (simulation-engine.js)**: Mocked in all tests.
-  Does not start an actual Web Worker; uses the return value of `makeDummySimResult()` as a substitute.
+- **`runSimulation` (simulation-engine.js)**: Mocked in most tests (analysis, comparison, below-init charts, init-dirty, and similar). Those tests do not start a real Web Worker; they substitute `makeDummySimResult()` or another mock return value.
+  Exception: `tests/unit/simulation-engine.test.js` replaces the global `Worker` with a stub that calls production `runWorkerBatch`, then awaits production `runSimulation`. Constructing `new Worker('js/worker.js')` is not a success condition.
 - **`vi.resetAllMocks()`**: Executed in `beforeEach` of each test to completely remove
   the residual counter of `mockRejectedValueOnce`.
 
@@ -160,8 +166,8 @@ Since CI environments may be slower than local environments, extend the `timeout
 
 ### 4.1 Unit Tests (`tests/unit/`)
 
-- Targets: Pure functions and state management modules under `js/core/`
-- Characteristics: Does not depend on DOM, fast (< 1 second)
+- Targets: Pure functions and state management modules under `js/core/`, plus some app helpers
+- Characteristics: Fast. Many cases are DOM-free pure functions. Some unit files use a jsdom DOM or a global `Worker` stub (`params-accessor`, `summary`, `ui-helpers-currency`, `simulation-engine`)
 - Naming: `{module-name}.test.js`
 - Examples: Correctness of parameter conversion, reproducibility of random seeds, percentile calculation
 
@@ -178,13 +184,14 @@ Since CI environments may be slower than local environments, extend the `timeout
 - **Purpose**: To ensure that results have not changed during refactoring of the core calculation logic
 - **How to generate reference data**: Execute `tests/fixtures/generate-reference.js` in browser DevTools
 - **Note**: Reference data was generated with `paths=1000`. Since `getParamsFromInputs` clamps `simPaths` to 5000, `params.simPaths = 1000` is set directly in the test code to maintain consistency with this reference data.
+- Headless T1 uses a **separate** fixture (`tests/fixtures/headless-reference-results.json`) and must not be compared to the UI reference numbers.
 
 ### 4.4 Comparison Tab Tests (`tests/unit/comparison-*.test.js`, `tests/integration/comparison-ui.test.js`)
 
 - **State management** (`comparison-state.js`): Scenario addition, deletion, duplication, movement; clearing results when common settings change; movement processing when the array is empty, etc.
 - **Execution logic** (`comparison-runner.js`): Parameter conversion (including fixed rate 100 yen = 1 dollar), sequential execution, error handling, preventing interference of progress callbacks.
 - **UI helpers** (`comparison-ui.js`): Currency conversion (JPY ↔ USD), dynamic conversion of step/min/max in English mode, inverse conversion consistency, prevention of conversion of non-currency parameters.
-- **Integration tests**: Scenario addition/deletion, run button, reordering, conditional display (row hiding when CB/GR OFF), deletion confirmation cancel, prevention of NaN when changing select boxes.
+- **Integration tests**: Scenario addition/deletion (including confirmation cancel, which leaves the scenario count unchanged), reordering, conditional display (row hiding when CB/GR OFF), prevention of NaN when changing select boxes.
 
 ### 4.5 About E2E Tests (Reasons for Not Adopting)
 
@@ -288,7 +295,8 @@ it('toggles state on click', () => {
 | T5 | tests/integration/cli.test.js | list-factors: Output `factors` count and `paramKey` values match `FACTORS` |
 | T6 | tests/unit/headless.test.js | currency=USD: `result.currency === 'USD'`, no rate conversion applied |
 | T7 | tests/unit/headless.test.js | normalizeHeadlessParams: HEADLESS_DEFAULTS fallback, clamp boundaries, guardrail cross-validation, boolean defaults, simDfManual=false |
-| T8 | tests/unit/headless.test.js | Worker vs Headless equivalence: Bit-for-bit output match between `runWorkerHarness` (1, 3, 8 workers) and `runSimulationHeadless` |
+| T8 | tests/unit/headless.test.js | Worker vs Headless equivalence: Bit-for-bit output match for numWorkers in [1, 3, 8]. Path work calls production `runWorkerBatch` from `js/worker.js`. Split/merge orchestration stays in the test. Does not start `new Worker`. |
+| T9 | tests/integration/cli.test.js | CLI round-trip: re-running with output `params` + `percentiles` produces identical results |
 | T10 | tests/unit/params.test.js | Shared clamp helpers: Unit tests for pure clamp functions (`clampSimPaths`, `clampNonPositive`, `clampNonNegative`, `clampRange`, `clampMinDf`, `resolveGuardrailRelease`) |
 
 ### Test Data

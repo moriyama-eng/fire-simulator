@@ -41,7 +41,7 @@ describe('query-params', () => {
 // ===== P1-01 critical regression: stored=ja x ?lang=en&cash=100&expense=3 (v2.7.1) =====
 // Validates that getParamsFromInputs correctly converts EN-mode URL values to internal JPY.
 // This is the primary regression test for the URL reproduction bug fixed in v2.7.1.
-describe('P1-01 regression: EN URL values convert correctly to internal JPY', () => {
+describe('EN input values convert correctly to internal JPY', () => {
     beforeEach(() => {
         delete globalThis.__currentLang;
     });
@@ -225,9 +225,58 @@ describe('applyQueryParams full flow with auto=1, languageChanged spy & double-c
 
         document.removeEventListener('languageChanged', langChangedSpy);
     });
+
+    it('processes ?lang=ja&cash=1000&expense=30 through applyQueryParams without languageChanged', () => {
+        try { localStorage.setItem('lang', 'ja'); } catch (e) {}
+        globalThis.__currentLang = 'ja';
+        setLanguage('ja');
+
+        delete window.location;
+        window.location = new URL('http://localhost/?lang=ja&cash=1000&expense=30');
+
+        const langChangedSpy = vi.fn();
+        document.addEventListener('languageChanged', langChangedSpy);
+
+        applyQueryParams(vi.fn());
+
+        expect(langChangedSpy).toHaveBeenCalledTimes(0);
+        expect(document.getElementById('initialCashBufferNum').value).toBe('1000');
+        expect(document.getElementById('monthlyExpenseNum').value).toBe('30');
+
+        const jaParams = getParamsFromInputs({
+            initialRiskAssetNum: document.getElementById('initialRiskAssetNum').value,
+            initialCashBufferNum: document.getElementById('initialCashBufferNum').value,
+            monthlyExpenseNum: document.getElementById('monthlyExpenseNum').value,
+            expectedReturnNum: document.getElementById('expectedReturnNum').value,
+            volatilityNum: document.getElementById('volatilityNum').value,
+            inflationRateNum: document.getElementById('inflationRateNum').value,
+            simYearsNum: document.getElementById('simYearsNum').value,
+            simPathsNum: document.getElementById('simPathsNum').value,
+            cashBufferToggle: document.getElementById('cashBufferToggle').checked,
+            drawdownTriggerNum: document.getElementById('drawdownTriggerNum').value,
+            drawdownReplenishNum: document.getElementById('drawdownReplenishNum').value,
+            replenishPaceNum: document.getElementById('replenishPaceNum').value,
+            guardrailToggle: document.getElementById('guardrailToggle').checked,
+            guardrailTriggerNum: document.getElementById('guardrailTriggerNum').value,
+            guardrailReleaseNum: document.getElementById('guardrailReleaseNum').value,
+            guardrailReductionNum: document.getElementById('guardrailReductionNum').value,
+            inflationModelToggle: document.getElementById('inflationModelToggle').checked,
+            infVolNum: document.getElementById('infVolNum').value,
+            infArNum: document.getElementById('infArNum').value,
+            returnModelSelect: document.getElementById('returnModelSelect').value,
+            simDfToggle: document.getElementById('simDfToggle').checked,
+            simDfNum: document.getElementById('simDfNum').value,
+            seedToggle: document.getElementById('seedToggle').checked,
+            seedNum: document.getElementById('seedNum').value,
+        });
+        expect(jaParams.initialCashBuffer).toBe(10_000_000);
+        expect(jaParams.monthlyExpense).toBe(300_000);
+
+        document.removeEventListener('languageChanged', langChangedSpy);
+    });
 });
 
-describe('v2.8.0 query-params & html lang sync enhancements', () => {
+describe('query-params lang/auto parse and html lang sync', () => {
     it('parses lang and auto query parameters correctly via parseQueryParams', () => {
         const query = '?lang=en&auto=1&asset=2&cash=500';
         const parsed = parseQueryParams(query);
