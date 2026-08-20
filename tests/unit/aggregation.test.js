@@ -28,59 +28,16 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         };
     };
 
-    // Test case 1: all paths exceed threshold → 100%
-    it('All paths exceed threshold → 100%', () => {
-        const simPaths = 10;
-        const dataLen = 361;
-        const finalAssets = Array(simPaths).fill(150_000_000);
-        const initialTotalAssets = 100_000_000;
-        const targetAssetRatio = 100;
-        
-        const mock = createMockBuffers(simPaths, dataLen, finalAssets);
-        const result = aggregateResultsProduction({
-            ...mock,
-            simPaths,
-            dataLen,
-            percentiles: [50],
-            bankruptCount: 0,
-            targetAssetRatio,
-            initialTotalAssets,
-        });
-        expect(result.targetAssetMaintainRate).toBe(100);
-    });
-
-    // Test case 2: half of paths exceed threshold → 50%
-    it('Half of paths exceed threshold → 50%', () => {
-        const simPaths = 10;
-        const dataLen = 361;
-        const finalAssets = [
+    it.each([
+        ['all paths exceed', Array(10).fill(150_000_000), 100],
+        ['half of paths exceed', [
             150_000_000, 150_000_000, 150_000_000, 150_000_000, 150_000_000,
-             50_000_000,  50_000_000,  50_000_000,  50_000_000,  50_000_000,
-        ];
-        const initialTotalAssets = 100_000_000;
-        const targetAssetRatio = 100;
-        
-        const mock = createMockBuffers(simPaths, dataLen, finalAssets);
-        const result = aggregateResultsProduction({
-            ...mock,
-            simPaths,
-            dataLen,
-            percentiles: [50],
-            bankruptCount: 0,
-            targetAssetRatio,
-            initialTotalAssets,
-        });
-        expect(result.targetAssetMaintainRate).toBe(50);
-    });
-
-    // Test case 3: 0 paths exceed threshold → 0%
-    it('0 paths exceed threshold → 0%', () => {
+            50_000_000, 50_000_000, 50_000_000, 50_000_000, 50_000_000,
+        ], 50],
+        ['no paths exceed', Array(10).fill(50_000_000), 0],
+    ])('%s → maintain rate %s', (_label, finalAssets, expectedRate) => {
         const simPaths = 10;
         const dataLen = 361;
-        const finalAssets = Array(simPaths).fill(50_000_000);
-        const initialTotalAssets = 100_000_000;
-        const targetAssetRatio = 100;
-        
         const mock = createMockBuffers(simPaths, dataLen, finalAssets);
         const result = aggregateResultsProduction({
             ...mock,
@@ -88,10 +45,10 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
             dataLen,
             percentiles: [50],
             bankruptCount: 0,
-            targetAssetRatio,
-            initialTotalAssets,
+            targetAssetRatio: 100,
+            initialTotalAssets: 100_000_000,
         });
-        expect(result.targetAssetMaintainRate).toBe(0);
+        expect(result.targetAssetMaintainRate).toBe(expectedRate);
     });
 
     // Test case 4: targetAssetRatio=0.5 (threshold halved) → all paths exceed = 100%

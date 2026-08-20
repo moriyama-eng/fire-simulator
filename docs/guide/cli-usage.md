@@ -105,7 +105,7 @@ The summary mode additionally includes:
     "currency": "JPY"
   },
   "meta": {
-    "toolVersion": "2.8.4",
+    "toolVersion": "2.8.5",
     "generatedAt": "2026-08-02T14:00:00.000Z"
   },
   "dataLen": 361

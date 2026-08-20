@@ -7,8 +7,6 @@ const dom = readFileSync('tests/fixtures/dom-snippet.html', 'utf-8');
 describe('dirty state', () => {
     beforeEach(() => { document.body.innerHTML = dom; markResultClean(); });
     it('disables buttons when input changes', () => {
-        document.getElementById('expectedReturnNum').value = '15.0';
-        document.getElementById('expectedReturnNum').dispatchEvent(new Event('input', { bubbles: true }));
         markInputChanged();
         expect(document.getElementById('shareXBtn').disabled).toBe(true);
     });

@@ -11,8 +11,7 @@ import {
     normalizeHeadlessPercentiles,
 } from '../../js/core/headless-params.js';
 import { runSimulationHeadless } from '../../js/headless.js';
-import { xoshiro128ss, createNormalGenerator, createGammaGenerator, createTGenerator } from '../../js/core/random.js';
-import { runSinglePath } from '../../js/core/simulation.js';
+import { runWorkerBatch } from '../../js/worker.js';
 import { aggregateResultsProduction } from '../../js/core/aggregation.js';
 import { calcAutoDf } from '../../js/core/params.js';
 
@@ -35,29 +34,20 @@ describe('T7: normalizeHeadlessParams', () => {
         expect(p.initialCashBuffer).toBe(10_000_000);
     });
 
-    it('simPaths clamp: 100 -> 5000', () => {
-        const p = normalizeHeadlessParams({ simPaths: 100 });
-        expect(p.simPaths).toBe(5000);
-    });
-
-    it('simPaths clamp: 99999 -> 50000', () => {
-        const p = normalizeHeadlessParams({ simPaths: 99999 });
-        expect(p.simPaths).toBe(50000);
-    });
-
-    it('drawdownTrigger clamp: positive -> 0', () => {
-        const p = normalizeHeadlessParams({ drawdownTrigger: 5 });
-        expect(p.drawdownTrigger).toBe(0);
-    });
-
-    it('targetAssetRatio clamp: 600 -> 500', () => {
-        const p = normalizeHeadlessParams({ targetAssetRatio: 600 });
-        expect(p.targetAssetRatio).toBe(500);
-    });
-
-    it('simDfNum clamp: 1 -> 2.5', () => {
-        const p = normalizeHeadlessParams({ simDfNum: 1 });
-        expect(p.simDfNum).toBe(2.5);
+    it.each([
+        ['simPaths', { simPaths: 100 }, 'simPaths', 5000],
+        ['simPaths', { simPaths: 99999 }, 'simPaths', 50000],
+        ['drawdownTrigger', { drawdownTrigger: 5 }, 'drawdownTrigger', 0],
+        ['targetAssetRatio', { targetAssetRatio: 600 }, 'targetAssetRatio', 500],
+        ['simDfNum', { simDfNum: 1 }, 'simDfNum', 2.5],
+        ['replenishPace', { replenishPace: -5 }, 'replenishPace', 0],
+        ['infAr high', { infAr: 1.5 }, 'infAr', 1.0],
+        ['infAr low', { infAr: -0.5 }, 'infAr', 0],
+        ['simYears', { simYears: 0 }, 'simYears', 1],
+        ['initialRiskAsset', { initialRiskAsset: -1000 }, 'initialRiskAsset', 0],
+    ])('clamps %s via normalizeHeadlessParams', (_label, input, key, expected) => {
+        const p = normalizeHeadlessParams(input);
+        expect(p[key]).toBe(expected);
     });
 
     it('seedNum clamp: 0 / negative / out of bounds', () => {
@@ -77,11 +67,6 @@ describe('T7: normalizeHeadlessParams', () => {
         expect(p.guardrailToggle).toBe(false);
         expect(p.useArInflation).toBe(false);
         expect(p.useTDistribution).toBe(false);
-        expect(p.simDfManual).toBe(false);
-    });
-
-    it('simDfManual: false = auto DF mode (matches HEADLESS_DEFAULTS)', () => {
-        const p = normalizeHeadlessParams({});
         expect(p.simDfManual).toBe(false);
     });
 
@@ -105,30 +90,6 @@ describe('T7: normalizeHeadlessParams', () => {
         expect(p.guardrailRelease).toBe(-25);
     });
 
-    it('replenishPace clamp: negative -> 0', () => {
-        const p = normalizeHeadlessParams({ replenishPace: -5 });
-        expect(p.replenishPace).toBe(0);
-    });
-
-    it('infAr clamp: 1.5 -> 1.0', () => {
-        const p = normalizeHeadlessParams({ infAr: 1.5 });
-        expect(p.infAr).toBe(1.0);
-    });
-
-    it('infAr clamp: -0.5 -> 0', () => {
-        const p = normalizeHeadlessParams({ infAr: -0.5 });
-        expect(p.infAr).toBe(0);
-    });
-
-    it('simYears clamp: 0 -> 1', () => {
-        const p = normalizeHeadlessParams({ simYears: 0 });
-        expect(p.simYears).toBe(1);
-    });
-
-    it('initialRiskAsset clamp: negative -> 0', () => {
-        const p = normalizeHeadlessParams({ initialRiskAsset: -1000 });
-        expect(p.initialRiskAsset).toBe(0);
-    });
 });
 
 // ===== normalizeHeadlessPercentiles =====
@@ -157,15 +118,10 @@ describe('normalizeHeadlessPercentiles', () => {
 
 // ===== T1: Reproducibility Test =====
 describe('T1: runSimulationHeadless Reproducibility (matches reference data)', () => {
-    it('successRate matches reference data within 1 decimal place', () => {
+    it('successRate and finalMedian match reference data', () => {
         const params = normalizeHeadlessParams({ simPaths: 1000, seedNum: 123456 });
         const result = runSimulationHeadless(params, [10, 30, 50, 70, 90]);
         expect(Math.round(result.successRate * 10)).toBe(Math.round(refData.successRate * 10));
-    });
-
-    it('finalMedian matches reference data integer portion', () => {
-        const params = normalizeHeadlessParams({ simPaths: 1000, seedNum: 123456 });
-        const result = runSimulationHeadless(params, [10, 30, 50, 70, 90]);
         expect(Math.round(result.finalMedian)).toBe(Math.round(refData.finalMedian));
     });
 });
@@ -201,24 +157,10 @@ describe('T6: currency=USD', () => {
         const result = runSimulationHeadless(params, [10, 30, 50, 70, 90]);
         expect(result.currency).toBe('USD');
     });
-
-    it('USD input values are reflected in aggregation without currency conversion (finalMedian > 0)', () => {
-        const params = normalizeHeadlessParams({
-            simPaths: 5000,
-            currency: 'USD',
-            initialRiskAsset: 1_000_000, // $1M (no JPY conversion)
-            monthlyExpense: 3_000,
-        });
-        const result = runSimulationHeadless(params, [10, 30, 50, 70, 90]);
-        expect(result.finalMedian).toBeGreaterThan(0);
-        expect(result.finalMedian).toBeLessThan(1e12); // Confirm 100x conversion is NOT applied
-    });
 });
 
 // ===== T8: Worker vs Headless equivalence check =====
-// NOTE: This harness is a Node-compatible replica (direct copy of the path-splitting,
-// seed-offset, buffer-merge, and aggregation logic) of simulation-engine.js + worker.js.
-// If simulation-engine.js or worker.js changes, this harness MUST be kept in sync.
+// Split/merge orchestration stays in the test. Path work calls production runWorkerBatch.
 function runWorkerHarness(params, userPercentiles, numWorkers) {
     const { simYears, simPaths } = params;
     const basePaths = Math.floor(simPaths / numWorkers);
@@ -231,47 +173,18 @@ function runWorkerHarness(params, userPercentiles, numWorkers) {
 
     for (let i = 0; i < numWorkers; i++) {
         const pathsCount = basePaths + (i < remainder ? 1 : 0);
-        // NOTE: Empty worker case (pathsCount === 0) is unreachable in production/tests because simPaths >= 5000 and numWorkers <= 8.
         if (pathsCount === 0) break;
 
-        const totals = new Float32Array(pathsCount * dataLen);
-        const cashes = new Float32Array(pathsCount * dataLen);
-        const dds = new Float32Array(pathsCount * dataLen);
-        const maxDds = new Float32Array(pathsCount);
-        const maxUws = new Float32Array(pathsCount);
-        const belowInitPeriods = new Float32Array(pathsCount);
-        const consecutiveSellPeriods = new Float32Array(pathsCount);
-        let bankruptCount = 0;
-
-        for (let p = 0; p < pathsCount; p++) {
-            // Seed offset logic: seedNum + currentSeedOffset + p corresponds to global path index seedNum + p_global
-            const rng = xoshiro128ss(params.seedNum + currentSeedOffset + p);
-            const normalGen = createNormalGenerator(rng);
-            const gammaRand = createGammaGenerator(rng, normalGen);
-            const tRand = createTGenerator(normalGen, gammaRand);
-
-            const res = runSinglePath({ rng, normalGen, gammaRand, tRand }, params);
-
-            const baseIdx = p * dataLen;
-            totals.set(res.totals, baseIdx);
-            cashes.set(res.cashes, baseIdx);
-            dds.set(res.dds, baseIdx);
-            maxDds[p] = res.maxDD;
-            maxUws[p] = res.maxUW;
-            belowInitPeriods[p] = res.maxBelowInitPeriod;
-            consecutiveSellPeriods[p] = res.maxConsecutiveSellPeriod;
-            if (res.bankrupt) bankruptCount++;
-        }
-
+        const batch = runWorkerBatch(params, pathsCount, currentSeedOffset, dataLen);
         results.push({
-            totalsBuffer: totals.buffer,
-            cashesBuffer: cashes.buffer,
-            ddsBuffer: dds.buffer,
-            maxDdsBuffer: maxDds.buffer,
-            maxUwsBuffer: maxUws.buffer,
-            belowInitPeriodsBuffer: belowInitPeriods.buffer,
-            consecutiveSellPeriodsBuffer: consecutiveSellPeriods.buffer,
-            bankruptCount,
+            totalsBuffer: batch.totals.buffer,
+            cashesBuffer: batch.cashes.buffer,
+            ddsBuffer: batch.dds.buffer,
+            maxDdsBuffer: batch.maxDds.buffer,
+            maxUwsBuffer: batch.maxUws.buffer,
+            belowInitPeriodsBuffer: batch.belowInitPeriods.buffer,
+            consecutiveSellPeriodsBuffer: batch.consecutiveSellPeriods.buffer,
+            bankruptCount: batch.bankruptCount,
         });
 
         currentSeedOffset += pathsCount;
@@ -364,6 +277,36 @@ describe('T8: Worker vs Headless equivalence check', () => {
             assertFloatArrayEqual(worker.belowInitPeriods, headless.belowInitPeriods);
             assertFloatArrayEqual(worker.consecutiveSellPeriods, headless.consecutiveSellPeriods);
         }
+    });
+
+    it('complete payload keys match the worker message contract', () => {
+        const params = normalizeHeadlessParams({ simPaths: 5000, seedNum: 42, simYears: 1 });
+        const dataLen = params.simYears * 12 + 1;
+        const batch = runWorkerBatch(params, 1, 0, dataLen);
+        const payload = {
+            type: 'complete',
+            totalsBuffer: batch.totals.buffer,
+            cashesBuffer: batch.cashes.buffer,
+            ddsBuffer: batch.dds.buffer,
+            maxDdsBuffer: batch.maxDds.buffer,
+            maxUwsBuffer: batch.maxUws.buffer,
+            belowInitPeriodsBuffer: batch.belowInitPeriods.buffer,
+            consecutiveSellPeriodsBuffer: batch.consecutiveSellPeriods.buffer,
+            bankruptCount: batch.bankruptCount,
+        };
+        expect(Object.keys(payload).sort()).toEqual([
+            'bankruptCount',
+            'belowInitPeriodsBuffer',
+            'cashesBuffer',
+            'consecutiveSellPeriodsBuffer',
+            'ddsBuffer',
+            'maxDdsBuffer',
+            'maxUwsBuffer',
+            'totalsBuffer',
+            'type',
+        ]);
+        expect(payload.type).toBe('complete');
+        expect(payload.totalsBuffer).toBeInstanceOf(ArrayBuffer);
     });
 });
 

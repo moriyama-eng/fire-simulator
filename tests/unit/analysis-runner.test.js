@@ -8,7 +8,7 @@ import { runSimulation } from '../../js/simulation-engine.js';
 import * as AS from '../../js/analysis-state.js';
 import { runAnalysis, applyFactorChange, convertToLegacyParams } from '../../js/analysis-runner.js';
 // Continue importing the actual FACTORS for use in applyFactorChange tests
-import { FACTORS, getSuccessRateTargetDelta } from '../../js/analysis-state.js';
+import { FACTORS } from '../../js/analysis-state.js';
 import { makeDummySimResult, makeBaseEffectiveParams } from '../helpers/analysis-fixtures.js';
 
 vi.mock('../../js/simulation-engine.js');
@@ -48,12 +48,6 @@ beforeEach(() => {
 });
 
 describe('runAnalysis', () => {
-  it('calls runSimulation 5 times when 1 factor selected', async () => {
-    AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
-    await runAnalysis(vi.fn());
-    expect(runSimulation).toHaveBeenCalledTimes(5);
-  });
-
   it('base scenario params include useFixedSeed and seedNum', async () => {
     // Note: convertToLegacyParams hardcodes useFixedSeed: true.
     // Currently always true in the implementation, but tests must be extended if it becomes variable in the future.
@@ -128,24 +122,14 @@ describe('convertToLegacyParams', () => {
     expect(convertToLegacyParams(makeBaseEffectiveParams({ modelType: 'log-normal' })).useTDistribution).toBe(false);
   });
 
-  it('clamps simPaths to 5000 minimum', () => {
-    const ep = makeBaseEffectiveParams({ simPaths: 500 });
-    expect(convertToLegacyParams(ep).simPaths).toBe(5000);
-  });
-
-  it('clamps simPaths to 50000 maximum', () => {
-    const ep = makeBaseEffectiveParams({ simPaths: 100000 });
-    expect(convertToLegacyParams(ep).simPaths).toBe(50000);
-  });
-
-  it('passes simPaths 5000 as-is', () => {
-    const ep = makeBaseEffectiveParams({ simPaths: 5000 });
-    expect(convertToLegacyParams(ep).simPaths).toBe(5000);
-  });
-
-  it('passes simPaths 50000 as-is', () => {
-    const ep = makeBaseEffectiveParams({ simPaths: 50000 });
-    expect(convertToLegacyParams(ep).simPaths).toBe(50000);
+  it.each([
+    [500, 5000],
+    [100000, 50000],
+    [5000, 5000],
+    [50000, 50000],
+  ])('clamps or passes simPaths %s -> %s', (input, expected) => {
+    const ep = makeBaseEffectiveParams({ simPaths: input });
+    expect(convertToLegacyParams(ep).simPaths).toBe(expected);
   });
 });
 
@@ -175,21 +159,6 @@ describe('applyFactorChange', () => {
   });
 });
 
-describe('getSuccessRateTargetDelta', () => {
-  it.each([
-    [96.0, 0],
-    [95.0, 0],
-    [93.2, 1.0],
-    [90.0, 1.0],
-    [87.5, 2.0],
-    [85.0, 2.0],
-    [70.0, 5.0],
-    [0, 5.0],
-  ])('gets correct delta for success rate %s%%', (rate, expectedDelta) => {
-    expect(getSuccessRateTargetDelta(rate)).toBe(expectedDelta);
-  });
-});
-
 // ===== Tests for target_asset_maintain_rate =====
 describe('extractMetrics - target_asset_maintain_rate', () => {
   beforeEach(() => {
@@ -209,5 +178,38 @@ describe('extractMetrics - target_asset_maintain_rate', () => {
     // Also included in factor scenarios
     const factorResults = result.perFactorResults.expected_return_pct;
     expect(factorResults[0].metrics).toHaveProperty('target_asset_maintain_rate');
+  });
+});
+
+describe('runAnalysis guard errors and level params', () => {
+  it('rejects with error.noBase when baseEffectiveParams is missing', async () => {
+    AS.getState.mockReturnValue({
+      baseEffectiveParams: null,
+      selectedFactors: ['expected_return_pct'],
+      isRunning: false,
+    });
+    await expect(runAnalysis(vi.fn())).rejects.toThrow('error.noBase');
+  });
+
+  it('rejects with error.noFactors when no factors are selected', async () => {
+    AS.getSelectedFactors.mockReturnValue([]);
+    await expect(runAnalysis(vi.fn())).rejects.toThrow('error.noFactors');
+  });
+
+  it('passes applyFactorChange params per level to runSimulation', async () => {
+    const baseReturn = 10.0;
+    AS.getState.mockReturnValue({
+      baseEffectiveParams: makeBaseEffectiveParams({ expectedReturn: baseReturn }),
+      selectedFactors: ['expected_return_pct'],
+      isRunning: false,
+    });
+    AS.getSelectedFactors.mockReturnValue(['expected_return_pct']);
+    AS.getFactorBaseValue.mockReturnValue(baseReturn);
+    await runAnalysis(vi.fn());
+    const factor = FACTORS.find(f => f.key === 'expected_return_pct');
+    const expectedByLevel = [-2, -1, 1, 2].map(level => baseReturn + factor.step * level);
+    expect(runSimulation.mock.calls[0][0].expectedReturn).toBe(baseReturn);
+    const levelReturns = runSimulation.mock.calls.slice(1).map(c => c[0].expectedReturn);
+    expect(levelReturns).toEqual(expectedByLevel);
   });
 });

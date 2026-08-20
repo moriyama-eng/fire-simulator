@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
     safeNumber,
     calcAutoDf,
@@ -11,6 +11,11 @@ import {
     clampMinDf,
     resolveGuardrailRelease
 } from '../../js/core/params.js';
+import { setLanguage } from '../../js/i18n.js';
+
+afterEach(() => {
+    setLanguage('ja');
+});
 
 describe('safeNumber', () => {
     it('converts string with commas to number', () => { expect(safeNumber('10,000', 0)).toBe(10000); });
@@ -54,6 +59,39 @@ describe('getParamsFromInputs - targetAssetRatio fallback', () => {
         };
         const params = getParamsFromInputs(inputs);
         expect(params.targetAssetRatio).toBe(DEFAULTS.targetAssetRatio);
+    });
+
+    it('converts EN cash and expense display units to internal JPY', () => {
+        setLanguage('en');
+        const inputs = {
+            initialRiskAssetNum: '1.0',
+            initialCashBufferNum: '100',
+            monthlyExpenseNum: '3',
+            expectedReturnNum: '10.0',
+            volatilityNum: '18.0',
+            inflationRateNum: '2.0',
+            simYearsNum: '30',
+            simPathsNum: '10000',
+            cashBufferToggle: true,
+            drawdownTriggerNum: '-20.0',
+            drawdownReplenishNum: '-5.0',
+            replenishPaceNum: '5.0',
+            guardrailToggle: false,
+            guardrailTriggerNum: '-20.0',
+            guardrailReleaseNum: '-15.0',
+            guardrailReductionNum: '-20.0',
+            inflationModelToggle: false,
+            infVolNum: '2.0',
+            infArNum: '0.5',
+            returnModelSelect: 'log-t',
+            simDfToggle: true,
+            simDfNum: '4.0',
+            seedToggle: false,
+            seedNum: '123456',
+        };
+        const params = getParamsFromInputs(inputs);
+        expect(params.initialCashBuffer).toBe(10_000_000);
+        expect(params.monthlyExpense).toBe(300_000);
     });
 });
 

@@ -5,15 +5,12 @@
 import { xoshiro128ss, createNormalGenerator, createGammaGenerator, createTGenerator } from './core/random.js';
 import { runSinglePath } from './core/simulation.js';
 
-self.onmessage = function (e) {
-    const { params, pathsCount, seedOffset, dataLen } = e.data;
-
+export function runWorkerBatch(params, pathsCount, seedOffset, dataLen, onProgress) {
     const totals = new Float32Array(pathsCount * dataLen);
     const cashes = new Float32Array(pathsCount * dataLen);
     const dds = new Float32Array(pathsCount * dataLen);
     const maxDds = new Float32Array(pathsCount);
     const maxUws = new Float32Array(pathsCount);
-    // v2.3.0: Buffers for new indicators
     const belowInitPeriods = new Float32Array(pathsCount);
     const consecutiveSellPeriods = new Float32Array(pathsCount);
     let bankruptCount = 0;
@@ -32,25 +29,43 @@ self.onmessage = function (e) {
         dds.set(result.dds, baseIdx);
         maxDds[p] = result.maxDD;
         maxUws[p] = result.maxUW;
-        // v2.3.0: Store new indicators
         belowInitPeriods[p] = result.maxBelowInitPeriod;
         consecutiveSellPeriods[p] = result.maxConsecutiveSellPeriod;
         if (result.bankrupt) bankruptCount++;
 
-        if (p % 100 === 0) self.postMessage({ type: "progress", completed: p });
+        if (p % 100 === 0 && typeof onProgress === 'function') onProgress(p);
     }
 
-    self.postMessage({
-        type: "complete",
-        totalsBuffer: totals.buffer,
-        cashesBuffer: cashes.buffer,
-        ddsBuffer: dds.buffer,
-        maxDdsBuffer: maxDds.buffer,
-        maxUwsBuffer: maxUws.buffer,
-        // v2.3.0: Add new indicator buffers to the transfer list
-        belowInitPeriodsBuffer: belowInitPeriods.buffer,
-        consecutiveSellPeriodsBuffer: consecutiveSellPeriods.buffer,
-        bankruptCount
-    }, [totals.buffer, cashes.buffer, dds.buffer, maxDds.buffer, maxUws.buffer,
-        belowInitPeriods.buffer, consecutiveSellPeriods.buffer]);
-};
+    return {
+        totals,
+        cashes,
+        dds,
+        maxDds,
+        maxUws,
+        belowInitPeriods,
+        consecutiveSellPeriods,
+        bankruptCount,
+    };
+}
+
+const isWorkerGlobal = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
+if (isWorkerGlobal) {
+    self.onmessage = function (e) {
+        const { params, pathsCount, seedOffset, dataLen } = e.data;
+        const batch = runWorkerBatch(params, pathsCount, seedOffset, dataLen, (completed) => {
+            self.postMessage({ type: 'progress', completed });
+        });
+        self.postMessage({
+            type: 'complete',
+            totalsBuffer: batch.totals.buffer,
+            cashesBuffer: batch.cashes.buffer,
+            ddsBuffer: batch.dds.buffer,
+            maxDdsBuffer: batch.maxDds.buffer,
+            maxUwsBuffer: batch.maxUws.buffer,
+            belowInitPeriodsBuffer: batch.belowInitPeriods.buffer,
+            consecutiveSellPeriodsBuffer: batch.consecutiveSellPeriods.buffer,
+            bankruptCount: batch.bankruptCount,
+        }, [batch.totals.buffer, batch.cashes.buffer, batch.dds.buffer, batch.maxDds.buffer, batch.maxUws.buffer,
+            batch.belowInitPeriods.buffer, batch.consecutiveSellPeriods.buffer]);
+    };
+}

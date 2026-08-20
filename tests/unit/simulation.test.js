@@ -23,6 +23,16 @@ describe('evaluateMonthEnd', () => {
         expect(res.isReplenishMode).toBe(true);
         expect(res.highWaterMark).toBe(130);
     });
+    it('releases guardrail when drawdown recovers to the release threshold', () => {
+        const state = { isGuardrailActive: true, currentUwMonths: 3, maxUwMonths: 3, maxDD: -0.25, isReplenishMode: false };
+        const res = evaluateMonthEnd(110, 120, -0.10, state, cfg);
+        expect(res.isGuardrailActive).toBe(false);
+    });
+    it('ends replenishment mode when drawdown is at or below the replenish threshold', () => {
+        const state = { isGuardrailActive: false, currentUwMonths: 2, maxUwMonths: 2, maxDD: -0.1, isReplenishMode: true };
+        const res = evaluateMonthEnd(100, 120, -0.10, state, cfg);
+        expect(res.isReplenishMode).toBe(false);
+    });
 });
 
 const referenceResults = JSON.parse(readFileSync('tests/fixtures/reference-results.json', 'utf-8'));
@@ -69,28 +79,6 @@ describe('Reproducibility', () => {
 // v2.3.0: Unit tests for new metrics (below-initial-assets continuous period / consecutive risk asset sell period)
 // ====================================================================
 describe('New below-initial metrics', () => {
-    /**
-     * Helper for runSinglePath: initialize RNG with a fixed seed and call it
-     */
-    function runWithParams(inputs, seedOffset = 0) {
-        const params = getParamsFromInputs(inputs);
-        const seed = params.seedNum + seedOffset;
-        const rng = xoshiro128ss(seed);
-        const normalGen = createNormalGenerator(rng);
-        const gammaRand = createGammaGenerator(rng, normalGen);
-        const tRand = createTGenerator(normalGen, gammaRand);
-        return runSinglePath({ rng, normalGen, gammaRand, tRand }, params);
-    }
-
-    it('returns maxBelowInitPeriod and maxConsecutiveSellPeriod in result', () => {
-        // Confirm that the return value includes new metrics
-        const result = runWithParams(defaultInputs);
-        expect(result).toHaveProperty('maxBelowInitPeriod');
-        expect(result).toHaveProperty('maxConsecutiveSellPeriod');
-        expect(typeof result.maxBelowInitPeriod).toBe('number');
-        expect(typeof result.maxConsecutiveSellPeriod).toBe('number');
-    });
-
     it('maxConsecutiveSellPeriod <= maxBelowInitPeriod always holds', () => {
         // Indicator 2 counts only periods where below initial assets AND selling, so it is always <= Indicator 1
         const params = getParamsFromInputs(defaultInputs);
@@ -102,13 +90,6 @@ describe('New below-initial metrics', () => {
             const res = runSinglePath({ rng, normalGen, gammaRand, tRand }, params);
             expect(res.maxConsecutiveSellPeriod).toBeLessThanOrEqual(res.maxBelowInitPeriod);
         }
-    });
-
-    it('returns non-negative values for both metrics', () => {
-        // Confirm that both metrics are always non-negative
-        const result = runWithParams(defaultInputs, 42);
-        expect(result.maxBelowInitPeriod).toBeGreaterThanOrEqual(0);
-        expect(result.maxConsecutiveSellPeriod).toBeGreaterThanOrEqual(0);
     });
 
     it('matches reference data for new metrics (reproducibility)', () => {
@@ -235,5 +216,57 @@ describe('New below-initial metrics', () => {
 
         const res = runSinglePath(rngs, customParams);
         expect(res.maxConsecutiveSellPeriod).toBe(1);
+    });
+});
+
+function makeBankruptcyParams(overrides = {}) {
+    return {
+        initialRiskAsset: 1000,
+        initialCashBuffer: 0,
+        monthlyExpense: 5000,
+        expectedReturn: 0,
+        volatility: 0.01,
+        inflationRate: 0,
+        simYears: 1,
+        cashBufferToggle: false,
+        drawdownTrigger: -20,
+        drawdownReplenish: -5,
+        replenishPace: 5,
+        guardrailToggle: false,
+        guardrailTrigger: -20,
+        guardrailReduction: -20,
+        guardrailRelease: -15,
+        useArInflation: false,
+        infVol: 2,
+        infAr: 0.5,
+        useTDistribution: false,
+        simDfManual: false,
+        simDfNum: 4,
+        ...overrides
+    };
+}
+
+function zeroRngs() {
+    return { rng: () => 0, normalGen: () => 0, gammaRand: () => 0, tRand: () => 0 };
+}
+
+describe('bankruptcy remaining months and AR inflation', () => {
+    it('adds remaining months after bankruptcy to below-init and consecutive-sell periods', () => {
+        const params = makeBankruptcyParams();
+        const res = runSinglePath(zeroRngs(), params);
+        expect(res.bankrupt).toBe(true);
+        const totalMonths = params.simYears * 12;
+        const bankruptMonth = res.totals.findIndex((v, i) => i > 0 && v === 0);
+        expect(bankruptMonth).toBeGreaterThan(0);
+        const remainingMonths = (totalMonths - bankruptMonth) + 1;
+        expect(res.maxBelowInitPeriod).toBeGreaterThanOrEqual(remainingMonths);
+        expect(res.maxConsecutiveSellPeriod).toBeGreaterThanOrEqual(remainingMonths);
+    });
+
+    it('completes a path when useArInflation is true', () => {
+        const params = makeBankruptcyParams({ useArInflation: true, inflationRate: 2, infVol: 2, infAr: 0.5 });
+        const res = runSinglePath(zeroRngs(), params);
+        expect(res.totals).toBeInstanceOf(Float32Array);
+        expect(typeof res.bankrupt).toBe('boolean');
     });
 });

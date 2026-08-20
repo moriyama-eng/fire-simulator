@@ -119,50 +119,6 @@ describe('Below-Initial charts integration', () => {
         runSimulation.mockResolvedValue(makeDummyResultWithNewMetrics());
     });
 
-    it('canvas elements for new charts exist in DOM', () => {
-        // Verify that canvas elements for new charts exist properly
-        const belowInitCanvas = document.getElementById('belowInitChartCanvas');
-        const sellCanvas = document.getElementById('sellChartCanvas');
-        expect(belowInitCanvas).not.toBeNull();
-        expect(sellCanvas).not.toBeNull();
-    });
-
-    it('does NOT have downside focus toggles for new charts', () => {
-        // Verify that downside focus toggles do not exist for the new charts
-        const toggles = document.querySelectorAll('#downsideFocusBelowInit, #downsideFocusSell');
-        expect(toggles.length).toBe(0);
-    });
-
-    it('new metric result contains belowInitPeriods and consecutiveSellPeriods', () => {
-        // Verify that the dummy result contains the new metrics data
-        const result = makeDummyResultWithNewMetrics();
-        expect(result).toHaveProperty('belowInitPeriods');
-        expect(result).toHaveProperty('consecutiveSellPeriods');
-        expect(result.belowInitPeriods).toBeInstanceOf(Float32Array);
-        expect(result.consecutiveSellPeriods).toBeInstanceOf(Float32Array);
-        expect(result.belowInitPeriods.length).toBe(1000);
-        expect(result.consecutiveSellPeriods.length).toBe(1000);
-    });
-
-    it('belowInitPeriods values are non-negative', () => {
-        // Verify that the new metric values are non-negative
-        const result = makeDummyResultWithNewMetrics();
-        for (let i = 0; i < result.belowInitPeriods.length; i++) {
-            expect(result.belowInitPeriods[i]).toBeGreaterThanOrEqual(0);
-        }
-    });
-
-    it('consecutiveSellPeriods <= belowInitPeriods for each path', () => {
-        // Confirm that Indicator 2 is <= Indicator 1 for each path
-        const result = makeDummyResultWithNewMetrics({
-            belowInitPeriods: new Float32Array(1000).fill(60),
-            consecutiveSellPeriods: new Float32Array(1000).fill(36),
-        });
-        for (let i = 0; i < result.params.simPaths; i++) {
-            expect(result.consecutiveSellPeriods[i]).toBeLessThanOrEqual(result.belowInitPeriods[i]);
-        }
-    });
-
     it('updates chart titles on language switch', async () => {
         const setLanguageGlobal = (lang) => {
             if (typeof window !== 'undefined' && window.__setLanguage) {

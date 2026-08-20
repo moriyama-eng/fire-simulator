@@ -14,6 +14,7 @@ import {
   getFactorBaseValue,
   getGeneratedValues,
   getScenarioCount,
+  getSuccessRateTargetDelta,
   _resetStateForTest,
 } from '../../js/analysis-state.js';
 import { makeAnalysisResult, makeBaseEffectiveParams } from '../helpers/analysis-fixtures.js';
@@ -115,13 +116,6 @@ describe('setSelectedFactors', () => {
 });
 
 describe('setRunning', () => {
-  it('sets running flag', () => {
-    setRunning(true);
-    expect(getState().isRunning).toBe(true);
-    setRunning(false);
-    expect(getState().isRunning).toBe(false);
-  });
-
   it('clears error message when running ends', () => {
     setErrorMessage('some error');
     setRunning(false);
@@ -188,18 +182,17 @@ describe('getScenarioCount', () => {
   });
 });
 
-describe('_resetStateForTest', () => {
-  it('resets all state', () => {
-    setBaseContext({}, makeBaseEffectiveParams());
-    setSelectedFactors(['dummy']);
-    setAnalysisResult(makeAnalysisResult());
-    _resetStateForTest();
-    const s = getState();
-    expect(s.baseContext).toBeNull();
-    expect(s.baseEffectiveParams).toBeNull();
-    expect(s.selectedFactors).toEqual([]);
-    expect(s.analysisResult).toBeNull();
-    expect(s.isRunning).toBe(false);
-    expect(s.errorMessage).toBeNull();
+describe('getSuccessRateTargetDelta', () => {
+  it.each([
+    [96.0, 0],
+    [95.0, 0],
+    [93.2, 1.0],
+    [90.0, 1.0],
+    [87.5, 2.0],
+    [85.0, 2.0],
+    [70.0, 5.0],
+    [0, 5.0],
+  ])('gets correct delta for success rate %s%%', (rate, expectedDelta) => {
+    expect(getSuccessRateTargetDelta(rate)).toBe(expectedDelta);
   });
 });

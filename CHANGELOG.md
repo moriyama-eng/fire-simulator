@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.5]
+
+### Added
+- **Automated tests for remaining engine and app gaps**: Dedicated cases for RNG generators, `runWorkerBatch` export from `js/worker.js`, currency input conversion, bankruptcy remaining-months and AR inflation completion, UI vs headless default percentile difference, analysis `error.noBase` / `error.noFactors` and per-level params, analysis `successRateHigh` / `outOfRange` display, comparison delete-confirm cancel, `params-accessor`, Japanese URL cash/expense round-trip, simulation-engine Worker-stub orchestration, summary cards, and init dirty wiring (including display-toggle exclusion).
+
+### Changed
+- **Test suite hygiene**: Removed low-signal duplicates (including the full i18n snapshot freeze and the analysis-full-flow stand-in) and merged overlapping cases. Gold-canary JSON files were not regenerated.
+- **testing-guide current facts**: Counts and module map now match Vitest (28 files / 263 cases). Documented that most tests still mock `runSimulation`, with the engine stub file as the exception; comparison delete-confirm cancel is covered.
+- **Worker batch export**: Path work in `js/worker.js` is exported as `runWorkerBatch`. The worker `onmessage` handler is a thin wrapper and attaches only in a worker global. The `progress` / `complete` message contract is unchanged.
+
+> **Simulation algorithm and calculation results are unchanged** (100% bit-for-bit match).
+
 ## [v2.8.4]
 
 ### Changed
