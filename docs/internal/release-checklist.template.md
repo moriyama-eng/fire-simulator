@@ -169,13 +169,13 @@ When releasing a new version, please perform manual verification using the follo
 
 Note: `.github/` contains no release workflow; release preparation is operated manually.
 
-- [ ] `node cli.js run <sample.json>` generates a full result JSON under `.agent/scratch/fire-sim/` and outputs a scalar summary to stdout — <result or reason>
+- [ ] `node cli.js run <sample.json>` generates a full result JSON under `output/fire-sim/` and outputs a scalar summary to stdout — <result or reason>
 - [ ] Scalar summary output matches specification (JSON fields `successRate`, `finalMedian`, `targetAssetMaintainRate`, etc. per `docs/guide/cli-usage.md`) — <result or reason>
-- [ ] Confirm that `.agent/scratch/` output files do **not** appear in `git status` (`.agent/` is gitignored) — <result or reason>
+- [ ] Confirm that `output/` output files do **not** appear in `git status` (`output/` is gitignored) — <result or reason>
 - [ ] `node cli.js run <file> --no-file` outputs summary to stdout without creating any output file — <result or reason>
 - [ ] `node cli.js run <file> --stdout` outputs full result JSON directly to stdout — <result or reason>
 - [ ] `node cli.js run <file> --compact` outputs minified single-line JSON — <result or reason>
-- [ ] `node cli.js run <file> --out .agent/scratch/custom/output.json` creates the directory automatically and writes the file — <result or reason>
+- [ ] `node cli.js run <file> --out output/custom/output.json` creates the directory automatically and writes the file — <result or reason>
 
 ## Version Consistency & Exhaustive Search (Prevention of Missed Updates)
 
@@ -193,7 +193,7 @@ Note: `.github/` contains no release workflow; release preparation is operated m
 
 ## README 3.0 & Documentation Human Inspection Preview
 
-- [ ] Generate authentic GitHub-style HTML preview files (`.agent/scratch/github_preview_readme_en.html` / `ja.html`) using official GitHub Markdown API or equivalent parser. — <result or reason>
+- [ ] Generate authentic GitHub-style HTML preview files (`output/github_preview_readme_en.html` / `ja.html`) using official GitHub Markdown API or equivalent parser. — <result or reason>
 - [ ] Ensure embedded screenshot images (e.g. `./docs/assets/readme/*.png`) resolve correctly via `<base href="../../">` or automated asset copying, guaranteeing zero 404 broken images when opened in browser. — <result or reason>
 - [ ] Provide browser-accessible links to the user for human inspection before PR creation. — <result or reason>
 - [ ] Confirm that markdown elements (horizontal rules `---`, badges, code blocks, tables, images, anchor links) render cleanly without broken layout or raw syntax leaking. — <result or reason>

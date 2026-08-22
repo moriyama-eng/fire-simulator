@@ -184,4 +184,5 @@ GitDiff*
 debug_screenshot.png
 coverage/
 # Local verification scripts
-scripts/
+
+output/

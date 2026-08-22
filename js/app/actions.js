@@ -330,7 +330,7 @@ export async function saveImage() {
         }, 2000);
 
     } catch (err) {
-        console.error("画像保存エラーの詳細:", err);
+        console.error("Image save error details:", err);
         const reason = err.message.startsWith('error.') ? t(err.message) : err.message;
         alert(t('error.imageFailed', [reason]));
         // Immediately restore on error

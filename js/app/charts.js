@@ -670,7 +670,7 @@ export function renderBelowInitCdfChart(result) {
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 13 },
-                        stepSize: 60, // 5年(60ヵ月)刻み
+                        stepSize: 60, // 5 years (60 months) intervals
                         callback: function (value) {
                             return formatYears(value / 12);
                         }
@@ -753,7 +753,7 @@ export function renderConsecutiveSellCdfChart(result) {
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 13 },
-                        stepSize: 60, // 5年(60ヵ月)刻み
+                        stepSize: 60, // 5 years (60 months) intervals
                         callback: function (value) {
                             return formatYears(value / 12);
                         }

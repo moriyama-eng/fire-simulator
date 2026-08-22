@@ -5,7 +5,7 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests/**/*.test.js'],
     retry: 2,
-    // 出力時の記号表示を簡素化し、Windowsコンソールの文字化けを回避する
+    // Simplify symbols in output to avoid mojibake in Windows console
     reporters: ['default'],
     outputFile: {
       json: './coverage/test-results.json'
