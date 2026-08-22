@@ -24,8 +24,8 @@ const SAMPLE_PARAMS = {
 };
 
 // Temporary directories
-const TMP_DIR = join(ROOT, '.agent', 'scratch', 'test-cli-tmp');
-const CUSTOM_OUT_DIR = join(ROOT, '.agent', 'scratch', 'custom-dir');
+const TMP_DIR = join(ROOT, 'output', 'test-cli-tmp');
+const CUSTOM_OUT_DIR = join(ROOT, 'output', 'custom-dir');
 let tmpParamsPath;
 let createdFiles = [];
 
@@ -50,9 +50,9 @@ afterEach(() => {
 });
 
 afterAll(() => {
-    // Clean up temporary directories under .agent/scratch/
-    try { rmSync(join(ROOT, '.agent', 'scratch', 'fire-sim'), { recursive: true, force: true }); } catch (_) {}
-    try { rmSync(join(ROOT, '.agent', 'scratch', 'custom-dir'), { recursive: true, force: true }); } catch (_) {}
+    // Clean up temporary directories under output/
+    try { rmSync(join(ROOT, 'output', 'fire-sim'), { recursive: true, force: true }); } catch (_) {}
+    try { rmSync(join(ROOT, 'output', 'custom-dir'), { recursive: true, force: true }); } catch (_) {}
     try { rmSync(TMP_DIR, { recursive: true, force: true }); } catch (_) {}
 });
 
@@ -109,7 +109,7 @@ describe('T3: CLI run subcommand', () => {
         expect(parsed).toHaveProperty('dataLen');
     });
 
-    it('outputFile is a string pointing under .temp/fire-sim/', () => {
+    it('outputFile is a string pointing under output/fire-sim/', () => {
         const paramsFile = setupTmpParams();
         const stdout = runCli(['run', paramsFile]);
         const parsed = JSON.parse(stdout);

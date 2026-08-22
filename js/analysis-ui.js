@@ -99,7 +99,7 @@ function renderFactorSelector() {
     const container = document.getElementById('factorSelector');
     const selected = AS.getSelectedFactors();
     const available = AS.getAvailableFactors();
-    document.getElementById('selectedFactorCount').textContent = t('analysis.selectedCount', [selected.length]);
+    document.getElementById('selectedFactorCount').textContent = t('analysis.selectedFactors', [selected.length]);
     document.getElementById('scenarioCount').textContent = t('analysis.scenarioCount', [AS.getScenarioCount()]);
     document.getElementById('runAnalysisBtn').disabled = selected.length === 0 || AS.getState().isRunning;
     document.getElementById('runAnalysisBtn').textContent = t('analysis.run');
@@ -485,6 +485,7 @@ function renderCompareCards() {
 let delegationDone = false;
 export function setupAnalysisEventDelegation() {
     if (delegationDone) return;
+    document.addEventListener('languageChanged', renderAnalysisTab);
     delegationDone = true;
     const tab = document.getElementById('analysisTab');
     if (!tab) return;

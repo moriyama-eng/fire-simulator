@@ -137,7 +137,7 @@ export function updateSummaryCard(result, params) {
                         <div class="space-y-1 pt-2 border-t border-slate-700/50">
                             <p class="text-xs text-slate-300 font-medium tracking-wide" data-i18n="summary.model.label">変動モデル</p>
                             <p class="font-bold text-white text-base">
-                                ${result.modelType === 'log-t' ? `${t('summary.model.logt')} <span class="text-xs ml-1">(自由度: ${result.usedDf.toFixed(1)})</span>` : t('summary.model.lognormal')}
+                                ${result.modelType === 'log-t' ? `${t('summary.model.logt')} <span class="text-xs ml-1">${t('summary.usedDf', [result.usedDf.toFixed(1)])}</span>` : t('summary.model.lognormal')}
                             </p>
                         </div>
                         <div class="space-y-1 pt-2 border-t border-slate-700/50">

@@ -5,6 +5,8 @@
 //       Therefore, this module provides only basic flag operations and button control.
 // ====================================================================
 
+import { t } from '../i18n.js';
+
 let isResultDirty = false;
 
 export function getIsResultDirty() { return isResultDirty; }
@@ -29,6 +31,6 @@ export function setButtonsEnabledForResult(enabled) {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.disabled = !enabled;
-        btn.title = enabled ? '' : '入力条件が変更されました。再度シミュレーションを実行してください。';
+        btn.title = enabled ? '' : t('button.tooltipDirty');
     });
 }

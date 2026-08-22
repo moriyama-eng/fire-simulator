@@ -143,7 +143,7 @@ The following are intentional scope limitations, not planned future features:
 
 ## Version / Update History
 
-**Current release: v2.8.5**
+**Current release: v2.8.6**
 
 For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
 
@@ -161,7 +161,7 @@ node cli.js run params.json
 node cli.js run params.json --stdout
 
 # Specify a custom output path
-node cli.js run params.json --out .agent/scratch/my-result.json
+node cli.js run params.json --out output/my-result.json
 
 
 # List factor definitions used by the Analysis UI

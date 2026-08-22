@@ -143,7 +143,7 @@ CLIはブラウザを開かずに同一シミュレーションモデルへア�
 
 ## バージョン / 更新履歴
 
-**現行リリース: v2.8.5**
+**現行リリース: v2.8.6**
 
 全更新履歴は [CHANGELOG-ja.md](./CHANGELOG-ja.md) を参照してください。
 
@@ -161,7 +161,7 @@ node cli.js run params.json
 node cli.js run params.json --stdout
 
 # カスタム出力ファイルパスを明示指定
-node cli.js run params.json --out .agent/scratch/my-result.json
+node cli.js run params.json --out output/my-result.json
 
 # Analysis UIで使用されるfactor定義を出力
 node cli.js list-factors

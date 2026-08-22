@@ -38,7 +38,7 @@ describe('query-params', () => {
     });
 });
 
-// ===== P1-01 critical regression: stored=ja x ?lang=en&cash=100&expense=3 (v2.7.1) =====
+// ===== critical regression: stored=ja x ?lang=en&cash=100&expense=3 (v2.7.1) =====
 // Validates that getParamsFromInputs correctly converts EN-mode URL values to internal JPY.
 // This is the primary regression test for the URL reproduction bug fixed in v2.7.1.
 describe('EN input values convert correctly to internal JPY', () => {

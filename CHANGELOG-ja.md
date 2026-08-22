@@ -5,6 +5,11 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.8.6]
+
+### 修正
+- 内部: エージェントの痕跡（マーカー）を削除し、ハードコードされていた日本語テキストを i18n 変数に置き換えました。
+
 ## [v2.8.5]
 
 ### 追加
@@ -41,7 +46,7 @@
 - **docs.html の既定ドキュメント**: `?doc=` なしで `docs.html` を開いたときの表示を `guide/getting-started` から `guide/overview` に変更。明示的な `?doc=guide/getting-started` は従来どおり。404 の戻り先も Overview。
 - **ドキュメント manifest**: Guide カテゴリ先頭を `overview` にし、Pages のナビを新しいランディングに合わせた。
 - **README ドキュメントゲートウェイ**: `README.md` と `README-ja.md` のドキュメント表に Overview を追加（宛先 10 件、英日パリティ維持）。
-- **リリースチェックリスト運用**: 各リリース準備の開始時に `docs/internal/release-checklist.template.md` を `docs/internal/release-checklist.md` へ上書きコピーする。記号は `[x]`（一行の結果必須）、`[N/A]`（構造的理由のみ）、`[ ]`（接尾辞 `<result or reason>` を残す）。前版の `[x]` や結果の持ち越しは禁止。残 `[ ]` をゼロにするのは P7（追跡ファイルを更新する最後の工程。完了後にコミット）。P8 は PR 作成のみでリポジトリを編集しない。draft コミットは1本に squash し、コミットメッセージと PR タイトルを同一にする（`Release vX.Y.Z: A, B, and C`。直近のマージ済み Release PR から形式をコピー）。本文の中身は CHANGELOG、章立ては直近 Release PR（`Summary of Changes` / `Key Features & Updates` / `Verification Status`）。GitHub のリリースドラフトはマージ後の P9。
+- **リリースチェックリスト運用**: 各リリース準備の開始時に `docs/internal/release-checklist.template.md` を `docs/internal/release-checklist.md` へ上書きコピーする。記号は `[x]`（一行の結果必須）、`[N/A]`（構造的理由のみ）、`[ ]`（接尾辞 `<result or reason>` を残す）。前版の `[x]` や結果の持ち越しは禁止。残 `[ ]` をゼロにするのは Release Phase（追跡ファイルを更新する最後の工程。完了後にコミット）。Release Phase は PR 作成のみでリポジトリを編集しない。draft コミットは1本に squash し、コミットメッセージと PR タイトルを同一にする（`Release vX.Y.Z: A, B, and C`。直近のマージ済み Release PR から形式をコピー）。本文の中身は CHANGELOG、章立ては直近 Release PR（`Summary of Changes` / `Key Features & Updates` / `Verification Status`）。GitHub のリリースドラフトはマージ後の Release Phase。
 
 > **シミュレーションアルゴリズム・計算結果はビット単位で不変**（100% ビット一致）です。
 

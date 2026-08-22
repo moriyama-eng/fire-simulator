@@ -2,10 +2,9 @@
 // Analysis tab state management
 
 // ----- Factor definitions -----
-// FACTORS は js/core/factors.js に移動。
-// モジュール内部関数（getAvailableFactors等）からも参照できるように import してから
-// 再エクスポートする。
-// analysis-runner.test.js の vi.mock importOriginal() 経由でも解決できる透過的な再エクスポート。
+// FACTORS moved to js/core/factors.js
+// Import and re-export so that module-internal functions (like getAvailableFactors) can also reference it.
+// Transparent re-export that can also be resolved via vi.mock importOriginal() in analysis-runner.test.js.
 // paramKey must exactly match the property name in baseEffectiveParams (generated in app.js).
 import { FACTORS } from './core/factors.js';
 export { FACTORS };
