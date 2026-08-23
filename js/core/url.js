@@ -134,11 +134,11 @@ export function applyQueryParams(runMainFn) {
     const parsed = parseQueryParams(window.location.search);
     if (Object.keys(parsed).length === 0) return;
 
-    // Initialization order contract (v2.7.1+):
+    // Initialization order contract:
     // boot script (lang resolved) -> i18n.js guard passthrough -> step 17 (translate + render)
     // -> step 18 (EN: convertCurrencyInputs HTML defaults) -> step 23 (applyQueryParams URL values)
     // Language is already set at boot; setLanguage must NOT be called here to avoid
-    // double-conversion of currency inputs (the URL reproduction bug fixed in v2.7.1).
+    // double-conversion of currency inputs.
 
     applyParsedParams(parsed);
     if (parsed['auto'] === '1') setTimeout(() => runMainFn(), 150);

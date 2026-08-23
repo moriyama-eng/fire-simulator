@@ -86,7 +86,7 @@ Z = tRand / Math.sqrt(simDf / (simDf - 2));   // requires df > 2
 
 1. **Deterministic seed expansion**: `splitmix32` is a pure function; same seed → same xoshiro128** state.
 2. **No floating-point non-determinism**: All arithmetic uses standard IEEE 754 double-precision operations. No `Math.random()` is used anywhere in the simulation.
-3. **Fixed call order**: The RNG is called in a strict, deterministic sequence each month (one normal draw for market return, optionally one for the t-distribution, two for AR-1 inflation if enabled).
+3. **Fixed call order**: The RNG is called in a strict, deterministic sequence each month (one normal draw for AR-1 inflation if enabled, followed by one normal draw or one Student-t draw using normal + gamma generators for market return).
 4. **Clamp idempotency**: `normalizeHeadlessParams()` is idempotent — applying it twice to already-clamped values produces the same result. This is what makes round-trip CLI reproducibility work.
 
 ## Reproducibility Test

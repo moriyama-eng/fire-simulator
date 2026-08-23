@@ -5,6 +5,17 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.8.7]
+
+### 修正
+- **バージョンフォールバックの同期と自動検証**: `js/i18n.js` の `getAppVersion()` フォールバック値を `'2.8.7'` に更新し、`tests/unit/i18n.test.js` に `package.json` との整合性を自動検証するテストを追加しました。
+- **乱数生成順序ドキュメントの是正**: `docs/explanation/reproducibility.md` における決定論的乱数生成順序の記述を実装コードに合わせて是正しました（AR-1 インフレで 1 回の正規乱数、市場リターンで正規乱数または Student-t 乱数）。
+- **コード衛生とスメル排除**: `js/analysis-state.js` 内の参照 0 件の未実装空関数 `_setAvailableFactorsForTest()` およびハック警告コメントを完全削除しました。`js/i18n.js` 内の `★` マーカーを除去し、`index.html` および `js/core/url.js` の過去バージョン依存コメントを実行順序の不変条件に集中した記述へ整理しました。
+- **フィクスチャおよび CLI ドキュメントのクリーンアップ**: `tests/fixtures/analysis-dom-snippet.html` に残存していた日本語コメントを英語化しました。`docs/guide/cli-usage.md` の出力例 JSON における `meta` オブジェクトをプレースホルダー表記（`<semver>`, `<ISO 8601 UTC timestamp>`）に統一しました。
+- **リリースゲートの堅牢化**: `docs/internal/release-checklist.template.md` に semver allowlist スキャン検査、`js/i18n.js` フォールバック検証、および構造化された Document-impact table 雛形を追加しました。
+
+> **シミュレーション計算アルゴリズムおよび計算ロジックに変更はありません（コア計算ソースコードは無変更）。**
+
 ## [v2.8.6]
 
 ### 修正

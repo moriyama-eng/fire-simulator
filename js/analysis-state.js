@@ -117,16 +117,6 @@ export function _resetStateForTest() {
     state.errorMessage = null;
 }
 
-/**
- * For testing only: forcibly sets factors
- */
-export function _setAvailableFactorsForTest(factors) {
-    // A hack that internally pollutes state
-    // In practice, since getAvailableFactors depends on state.baseEffectiveParams,
-    // it is better to call setBaseContext appropriately rather than adding functions for testing.
-    // For now, modify the test code side.
-}
-
 
 /**
  * Returns the improvement margin in the target success rate according to the base success rate (pct).
