@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { TRANSLATIONS, t, formatCurrency, formatPercent, formatYears, setLanguage } from '../../js/i18n.js';
 
 beforeAll(() => {
@@ -65,4 +65,58 @@ describe('i18n module', () => {
       expect(emptyKeys).toEqual([]);
     });
   });
+
+  describe('Version interpolation and fallback', () => {
+    let originalHeadHTML = '';
+
+    beforeEach(() => {
+      originalHeadHTML = document.head.innerHTML;
+    });
+
+    afterEach(() => {
+      document.head.innerHTML = originalHeadHTML;
+      vi.resetModules();
+    });
+
+    it('should use fallback literal when meta tag is absent and match package.json version', async () => {
+      const { readFileSync } = await import('fs');
+      const { resolve } = await import('path');
+      const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf-8'));
+
+      // Ensure no meta tag is present in document.head
+      const existingMeta = document.querySelector('meta[name="app-version"]');
+      if (existingMeta) existingMeta.remove();
+
+      // Reset module cache and dynamically import fresh i18n module
+      vi.resetModules();
+      const i18n = await import('../../js/i18n.js');
+
+      const footerUrl = i18n.t('capture.footerUrl');
+      expect(footerUrl).toBe(`https://moriyama-eng.github.io/fire-simulator/ | v${pkg.version}`);
+      expect(footerUrl).toContain(`v${pkg.version}`);
+      expect(footerUrl).not.toContain('{VERSION}');
+    });
+
+    it('should prioritize meta[name="app-version"] when present in DOM', async () => {
+      // Set up a custom meta tag in document.head
+      let meta = document.querySelector('meta[name="app-version"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'app-version');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', '9.9.9-test');
+
+      // Reset module cache and dynamically import fresh i18n module
+      vi.resetModules();
+      const i18n = await import('../../js/i18n.js');
+
+      const footerUrl = i18n.t('capture.footerUrl');
+      expect(footerUrl).toContain('v9.9.9-test');
+      expect(footerUrl).not.toContain('{VERSION}');
+    });
+  });
 });
+
+
+

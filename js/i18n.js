@@ -294,13 +294,13 @@ export const TRANSLATIONS = {
   }
 };
 
-// ★ Retrieve version number from meta tag (fallback value in test environment)
+// Retrieve version number from meta tag (fallback value in test environment)
 function getAppVersion() {
   try {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* In test environments, document may be special */ }
-  return '2.7.1'; // Fallback (sync with the actual latest version)
+  return '2.8.7'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION = getAppVersion();
 

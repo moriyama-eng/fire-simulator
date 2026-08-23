@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.8.7]
+
+### Fixed
+- **Version Fallback Sync & Guard**: Updated `getAppVersion()` fallback literal in `js/i18n.js` to `2.8.7` and added automated test in `tests/unit/i18n.test.js` to verify fallback consistency against `package.json`.
+- **RNG Call Order Documentation**: Corrected `docs/explanation/reproducibility.md` to accurately describe deterministic random variable draws (1 normal draw for AR-1 inflation; normal or Student-t using normal+gamma for market return).
+- **Code Hygiene & Smell Removal**: Completely removed unreferenced stub `_setAvailableFactorsForTest()` and hack comments in `js/analysis-state.js`. Removed internal `★` comment marker in `js/i18n.js`. Refactored `v2.7.1+` historical comments in `index.html` and `js/core/url.js` to focus strictly on architectural execution invariants.
+- **Fixture & CLI Documentation Cleanup**: Translated residual Japanese comment in `tests/fixtures/analysis-dom-snippet.html` to English. Standardized `meta` object fields in `docs/guide/cli-usage.md` example JSON to semantic placeholders (`<semver>`, `<ISO 8601 UTC timestamp>`).
+- **Release Gate Hardening**: Updated `docs/internal/release-checklist.template.md` with semver allowlist scan check, `js/i18n.js` fallback verification, and structured Document-impact table template.
+
+> **Simulation algorithm and calculation logic are unchanged; simulation-core source files remain untouched.**
+
 ## [v2.8.6]
 
 ### Fixed

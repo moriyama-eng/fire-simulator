@@ -39,13 +39,33 @@ When releasing a new version, please perform manual verification using the follo
 ## Release Scope
 
 - Target version:
+- Working branch name:
 - What changed in this release:
 - What did not change:
 
+### Document-Impact Table
+
+| Path | Impact this release |
+|---|---|
+| package.json / package-lock.json | Version X.Y.Z |
+| README.md / README-ja.md | Current-release marker only |
+| CHANGELOG.md / CHANGELOG-ja.md | New latest vX.Y.Z entry only |
+| index.html | meta, CSS queries, footer, #capFooterUrl |
+| docs.html | CSS query |
+| docs/internal/style-guide.md | Example CSS query strings |
+| js/i18n.js | getAppVersion() fallback version |
+| js/... (if modified) | Specific implementation change summary |
+| tests/... (if modified) | Specific test addition or update summary |
+| docs/internal/release-checklist.md | Overwritten from template; vX.Y.Z H1, scope, and verification records |
+
+
 ## Release Identity / Metadata
+- [ ] Target release branch (release/vX.Y.Z) is checked out and separated from main — <result or reason>
+- [ ] Target version conforms to Semantic Versioning specification (MAJOR/MINOR/PATCH based on scope of changes) — <result or reason>
 - [ ] package.json version is the target release version — <result or reason>
 - [ ] package-lock.json top-level version is the target release version — <result or reason>
 - [ ] package-lock.json packages[""].version is the target release version — <result or reason>
+- [ ] js/i18n.js getAppVersion() fallback is the target release version — <result or reason>
 - [ ] README.md current release marker is the target release version — <result or reason>
 - [ ] README-ja.md current release marker is the target release version — <result or reason>
 - [ ] CHANGELOG.md latest entry is the target release heading — <result or reason>
@@ -72,6 +92,7 @@ When releasing a new version, please perform manual verification using the follo
 - [ ] No stale current-version marker remains — <result or reason>
 - [ ] CHANGELOG EN/JA latest entries describe the target release — <result or reason>
 - [ ] docs/guide/overview.md is content-consistent with README.md source sections (Overview, Psychological Load, Privacy, Deliberate Scope, Disclaimer); README.md is the single source of truth and overview.md is synced one-way (developer-only sections such as Features / CLI / License / Documentation are intentionally excluded) — <result or reason>
+- [ ] Confirm no internal agent/orchestration markers (e.g. internal workflow tokens, scratch paths, local-only directives) leaked into git-tracked public documentation or source diffs — <result or reason>
 
 ## CSS & Build Freshness Verification
 - [ ] `npm run build:css` executes cleanly — <result or reason>
@@ -180,6 +201,7 @@ Note: `.github/` contains no release workflow; release preparation is operated m
 ## Version Consistency & Exhaustive Search (Prevention of Missed Updates)
 
 - [ ] `package.json` version matches the target release version — <result or reason>
+- [ ] `js/i18n.js` `getAppVersion()` fallback return value matches target release version — <result or reason>
 - [ ] `index.html` all version occurrences match target release version: — <result or reason>
   - [ ] `<meta name="app-version">` — <result or reason>
   - [ ] `<link rel="stylesheet" href="css/tailwind.css?v=...">` — <result or reason>
@@ -190,6 +212,7 @@ Note: `.github/` contains no release workflow; release preparation is operated m
 - [ ] `docs.html` CSS query strings match target release version — <result or reason>
 - [ ] `docs/internal/style-guide.md` example query strings match target release version — <result or reason>
 - [ ] Run exhaustive workspace grep (`grep_search` for previous version string `vX.Y.Z-1`) to physically prove 0 missed occurrences across all source files — <result or reason>
+- [ ] Run semver allowlist scan across executable source files (`js/`, `index.html`, `docs.html`, `cli.js`) to verify zero unapproved semver literals remain — <result or reason>
 
 ## README 3.0 & Documentation Human Inspection Preview
 
