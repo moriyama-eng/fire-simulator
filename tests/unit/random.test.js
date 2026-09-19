@@ -40,6 +40,16 @@ describe('createGammaGenerator', () => {
         expect(gammaRand(0)).toBe(0);
         expect(gammaRand(-1)).toBe(0);
     });
+
+    it('generates gamma variate when alpha < 1.0', () => {
+        const rng = xoshiro128ss(12345, 67890, 54321, 9876);
+        const normalGen = createNormalGenerator(rng);
+        const gammaRand = createGammaGenerator(rng, normalGen);
+        const val = gammaRand(0.5);
+        expect(typeof val).toBe('number');
+        expect(Number.isFinite(val)).toBe(true);
+        expect(val).toBeGreaterThan(0);
+    });
 });
 
 describe('createTGenerator', () => {

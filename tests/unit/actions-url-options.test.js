@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { getCopyUrlOptions, getShareUrlOptions, getCompareUrlOptions } from '../../js/app/actions-url-options.js';
 

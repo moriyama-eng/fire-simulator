@@ -173,6 +173,10 @@ describe('getGeneratedValues', () => {
     setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
     expect(getGeneratedValues('expected_return_pct')).toEqual([8.0, 9.0, 10.0, 11.0, 12.0]);
   });
+
+  it('returns null when base is not available', () => {
+    expect(getGeneratedValues('expected_return_pct')).toBeNull();
+  });
 });
 
 describe('getScenarioCount', () => {

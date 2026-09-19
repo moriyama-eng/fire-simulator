@@ -300,7 +300,7 @@ function getAppVersion() {
     const meta = document.querySelector('meta[name="app-version"]');
     if (meta) return meta.content;
   } catch (e) { /* In test environments, document may be special */ }
-  return '2.8.7'; // Fallback (sync with the actual latest version)
+  return '2.9.0'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION = getAppVersion();
 

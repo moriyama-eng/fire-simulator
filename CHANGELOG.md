@@ -5,6 +5,20 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v2.9.0]
+
+### Added
+- **Property-Based Testing (PBT) Suite**: Introduced `fast-check` (^4.10.1) deterministic property-based test suite (`tests/unit/pbt-core.test.js`) with fixed seed (42) and 100 iterations covering percentiles monotonic non-decreasing invariant, percentile input normalization idempotence, headless params clamping bounds, and simulation URL round-trip serialization.
+- **Shared Worker Stub Helper**: Extracted reusable `StubWorker` class to `tests/helpers/stub-worker.js` with comprehensive unit tests achieving 100% statement, line, and branch coverage.
+- **Boundary and Edge Case Coverage**: Added comprehensive test cases for non-existent scenario deletion and duplication capacity limits in `tests/unit/comparison-state.test.js`, Gamma generator `alpha < 1.0` in `tests/unit/random.test.js`, and deficit compensation under monthly withdrawal in `tests/unit/simulation-edge-cases.test.js`.
+
+### Changed
+- **Test Runner Modernization (Vitest 4.x)**: Upgraded test runner to Vitest 4.1.11 and `@vitest/coverage-v8` 4.1.11. Implemented test environment isolation with default `node` environment and per-file `// @vitest-environment jsdom` directives for DOM-dependent tests, significantly accelerating local and CI execution.
+- **Asynchronous Waiting Utility**: Refactored `tests/helpers/async-utils.js` to prioritize native `vi.waitFor` delegation with preserved diagnostic failure messages and a robust polling fallback.
+- **Runtime and CI Modernization**: Elevated Node.js engine baseline to `>=22` (`package.json`, `package-lock.json`, and `docs/guide/cli-usage.md`) and expanded GitHub Actions CI matrix to test both Node.js 22 and 24.
+
+> **Simulation algorithm and calculation logic are unchanged; simulation-core source files remain untouched.**
+
 ## [v2.8.7]
 
 ### Fixed

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // tests/integration/belowinit-charts.test.js
 // v2.3.0: Integration tests for the new metric charts (belowInitChart, sellChart)
 

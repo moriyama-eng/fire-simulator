@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { renderAnalysisTab, setupAnalysisEventDelegation, _resetDelegationForTest } from '../../js/analysis-ui.js';

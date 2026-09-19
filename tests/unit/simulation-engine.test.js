@@ -1,39 +1,8 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { runWorkerBatch } from '../../js/worker.js';
 import { runSimulation } from '../../js/simulation-engine.js';
 import { normalizeHeadlessPercentiles } from '../../js/core/headless-params.js';
-
-const workerPosts = [];
-
-class StubWorker {
-    constructor() {
-        this.onmessage = null;
-        this.onerror = null;
-    }
-    postMessage(data) {
-        workerPosts.push({ ...data });
-        const { params, pathsCount, seedOffset, dataLen } = data;
-        const batch = runWorkerBatch(params, pathsCount, seedOffset, dataLen, (completed) => {
-            if (this.onmessage) this.onmessage({ data: { type: 'progress', completed } });
-        });
-        if (this.onmessage) {
-            this.onmessage({
-                data: {
-                    type: 'complete',
-                    totalsBuffer: batch.totals.buffer,
-                    cashesBuffer: batch.cashes.buffer,
-                    ddsBuffer: batch.dds.buffer,
-                    maxDdsBuffer: batch.maxDds.buffer,
-                    maxUwsBuffer: batch.maxUws.buffer,
-                    belowInitPeriodsBuffer: batch.belowInitPeriods.buffer,
-                    consecutiveSellPeriodsBuffer: batch.consecutiveSellPeriods.buffer,
-                    bankruptCount: batch.bankruptCount,
-                },
-            });
-        }
-    }
-    terminate() {}
-}
+import { StubWorker } from '../helpers/stub-worker.js';
 
 function makeEngineParams(overrides = {}) {
     return {
@@ -70,7 +39,7 @@ describe('runSimulation Worker stub orchestration', () => {
     let originalHw;
 
     beforeEach(() => {
-        workerPosts.length = 0;
+        StubWorker.posts.length = 0;
         originalHw = Object.getOwnPropertyDescriptor(navigator, 'hardwareConcurrency');
         Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, value: 3 });
         globalThis.Worker = StubWorker;
@@ -85,15 +54,15 @@ describe('runSimulation Worker stub orchestration', () => {
     it('splits paths, accumulates seedOffset, and merges successRate plus a buffer field', async () => {
         const params = makeEngineParams({ simPaths: 8 });
         const result = await runSimulation(params, [10, 50, 90]);
-        expect(workerPosts.length).toBe(3);
-        const counts = workerPosts.map((p) => p.pathsCount);
+        expect(StubWorker.posts.length).toBe(3);
+        const counts = StubWorker.posts.map((p) => p.pathsCount);
         expect(counts.reduce((a, b) => a + b, 0)).toBe(8);
         expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
         expect(counts[0]).toBeGreaterThanOrEqual(counts[1]);
         expect(counts[1]).toBeGreaterThanOrEqual(counts[2]);
-        expect(workerPosts[0].seedOffset).toBe(0);
-        expect(workerPosts[1].seedOffset).toBe(workerPosts[0].pathsCount);
-        expect(workerPosts[2].seedOffset).toBe(workerPosts[0].pathsCount + workerPosts[1].pathsCount);
+        expect(StubWorker.posts[0].seedOffset).toBe(0);
+        expect(StubWorker.posts[1].seedOffset).toBe(StubWorker.posts[0].pathsCount);
+        expect(StubWorker.posts[2].seedOffset).toBe(StubWorker.posts[0].pathsCount + StubWorker.posts[1].pathsCount);
         expect(typeof result.successRate).toBe('number');
         expect(Array.isArray(result.totalPercentileData)).toBe(true);
         expect(result.totalPercentileData.length).toBe(3);

@@ -7,11 +7,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [22, 24]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: ${{ matrix.node-version }}
       - run: npm ci
       - run: npm run build:css
       - run: git diff --exit-code -- css/tailwind.css

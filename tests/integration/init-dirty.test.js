@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { runSimulation } from '../../js/simulation-engine.js';
