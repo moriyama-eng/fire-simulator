@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { TRANSLATIONS, t, formatCurrency, formatPercent, formatYears, setLanguage } from '../../js/i18n.js';
 

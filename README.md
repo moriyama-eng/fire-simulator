@@ -143,7 +143,7 @@ The following are intentional scope limitations, not planned future features:
 
 ## Version / Update History
 
-**Current release: v2.8.7**
+**Current release: v2.9.0**
 
 For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
 

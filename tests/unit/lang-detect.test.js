@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // ====================================================================
 // tests/unit/lang-detect.test.js
 // Unit tests for resolveInitialLang() pure function (js/lang-detect.js)

@@ -5,6 +5,20 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v2.9.0]
+
+### 追加
+- **プロパティベーステスト (PBT) スイート**: `fast-check` (^4.10.1) を導入し、固定シード (42) および 100 回試行による決定論的 PBT スイート (`tests/unit/pbt-core.test.js`) を構築。パーセンタイルの単調非減少性、パーセンタイル入力正規化のべき等性、Headless パラメータのクランプ上下限不変量、URL シリアライズ往復整合性を検証。
+- **共通 Worker スタブヘルパー**: 再利用可能な `StubWorker` クラスを `tests/helpers/stub-worker.js` に抽出し、100% のステートメント・行・ブランチ網羅率を達成する単体テストを追加。
+- **境界条件テスト拡充**: `tests/unit/comparison-state.test.js` における未登録シナリオ削除・上限 10 件超過複製、`tests/unit/random.test.js` における `alpha < 1.0` ガンマ生成、`tests/unit/simulation-edge-cases.test.js` における極限引き出し時の負残高補正テストを追加。
+
+### 変更
+- **テスト実行基盤の近代化 (Vitest 4.x)**: テストランナーを Vitest 4.1.11 および `@vitest/coverage-v8` 4.1.11 にアップグレード。デフォルト環境を `node` とし、DOM 依存テストのみ `// @vitest-environment jsdom` ディレクティブを指定する環境分離を導入してテスト実行を大幅に高速化。
+- **非同期待機ユーティリティの委譲**: `tests/helpers/async-utils.js` を Vitest ネイティブの `vi.waitFor` に優先委譲するよう刷新し、診断メッセージの保持とフォールバックループを両立。
+- **実行基盤および CI の近代化**: Node.js 要件を `>=22` に引き上げ (`package.json`, `package-lock.json`, `docs/guide/cli-usage.md`)、GitHub Actions CI に Node.js 22 および 24 のテストマトリックスを追加。
+
+> **シミュレーション計算アルゴリズムおよび計算ロジックに変更はありません（コア計算ソースコードは無変更）。**
+
 ## [v2.8.7]
 
 ### 修正

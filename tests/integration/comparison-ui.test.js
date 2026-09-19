@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { vi } from 'vitest';
 
 vi.mock('../../js/simulation-engine.js');

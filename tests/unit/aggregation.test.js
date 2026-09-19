@@ -92,4 +92,21 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         });
         expect(result.targetAssetMaintainRate).toBe(0);
     });
+
+    it('handles percentiles array without 50', () => {
+        const simPaths = 10;
+        const dataLen = 361;
+        const mock = createMockBuffers(simPaths, dataLen, Array(10).fill(100_000_000));
+        const result = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [10, 30, 70, 90],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 100_000_000,
+        });
+        expect(result).toBeDefined();
+        expect(result.finalMedian).toBeDefined();
+    });
 });

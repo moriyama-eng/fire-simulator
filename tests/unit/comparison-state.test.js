@@ -38,6 +38,39 @@ describe('comparison-state', () => {
             expect(inputs.inflationModel).toBe('ar1');
             expect(inputs.guardrailEnabled).toBe(true);
         });
+
+        it('converts simParams with alternate models and default targetAssetRatio', () => {
+            const simParams = {
+                initialRiskAsset: 100000000,
+                initialCashBuffer: 0,
+                monthlyExpense: 300000,
+                targetAssetRatio: undefined,
+                expectedReturn: 10.0,
+                volatility: 18.0,
+                inflationRate: 2.0,
+                simYears: 30,
+                useTDistribution: false,
+                simDfManual: true,
+                simDfNum: 4.0,
+                useArInflation: false,
+                infVol: 2.0,
+                infAr: 0.5,
+                cashBufferToggle: false,
+                drawdownTrigger: -20,
+                drawdownReplenish: -5,
+                replenishPace: 5.0,
+                guardrailToggle: false,
+                guardrailTrigger: -20,
+                guardrailRelease: -15,
+                guardrailReduction: -20,
+            };
+            const inputs = CS.createInputsFromSimParams(simParams);
+            expect(inputs.targetAssetRatio).toBe(100);
+            expect(inputs.returnModel).toBe('log-normal');
+            expect(inputs.tDfMode).toBe('manual');
+            expect(inputs.inflationModel).toBe('fixed');
+            expect(inputs.guardrailEnabled).toBe(false);
+        });
     });
 
     describe('scenario management', () => {
@@ -164,6 +197,91 @@ describe('comparison-state', () => {
             CS.setScenarioError(id, 'error message');
             expect(CS.getScenarios()[0].error).toBe('error message');
             expect(CS.getScenarios()[0].result).toBeNull();
+        });
+
+        it('returns false when deleting a non-existent scenario id', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            CS.addScenario(makeMockScenarioInputs(), mockT);
+            expect(CS.deleteScenario('non-existent-id')).toBe(false);
+            expect(CS.getScenarioCount()).toBe(2);
+        });
+
+        it('returns false when duplicating and max scenarios reached', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            const originalId = CS.getScenarios()[0].id;
+            for (let i = 1; i < CS.getMaxScenarios(); i++) {
+                CS.addScenario(makeMockScenarioInputs(), mockT);
+            }
+            expect(CS.getScenarioCount()).toBe(10);
+            expect(CS.duplicateScenario(originalId, mockT)).toBe(false);
+        });
+
+        it('returns false when duplicating non-existent scenario id', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            expect(CS.duplicateScenario('non-existent-id', mockT)).toBe(false);
+        });
+
+        it('ignores updateScenarioName when scenario not found or name empty', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            const id = CS.getScenarios()[0].id;
+            CS.updateScenarioName('non-existent-id', 'Test');
+            CS.updateScenarioName(id, '');
+            CS.updateScenarioName(id, '   ');
+            expect(CS.getScenarios()[0].name).toBe('Scenario 1');
+        });
+
+        it('handles moveScenario edge cases (same index, out of bounds)', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            CS.addScenario(makeMockScenarioInputs(), mockT);
+            const originalOrder = CS.getScenarios().map(s => s.id);
+            CS.moveScenario(0, 0);
+            expect(CS.getScenarios().map(s => s.id)).toEqual(originalOrder);
+            CS.moveScenario(-1, 1);
+            expect(CS.getScenarios().map(s => s.id)).toEqual(originalOrder);
+            CS.moveScenario(5, 1);
+            expect(CS.getScenarios().map(s => s.id)).toEqual(originalOrder);
+            CS.moveScenario(0, -1);
+            expect(CS.getScenarios().map(s => s.id)).toEqual(originalOrder);
+            CS.moveScenario(0, 10);
+            expect(CS.getScenarios().map(s => s.id)).toEqual(originalOrder);
+        });
+
+        it('handles non-existent id gracefully across update methods', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            expect(() => CS.overwriteScenarioFromSim('non-existent', {})).not.toThrow();
+            expect(() => CS.updateScenarioInput('non-existent', 'expectedReturn', 5)).not.toThrow();
+            expect(() => CS.setScenarioResult('non-existent', {})).not.toThrow();
+            expect(() => CS.setScenarioError('non-existent', 'error')).not.toThrow();
+        });
+
+        it('does not clear results if common seed or paths is unchanged', () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            const id = CS.getScenarios()[0].id;
+            CS.setScenarioResult(id, { successRate: 95 });
+            CS.setCommonSeed(CS.getCommonSeed());
+            expect(CS.getScenarios()[0].result).not.toBeNull();
+            CS.setCommonPaths(CS.getCommonPaths());
+            expect(CS.getScenarios()[0].result).not.toBeNull();
+        });
+
+        it('sets and gets isRunning flag', () => {
+            expect(CS.getIsRunning()).toBe(false);
+            CS.setIsRunning(true);
+            expect(CS.getIsRunning()).toBe(true);
+            CS.setIsRunning(false);
+            expect(CS.getIsRunning()).toBe(false);
+        });
+
+        it('generates ID with fallback when crypto.randomUUID is not available', () => {
+            const originalUUID = crypto.randomUUID;
+            try {
+                crypto.randomUUID = undefined;
+                const scenario = CS.createScenario(makeMockScenarioInputs(), 'Fallback Scenario');
+                expect(typeof scenario.id).toBe('string');
+                expect(scenario.id.length).toBeGreaterThan(0);
+            } finally {
+                crypto.randomUUID = originalUUID;
+            }
         });
     });
 });

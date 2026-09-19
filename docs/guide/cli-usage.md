@@ -3,7 +3,7 @@
 ## Overview
 
 `cli.js` is the command-line interface for the FIRE Monte Carlo Simulator.
-Node.js >= 18 is required.
+Node.js >= 22 is required.
 
 ## Installation (global)
 

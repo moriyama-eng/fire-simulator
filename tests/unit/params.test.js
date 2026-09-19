@@ -25,6 +25,10 @@ describe('safeNumber', () => {
 describe('calcAutoDf', () => {
     it('returns 5.0 for volatility=10', () => { expect(calcAutoDf(10)).toBe(5.0); });
     it('does not go below lower bound of 2.5', () => { expect(calcAutoDf(80)).toBe(3.0); });
+    it('returns 30.0 for non-positive volatility', () => {
+        expect(calcAutoDf(0)).toBe(30.0);
+        expect(calcAutoDf(-5)).toBe(30.0);
+    });
 });
 
 // ===== Default value test for targetAssetRatio =====

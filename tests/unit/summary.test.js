@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderEmptySummaryCard, updateSummaryCard } from '../../js/app/summary.js';
 import { setLanguage } from '../../js/i18n.js';

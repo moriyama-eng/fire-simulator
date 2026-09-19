@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { applyParsedParams, applyQueryParams, parseQueryParams, buildSimulationUrl } from '../../js/core/url.js';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import { buildCdfPoints, formatAssetTooltipLabel } from '../../js/app/charts.js';
 import { setLanguage } from '../../js/i18n.js';
