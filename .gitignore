@@ -15,6 +15,7 @@ downloads/
 eggs/
 lib/
 lib64/
+!scripts/lib/
 parts/
 sdist/
 var/

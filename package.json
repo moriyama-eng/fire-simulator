@@ -1,27 +1,42 @@
 {
   "name": "fire-monte-carlo-simulator",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "description": "FIRE Monte Carlo Simulator",
   "type": "module",
   "bin": {
-    "fire-sim": "./cli.js"
+    "fire-sim": "./dist/cli.js"
   },
   "engines": {
     "node": ">=22"
   },
   "scripts": {
+    "dev": "vite",
+    "build": "npm run build:css && npm run build:client && npm run build:cli && node scripts/assert-client-bundle.mjs && node scripts/assert-build-artifacts.mjs",
+    "build:client": "vite build && node scripts/copy-docs.mjs && node scripts/assert-client-bundle.mjs",
+    "build:cli": "tsup",
+    "preview": "vite preview",
+    "build:css": "tailwindcss -c tailwind.config.cjs -i css/tailwind.src.css -o css/tailwind.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.cjs -i css/tailwind.src.css -o css/tailwind.css --minify --watch",
+    "typecheck": "tsc -b",
+    "pretest": "npm run build:cli",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "simulate": "node cli.js",
-    "build:css": "tailwindcss -c tailwind.config.cjs -i css/tailwind.src.css -o css/tailwind.css --minify",
-    "watch:css": "tailwindcss -c tailwind.config.cjs -i css/tailwind.src.css -o css/tailwind.css --minify --watch"
+    "simulate": "node dist/cli.js"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.13.0",
+    "@types/sortablejs": "^1.15.9",
     "@vitest/coverage-v8": "^4.1.11",
+    "@xmldom/xmldom": "0.9.8",
     "fast-check": "^4.10.1",
     "jsdom": "^24.1.0",
+    "marked": "15.0.7",
     "tailwindcss": "3.4.17",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.0",
+    "vite": "^8.3.0",
     "vitest": "^4.1.11"
   }
 }

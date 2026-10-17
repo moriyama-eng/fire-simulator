@@ -10,63 +10,76 @@
 
 ## 1. Test Overview
 
-This project uses two layers of automated testing with Vitest + jsdom.
+This project uses two layers of automated testing with Vitest + jsdom across 42 TypeScript test files.
 
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
-|----|-------------|----------|-------------|------|
-| Unit tests | `tests/unit/` | Vitest + jsdom | Pure functions, core logic, state management | 21 files (214 test cases) |
-| Integration tests | `tests/integration/` | Vitest + jsdom | DOM operations, UI state transitions, event delegation | 7 files (49 test cases) |
-| **Total** | `tests/` | Vitest + jsdom | Full test suite coverage | **28 files (263 test cases)** |
+|---|---|---|---|---|
+| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 35 files (336 test cases) |
+| Integration tests | `tests/integration/` | Vitest (jsdom) | DOM operations, UI state transitions, CLI subprocess execution | 7 files (49 test cases) |
+| **Total** | `tests/` | Vitest | Full test suite coverage | **42 files (385 test cases)** |
 
 ### 1.1 Test Target Module Map
 
 ```
-js/core/
-├── aggregation.js       → tests/unit/aggregation.test.js
-├── format.js            → tests/unit/format.test.js
-├── params.js            → tests/unit/params.test.js
-├── percentile.js        → tests/unit/percentile.test.js
-├── random.js            → tests/unit/random.test.js
-├── simulation.js        → tests/unit/simulation.test.js
-├── state.js             → tests/integration/ui-state.test.js
-├── url.js               → tests/unit/url.test.js, tests/integration/query-params.test.js
-├── headless-params.js   → tests/unit/headless.test.js
+src/core/
+├── aggregation.ts       → tests/unit/aggregation.test.ts
+├── format.ts            → tests/unit/format.test.ts
+├── params.ts            → tests/unit/params.test.ts
+├── percentile.ts        → tests/unit/percentile.test.ts
+├── random.ts            → tests/unit/random.test.ts
+├── simulation.ts        → tests/unit/simulation.test.ts, tests/unit/simulation-edge-cases.test.ts
+├── state.ts             → tests/integration/ui-state.test.ts, tests/unit/core-state.test.ts
+├── url.ts               → tests/unit/url.test.ts, tests/integration/query-params.test.ts
+├── factors.ts           → tests/unit/analysis-runner.test.ts
+└── headless-params.ts   → tests/unit/headless.test.ts
 
-js/app/
-├── charts.js            → tests/unit/chart-helpers.test.js
-├── actions-url-options.js → tests/unit/actions-url-options.test.js
-├── ui-helpers.js        → tests/unit/ui-helpers-currency.test.js
-├── summary.js           → tests/unit/summary.test.js
-├── init.js              → tests/integration/init-dirty.test.js
+src/app/
+├── charts.ts            → tests/unit/chart-helpers.test.ts
+├── actions-url-options.ts → tests/unit/actions-url-options.test.ts
+├── ui-helpers.ts        → tests/unit/ui-helpers-currency.test.ts
+├── summary.ts           → tests/unit/summary.test.ts
+└── init.ts              → tests/integration/init-dirty.test.ts
 
-js/
-├── worker.js            → tests/unit/headless.test.js (T8 runWorkerBatch), tests/unit/simulation-engine.test.js
-├── simulation-engine.js → tests/unit/simulation-engine.test.js
-├── params-accessor.js   → tests/unit/params-accessor.test.js
-├── analysis-state.js    → tests/unit/analysis-state.test.js
-├── analysis-runner.js   → tests/unit/analysis-runner.test.js
-├── analysis-ui.js       → tests/integration/analysis-ui.test.js
-├── comparison-state.js  → tests/unit/comparison-state.test.js
-├── comparison-runner.js → tests/unit/comparison-runner.test.js
-├── comparison-ui.js     → tests/unit/comparison-ui.test.js, tests/integration/comparison-ui.test.js
-├── lang-detect.js       → tests/unit/lang-detect.test.js
-├── i18n.js              → tests/unit/i18n.test.js
-└── app.js               → tests/integration/init-dirty.test.js (boot)
-
-Repository root
-└── cli.js               → tests/integration/cli.test.js
+src/
+├── docs-app.ts          → tests/unit/docs-render.test.ts
+├── docs-links.ts        → tests/unit/docs-links.test.ts
+├── url-utils.ts         → tests/unit/url-utils.test.ts
+├── worker.ts            → tests/unit/headless.test.ts (T8 runWorkerBatch), tests/unit/simulation-engine.test.ts
+├── simulation-engine.ts → tests/unit/simulation-engine.test.ts
+├── params-accessor.ts   → tests/unit/params-accessor.test.ts
+├── analysis-state.ts    → tests/unit/analysis-state.test.ts
+├── analysis-runner.ts   → tests/unit/analysis-runner.test.ts
+├── analysis-ui.ts       → tests/integration/analysis-ui.test.ts
+├── comparison-state.ts  → tests/unit/comparison-state.test.ts
+├── comparison-runner.ts → tests/unit/comparison-runner.test.ts
+├── comparison-ui.ts     → tests/unit/comparison-ui.test.ts, tests/integration/comparison-ui.test.ts
+├── lang-detect.ts       → tests/unit/lang-detect.test.ts
+├── i18n.ts              → tests/unit/i18n.test.ts
+├── app.ts               → tests/integration/init-dirty.test.ts (boot)
+├── headless.ts          → tests/unit/headless.test.ts
+└── cli.ts               → tests/integration/cli.test.ts (via dist/cli.js)
 ```
 
 ### 1.2 Coverage Targets
 
-`vitest.config.js` specifies `js/core/**/*.js` as the coverage target.
-The UI layer (`analysis-ui.js`, `app.js`) is excluded from coverage measurement due to its strong dependency on the DOM,
-but its behavior is verified by integration tests.
+`vitest.config.ts` specifies the following coverage target collection:
+1. `src/core/**/*.ts` (core 10 modules)
+2. `src/analysis-state.ts`
+3. `src/analysis-runner.ts`
+4. `src/comparison-state.ts`
+5. `src/comparison-runner.ts`
+6. `tests/helpers/stub-worker.ts`
+7. `tests/helpers/async-utils.ts`
 
-The state management (`analysis-state.js`) and execution logic (`analysis-runner.js`) of the Analysis tab
-have unit tests, so they are included in the coverage target (since v2.0.0).
+The UI DOM layer (`analysis-ui.ts`, `app.ts`) is verified by integration tests.
 
-The state management (`comparison-state.js`) and execution logic (`comparison-runner.js`) of the Comparison tab are similarly included in the coverage target (since v2.3.0).
+### 1.3 Property-Based Testing (PBT)
+
+Property-based testing is implemented in `tests/unit/pbt-core.test.ts` using `fast-check` (^4.10.1) with a fixed seed (42) and 100 iterations. It verifies mathematical invariants including:
+- Percentile monotonic non-decreasing order
+- Percentile normalization idempotence
+- Headless parameter clamping bounds
+- URL query parameter serialization round-trip fidelity
 
 ## 2. How to Run Tests
 
@@ -81,17 +94,17 @@ npm run watch:css    # Watch mode for CSS development
 
 ```bash
 npm install   # First time only
-npm test      # Run all tests with Vitest
+npm test      # Build CLI and run all tests with Vitest
 ```
 
 ### 2.2 Run Specific Tests Only
 
 ```bash
-# Filter by file name pattern
+# Filter by test name pattern
 npx vitest run -t "transposeFlat"
 
 # Specific file only
-npx vitest run tests/unit/format.test.js
+npx vitest run tests/unit/format.test.ts
 ```
 
 ### 2.3 Check Coverage Report
@@ -103,12 +116,57 @@ npm run test:coverage   # Run tests with coverage report (npx vitest run --cover
 
 ### 2.4 Automatic Execution in CI
 
-GitHub Actions (`.github/workflows/test.yml`) automatically runs on push to the `main` branch and pull requests. The execution environment is `ubuntu-latest` / `node 24`. CI verifies CSS freshness before running tests:
+GitHub Actions (`.github/workflows/test.yml`) automatically runs on push to the `main` branch and pull requests. The execution environment is `ubuntu-latest` / `node 22, 24`. CI verifies CSS freshness and builds the CLI before running tests:
 ```bash
 npm run build:css
 git diff --exit-code -- css/tailwind.css
+npm run build:cli
 npm test
 ```
+
+### 2.5 Browser Smoke Testing (Headless and Headful)
+
+The project includes an end-to-end browser smoke test tool (`<local-smoke-tool>`) that verifies DOM interactions, simulation runs, Web Worker execution, subpath routing, docs SPA navigation, and SRI script loading against a real Chromium browser instance across 47 verification points.
+
+#### Headless Mode (Default / CI)
+
+Runs silently in headless mode for CI/CD and automated release gate checks without opening a graphical browser window:
+
+```bash
+node <local-smoke-tool>
+```
+
+#### Headful Mode (Visual UI Inspection)
+
+Launches Chromium with a visible GUI window so that human operators can observe user interactions (buttons, tabs, inputs, scenario transitions, charts, and docs):
+
+```bash
+# Passing CLI flag directly
+node <local-smoke-tool> --headful
+
+# Or via environment variable
+HEADFUL=1 node <local-smoke-tool>
+```
+
+#### Slow Motion Delay Configuration
+
+To facilitate visual observation during headful runs, the tool supports an operation delay (slowMo) that slows down Playwright browser interactions:
+- When `--headful` is active, slowMo defaults to `100ms`.
+- When in headless mode, slowMo defaults to `0ms` (no delay).
+- You can customize the delay using `--slowmo <ms>` or the `SLOWMO` environment variable:
+
+```bash
+# Direct node invocation
+node <local-smoke-tool> --headful --slowmo 200
+
+# Using environment variable (POSIX / bash / zsh)
+SLOWMO=250 node <local-smoke-tool> --headful
+
+# Using environment variable (Windows PowerShell)
+$env:SLOWMO="250"; node <local-smoke-tool> --headful
+```
+
+When running in headful mode, pressing `Ctrl+C` sends `SIGINT` which gracefully closes Chromium and shuts down any spawned preview server to avoid leaving orphaned browser processes.
 
 ## 3. Test Design Philosophy
 
@@ -209,6 +267,7 @@ This project **intentionally does not adopt** End-to-End tests using Puppeteer/P
 
 **Alternative approaches**:
 - Ensure the correctness of logic and UI with unit tests + integration tests
+- Automated browser smoke testing via `<local-smoke-tool>` (supporting both headless CI execution and interactive headful visual inspection; see Section 2.5)
 - Use the "Smoke Test Manual" (below) for manual verification before release
 
 **Conditions for future reintroduction**:
@@ -288,16 +347,16 @@ it('toggles state on click', () => {
 
 | Test ID | File | Description |
 | --- | --- | --- |
-| T1 | tests/unit/headless.test.js | Reproducibility: `normalizeHeadlessParams` + `runSimulationHeadless` results match `tests/fixtures/headless-reference-results.json` |
-| T2 | tests/unit/headless.test.js | Determinism: Two runs with identical params produce identical `successRate` / `finalMedian` / `totalPercentileData` |
-| T3 | tests/integration/cli.test.js | CLI integration: `node cli.js run <file>` scalar key validation, file generation, `--out` auto directory creation |
-| T4 | tests/integration/cli.test.js | Float32Array conversion: `--stdout` output `totalPercentileData[0]` is a plain array |
-| T5 | tests/integration/cli.test.js | list-factors: Output `factors` count and `paramKey` values match `FACTORS` |
-| T6 | tests/unit/headless.test.js | currency=USD: `result.currency === 'USD'`, no rate conversion applied |
-| T7 | tests/unit/headless.test.js | normalizeHeadlessParams: HEADLESS_DEFAULTS fallback, clamp boundaries, guardrail cross-validation, boolean defaults, simDfManual=false |
-| T8 | tests/unit/headless.test.js | Worker vs Headless equivalence: Bit-for-bit output match for numWorkers in [1, 3, 8]. Path work calls production `runWorkerBatch` from `js/worker.js`. Split/merge orchestration stays in the test. Does not start `new Worker`. |
-| T9 | tests/integration/cli.test.js | CLI round-trip: re-running with output `params` + `percentiles` produces identical results |
-| T10 | tests/unit/params.test.js | Shared clamp helpers: Unit tests for pure clamp functions (`clampSimPaths`, `clampNonPositive`, `clampNonNegative`, `clampRange`, `clampMinDf`, `resolveGuardrailRelease`) |
+| T1 | tests/unit/headless.test.ts | Reproducibility: `normalizeHeadlessParams` + `runSimulationHeadless` results match `tests/fixtures/headless-reference-results.json` |
+| T2 | tests/unit/headless.test.ts | Determinism: Two runs with identical params produce identical `successRate` / `finalMedian` / `totalPercentileData` |
+| T3 | tests/integration/cli.test.ts | CLI integration: `node dist/cli.js run <file>` scalar key validation, file generation, `--out` auto directory creation |
+| T4 | tests/integration/cli.test.ts | Float32Array conversion: `--stdout` output `totalPercentileData[0]` is a plain array |
+| T5 | tests/integration/cli.test.ts | list-factors: Output `factors` count and `paramKey` values match `FACTORS` |
+| T6 | tests/unit/headless.test.ts | currency=USD: `result.currency === 'USD'`, no rate conversion applied |
+| T7 | tests/unit/headless.test.ts | normalizeHeadlessParams: HEADLESS_DEFAULTS fallback, clamp boundaries, guardrail cross-validation, boolean defaults, simDfManual=false |
+| T8 | tests/unit/headless.test.ts | Worker vs Headless equivalence: Bit-for-bit output match for numWorkers in [1, 3, 8]. Path work calls production `runWorkerBatch` from `src/worker.ts`. Split/merge orchestration stays in the test. Does not start `new Worker`. |
+| T9 | tests/integration/cli.test.ts | CLI round-trip: re-running with output `params` + `percentiles` produces identical results |
+| T10 | tests/unit/params.test.ts | Shared clamp helpers: Unit tests for pure clamp functions (`clampSimPaths`, `clampNonPositive`, `clampNonNegative`, `clampRange`, `clampMinDf`, `resolveGuardrailRelease`) |
 
 ### Test Data
 

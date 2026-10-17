@@ -1,0 +1,84 @@
+// @vitest-environment jsdom
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { runSimulation } from '../../src/simulation-engine.js';
+import { normalizeHeadlessPercentiles } from '../../src/core/headless-params.js';
+import { StubWorker } from '../helpers/stub-worker.js';
+import type { SimulationParams } from '../../src/types/params.js';
+
+function makeEngineParams(overrides: Partial<SimulationParams> = {}): SimulationParams {
+  return {
+    initialRiskAsset: 100_000_000,
+    initialCashBuffer: 0,
+    monthlyExpense: 300_000,
+    expectedReturn: 10,
+    volatility: 18,
+    inflationRate: 2,
+    simYears: 1,
+    simPaths: 8,
+    cashBufferToggle: false,
+    drawdownTrigger: -20,
+    drawdownReplenish: -5,
+    replenishPace: 5,
+    guardrailToggle: false,
+    guardrailTrigger: -20,
+    guardrailReduction: -20,
+    guardrailRelease: -15,
+    useArInflation: false,
+    infVol: 2,
+    infAr: 0.5,
+    useTDistribution: false,
+    simDfManual: false,
+    simDfNum: 4,
+    seedNum: 42,
+    targetAssetRatio: 100,
+    ...overrides,
+  };
+}
+
+describe('runSimulation Worker stub orchestration', () => {
+  const originalWorker = globalThis.Worker;
+  let originalHw: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    StubWorker.posts.length = 0;
+    originalHw = Object.getOwnPropertyDescriptor(navigator, 'hardwareConcurrency');
+    Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, value: 3 });
+    globalThis.Worker = StubWorker as unknown as typeof Worker;
+  });
+
+  afterEach(() => {
+    globalThis.Worker = originalWorker;
+    if (originalHw) {
+      Object.defineProperty(navigator, 'hardwareConcurrency', originalHw);
+    } else {
+      delete (navigator as unknown as { hardwareConcurrency?: number }).hardwareConcurrency;
+    }
+  });
+
+  it('splits paths, accumulates seedOffset, and merges successRate plus a buffer field', async () => {
+    const params = makeEngineParams({ simPaths: 8 });
+    const result = await runSimulation(params, [10, 50, 90]);
+    expect(StubWorker.posts.length).toBe(3);
+    const counts = StubWorker.posts.map((p) => p.pathsCount);
+    expect(counts.reduce((a, b) => a + b, 0)).toBe(8);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+    expect(counts[0]).toBeGreaterThanOrEqual(counts[1]);
+    expect(counts[1]).toBeGreaterThanOrEqual(counts[2]);
+    expect(StubWorker.posts[0].seedOffset).toBe(0);
+    expect(StubWorker.posts[1].seedOffset).toBe(StubWorker.posts[0].pathsCount);
+    expect(StubWorker.posts[2].seedOffset).toBe(
+      StubWorker.posts[0].pathsCount + StubWorker.posts[1].pathsCount
+    );
+    expect(typeof result.successRate).toBe('number');
+    expect(Array.isArray(result.totalPercentileData)).toBe(true);
+    expect(result.totalPercentileData.length).toBe(3);
+  });
+
+  it('uses UI default percentiles when omitted, different from headless default', async () => {
+    const result = await runSimulation(makeEngineParams());
+    const headlessDefault = normalizeHeadlessPercentiles(undefined);
+    expect(result.percentiles).toEqual([10, 25, 50, 75, 90]);
+    expect(headlessDefault).toEqual([10, 30, 50, 70, 90]);
+    expect(result.percentiles).not.toEqual(headlessDefault);
+  });
+});

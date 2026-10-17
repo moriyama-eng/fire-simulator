@@ -5,6 +5,29 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v3.0.0]
+
+### 追加
+- **Vite ビルドシステムの統合構築**: クライアント静的成果物 (`dist/client/`) および ESM Web Worker (`src/worker.ts`) のビルド・開発基盤として Vite を導入。高速な HMR（Hot Module Replacement）および最適化された本番静的アセット出力を実現。
+- **tsup による Node.js CLI バンドル**: `tsup` による `src/cli.ts` から独立実行可能な `dist/cli.js`（`#!/usr/bin/env node` バナー付き ESM 形式）へのバンドルパイプラインを確立（`npm run build:cli`）。既存 CLI コマンドライン機能および `package.json` の bin 互換性（`fire-sim`）を完全維持。
+- **包括的な TypeScript 型定義体系**: シミュレーションモデル、パラメータスキーマ、計算結果、ファクター定義、UI 状態モデルにわたる厳格なドメインインターフェースおよび型定義を策定。
+- **GitHub Pages デプロイパイプライン**: 最小権限トークンを設定した 2 ジョブ構成の GitHub Pages 自動デプロイワークフロー (`.github/workflows/deploy.yml`) を新設。相対ベースパス (`./`) によるサブパスホスティングおよびサブパス検証スモークを整備。
+- **ドキュメント SPA の TypeScript モジュール化**: ドキュメントビューアを TypeScript (`src/docs-app.ts`, `src/docs-links.ts`, `src/url-utils.ts`) へモジュール化。KaTeX 数式レンダリング、Vite 開発用 Markdown ミドルウェア、アセットパスの境界封じ込め (Confinement)、SVG サニタイズ、SPA クライアントルーティングを実装。
+- **42 テストスイートへの大幅拡充**: 自動テストスイートを 42 テストファイル・385 テストケース（単体テスト 35 件 / 336 ケース、統合テスト 7 件 / 49 ケース）へと拡充。パス封じ込め、開発ミドルウェア、ドキュメントリンク解決、LaTeX レンダリング、SVG サニタイズの網羅的検証を追加。
+
+### 変更
+- **コードベース全体の完全 TypeScript 化**: 全コンポーネントを JavaScript から TypeScript へ全面的に移行：
+  - **コア計算エンジン**: `src/core/` 配下（乱数生成、シミュレーション、集計、パーセンタイル、フォーマット、状態管理、URL シリアライズ、パラメータ検証、ファクター定義）。
+  - **CLI およびヘッドレス実行**: `src/cli.ts` および `src/headless.ts`。
+  - **Web Worker**: `src/worker.ts`（Vite 標準の ESM Worker 解決を採用）。
+  - **UI コントローラおよびサブシステム**: `src/app.ts`, `src/app/` コントローラ群, `src/analysis-*.ts`, `src/comparison-*.ts`, `src/i18n.ts`, `src/lang-detect.ts`。
+  - **全 42 テストスイート**: 単体テスト 35 件および統合テスト 7 件の全テストファイルを `.test.ts` で構築。
+  - 旧 `js/` ディレクトリおよびルート `cli.js` を完全削除・廃止。
+- **Zero any 規約とソリューション参照ビルドによる厳格な型保証**: ソリューション参照構成（`tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.tests.json`）と `tsc -b` を通じ、全プロジェクトで型エラー 0 件および `any` 型の完全排除（Zero `any`）を徹底。不確実な入力境界には `unknown` と型ガードによるナローイングを適用。
+- **数学的再現性の完全維持（差分ゼロ）**: コア計算エンジンのアルゴリズム差分ゼロ規約を遵守。乱数生成順序、ループ構造、数式展開順序を完全に保持し、過去バージョンのゴールデンフィクスチャに対してビット単位（Bit-for-bit）の完全一致を検証・保証。
+
+> **シミュレーション計算アルゴリズムおよび数学的再現性は完全に保持されており、シミュレーション結果は v2.x とビット単位で同一です。**
+
 ## [v2.9.0]
 
 ### 追加

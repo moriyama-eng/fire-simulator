@@ -1,0 +1,230 @@
+// tests/unit/analysis-state.test.ts
+
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  FACTORS,
+  getAvailableFactors,
+  getState,
+  setBaseContext,
+  setSelectedFactors,
+  setAnalysisResult,
+  setRunning,
+  setErrorMessage,
+  getFactorBaseValue,
+  getGeneratedValues,
+  getScenarioCount,
+  getSuccessRateTargetDelta,
+  _resetStateForTest,
+} from '../../src/analysis-state.js';
+import { makeAnalysisResult, makeBaseEffectiveParams } from '../helpers/analysis-fixtures.js';
+
+beforeEach(() => {
+  _resetStateForTest();
+});
+
+describe('FACTORS definition', () => {
+  it('has 10 factors', () => {
+    expect(FACTORS.length).toBe(10);
+  });
+
+  it('each factor has required properties', () => {
+    for (const f of FACTORS) {
+      expect(f).toHaveProperty('key');
+      expect(f).toHaveProperty('labelKey');
+      expect(f).toHaveProperty('categoryKey');
+      expect(f).toHaveProperty('catClass');
+      expect(f).toHaveProperty('unitKey');
+      expect(f).toHaveProperty('step');
+      expect(f).toHaveProperty('decimals');
+      expect(f).toHaveProperty('scale');
+      expect(f).toHaveProperty('paramKey');
+      if (f.requiresFeature) {
+        expect(typeof f.requiresFeature).toBe('string');
+      }
+    }
+  });
+});
+
+describe('getAvailableFactors', () => {
+  it('returns all 10 factors when CB and GR are ON', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true, guardrailToggle: true }));
+    expect(getAvailableFactors().length).toBe(10);
+  });
+
+  it('excludes cash buffer factors when CB is OFF', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: false }));
+    const keys = getAvailableFactors().map(f => f.key);
+    expect(keys).not.toContain('drawdown_trigger_pct');
+    expect(keys).not.toContain('replenish_pace_x_expense');
+  });
+
+  it('excludes guardrail factors when GR is OFF', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ guardrailToggle: false }));
+    const keys = getAvailableFactors().map(f => f.key);
+    expect(keys).not.toContain('guardrail_trigger_pct');
+    expect(keys).not.toContain('guardrail_reduction_pct');
+  });
+
+  it('includes guardrail factors when GR is ON', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true, guardrailToggle: true }));
+    const keys = getAvailableFactors().map(f => f.key);
+    expect(keys).toContain('guardrail_trigger_pct');
+    expect(keys).toContain('guardrail_reduction_pct');
+  });
+
+  it('returns empty array when base not set', () => {
+    expect(getAvailableFactors()).toEqual([]);
+  });
+});
+
+describe('setBaseContext', () => {
+  it('sets base params correctly', () => {
+    const ep = makeBaseEffectiveParams();
+    setBaseContext({ source: 'test' }, ep);
+    expect(getState().baseEffectiveParams).toEqual(ep);
+    expect(getState().baseContext?.source).toBe('test');
+  });
+
+  it('removes unavailable factors and clears results on condition change', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: true }));
+    setSelectedFactors(['drawdown_trigger_pct']);
+    setBaseContext({}, makeBaseEffectiveParams({ cashBufferToggle: false }));
+    expect(getState().selectedFactors).toEqual([]);
+    expect(getState().analysisResult).toBeNull();
+  });
+
+  it('keeps selected factors and results when same condition is set again', () => {
+    const ep = makeBaseEffectiveParams();
+    setBaseContext({}, ep);
+    const mockResult = makeAnalysisResult();
+    setSelectedFactors(['expected_return_pct']);
+    setAnalysisResult(mockResult);
+    setBaseContext({}, { ...ep });
+    expect(getState().selectedFactors).toEqual(['expected_return_pct']);
+    expect(getState().analysisResult).toEqual(mockResult);
+  });
+});
+
+describe('setSelectedFactors', () => {
+  it('sets selected factors and clears results', () => {
+    setAnalysisResult(makeAnalysisResult());
+    setSelectedFactors(['volatility_pct']);
+    expect(getState().selectedFactors).toEqual(['volatility_pct']);
+    expect(getState().analysisResult).toBeNull();
+  });
+});
+
+describe('setRunning', () => {
+  it('clears error message when running ends', () => {
+    setErrorMessage('some error');
+    setRunning(false);
+    expect(getState().errorMessage).toBeNull();
+  });
+});
+
+describe('setAnalysisResult', () => {
+  it('sets analysis result and clears running flag', () => {
+    const result = makeAnalysisResult();
+    setAnalysisResult(result);
+    expect(getState().analysisResult).toEqual(result);
+    expect(getState().isRunning).toBe(false);
+  });
+});
+
+describe('setErrorMessage', () => {
+  it('sets error message and clears running flag', () => {
+    setErrorMessage('test error');
+    expect(getState().errorMessage).toBe('test error');
+    expect(getState().isRunning).toBe(false);
+  });
+});
+
+describe('getFactorBaseValue', () => {
+  it('returns base value in UI units for scaled factor', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ initialRiskAsset: 200_000_000 }));
+    expect(getFactorBaseValue('initial_risk_asset_jpy')).toBe(2.0);
+  });
+
+  it('returns scale-1 factor as-is', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
+    expect(getFactorBaseValue('expected_return_pct')).toBe(10.0);
+  });
+
+  it('returns null when base not set', () => {
+    expect(getFactorBaseValue('expected_return_pct')).toBeNull();
+  });
+
+  it('returns null for undefined factor key', () => {
+    setBaseContext({}, makeBaseEffectiveParams());
+    expect(getFactorBaseValue('non_existent_key')).toBeNull();
+  });
+
+  it('returns null for valid key but unset param', () => {
+    const ep = makeBaseEffectiveParams();
+    delete (ep as Record<string, unknown>).expectedReturn;
+    setBaseContext({}, ep);
+    expect(getFactorBaseValue('expected_return_pct')).toBeNull();
+  });
+
+  it('falls back to scale 1 when factor scale is falsy or 0', () => {
+    const factor = FACTORS.find(f => f.key === 'expected_return_pct')!;
+    const origScale = factor.scale;
+    try {
+      (factor as { scale: number }).scale = 0;
+      setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
+      expect(getFactorBaseValue('expected_return_pct')).toBe(10.0);
+    } finally {
+      (factor as { scale: number }).scale = origScale;
+    }
+  });
+});
+
+describe('getGeneratedValues', () => {
+  it('generates 5 levels from base value with step', () => {
+    setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
+    expect(getGeneratedValues('expected_return_pct')).toEqual([8.0, 9.0, 10.0, 11.0, 12.0]);
+  });
+
+  it('returns null when base is not available', () => {
+    expect(getGeneratedValues('expected_return_pct')).toBeNull();
+  });
+
+  it('returns null when factor is removed between getFactorBaseValue and getGeneratedValues', () => {
+    const factor = FACTORS.find(f => f.key === 'expected_return_pct')!;
+    setBaseContext({}, makeBaseEffectiveParams({ expectedReturn: 10.0 }));
+    const origFind = FACTORS.find.bind(FACTORS);
+    let callCount = 0;
+    FACTORS.find = ((predicate: (f: typeof factor) => boolean) => {
+      callCount++;
+      if (callCount === 2) return undefined;
+      return origFind(predicate);
+    }) as typeof FACTORS.find;
+    try {
+      expect(getGeneratedValues('expected_return_pct')).toBeNull();
+    } finally {
+      FACTORS.find = origFind;
+    }
+  });
+});
+
+describe('getScenarioCount', () => {
+  it('calculates total scenarios from selected factors', () => {
+    setSelectedFactors(['expected_return_pct', 'volatility_pct']);
+    expect(getScenarioCount()).toBe(9);
+  });
+});
+
+describe('getSuccessRateTargetDelta', () => {
+  it.each([
+    [96.0, 0],
+    [95.0, 0],
+    [93.2, 1.0],
+    [90.0, 1.0],
+    [87.5, 2.0],
+    [85.0, 2.0],
+    [70.0, 5.0],
+    [0, 5.0],
+  ])('gets correct delta for success rate %s%%', (rate, expectedDelta) => {
+    expect(getSuccessRateTargetDelta(rate)).toBe(expectedDelta);
+  });
+});

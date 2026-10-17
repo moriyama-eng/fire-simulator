@@ -2,7 +2,7 @@
 
 This document explains how the Sensitivity Analysis tab computes and displays results.
 
-Source files: `js/analysis-runner.js`, `js/analysis-ui.js`.
+Source files: `src/analysis-runner.ts`, `src/analysis-ui.ts`.
 
 ## Overview
 
@@ -10,13 +10,13 @@ The Analysis tab runs a one-factor-at-a-time (OAT) sensitivity analysis. For eac
 
 ## Factor Levels and the 5-Level Scale
 
-Each factor is varied across 5 levels: `[-2, -1, 0, +1, +2]` (defined in `js/analysis-runner.js`, line 78).
+Each factor is varied across 5 levels: `[-2, -1, 0, +1, +2]` (defined in `src/analysis-runner.ts`).
 
 - **Level 0** is the baseline. It is **skipped** during the loop because the baseline simulation has already been run separately and its results are stored as `baseScenario`. Only levels `[-2, -1, +1, +2]` produce new simulations — a total of 4 simulations per factor.
 - The value applied at each level is: `baseValue + factor.step × level` (in UI units).
 
-From `js/analysis-runner.js`:
-```javascript
+From `src/analysis-runner.ts`:
+```typescript
 for (const level of [-2, -1, 0, 1, 2]) {
     if (level === 0) continue; // Skip baseline (already executed)
     applyFactorChange(modifiedEp, factor, baseValue + factor.step * level);
@@ -29,8 +29,8 @@ for (const level of [-2, -1, 0, 1, 2]) {
 Each factor definition includes a `scale` field that converts UI units to raw simulation units.
 For example, `initial_risk_asset_jpy` uses `scale: 1e8` (1 億), so a UI value of `1.0` maps to `100,000,000` in the parameter.
 
-```javascript
-// js/analysis-runner.js
+```typescript
+// src/analysis-runner.ts
 export function applyFactorChange(ep, factor, value) {
     const scaledValue = factor.scale && factor.scale !== 1
         ? Math.round(value * factor.scale)
@@ -47,7 +47,7 @@ The "Target Table" shows how much each factor must change to move a chosen metri
 
 The calculation uses **linear interpolation** between the two adjacent scenario points that bracket the target value:
 
-From `js/analysis-ui.js`:
+From `src/analysis-ui.ts`:
 ```javascript
 const fraction = (targetValue - lower.metricValue) / (upper.metricValue - lower.metricValue);
 const requiredFactorValue = lower.factorValue + fraction * (upper.factorValue - lower.factorValue);

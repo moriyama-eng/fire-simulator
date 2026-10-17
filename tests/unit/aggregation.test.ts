@@ -1,0 +1,133 @@
+import { describe, it, expect } from 'vitest';
+import { transposeFlat, aggregateResultsProduction } from '../../src/core/aggregation.js';
+
+describe('transposeFlat', () => {
+    it('transposeFlat preserves values', () => {
+        const data = new Float32Array([1, 2, 3, 4, 5, 6]);
+        const result = transposeFlat(data.buffer, 2, 3);
+        expect(result[0][0]).toBe(1);
+        expect(result[0][1]).toBe(4);
+    });
+});
+
+// ===== Target asset maintenance rate tests =====
+describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
+    // Helper function: create mock buffers
+    const createMockBuffers = (simPaths: number, dataLen: number, finalAssets: number[]) => {
+        const totalsBuffer = new Float32Array(simPaths * dataLen);
+        for (let p = 0; p < simPaths; p++) {
+            totalsBuffer[p * dataLen + (dataLen - 1)] = finalAssets[p];
+        }
+        return {
+            totalsBuffer: totalsBuffer.buffer,
+            cashesBuffer: new Float32Array(simPaths * dataLen).buffer,
+            ddsBuffer: new Float32Array(simPaths * dataLen).buffer,
+            maxDdPerPath: new Float32Array(simPaths),
+            maxUwPerPath: new Float32Array(simPaths),
+            belowInitPeriods: new Float32Array(simPaths),
+            consecutiveSellPeriods: new Float32Array(simPaths),
+        };
+    };
+
+    it.each([
+        ['all paths exceed', Array(10).fill(150_000_000), 100],
+        ['half of paths exceed', [
+            150_000_000, 150_000_000, 150_000_000, 150_000_000, 150_000_000,
+            50_000_000, 50_000_000, 50_000_000, 50_000_000, 50_000_000,
+        ], 50],
+        ['no paths exceed', Array(10).fill(50_000_000), 0],
+    ])('%s -> maintain rate %s', (_label: string, finalAssets: number[], expectedRate: number) => {
+        const simPaths = 10;
+        const dataLen = 361;
+        const mock = createMockBuffers(simPaths, dataLen, finalAssets);
+        const result = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [50],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 100_000_000,
+        });
+        expect(result.targetAssetMaintainRate).toBe(expectedRate);
+    });
+
+    // Test case 4: targetAssetRatio=0.5 (threshold halved) -> all paths exceed = 100%
+    it('targetAssetRatio=0.5 -> threshold halved, all paths exceed', () => {
+        const simPaths = 10;
+        const dataLen = 361;
+        const finalAssets = Array(simPaths).fill(60_000_000);
+        const initialTotalAssets = 100_000_000;
+        const targetAssetRatio = 50;
+
+        const mock = createMockBuffers(simPaths, dataLen, finalAssets);
+        const result = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [50],
+            bankruptCount: 0,
+            targetAssetRatio,
+            initialTotalAssets,
+        });
+        expect(result.targetAssetMaintainRate).toBe(100);
+    });
+
+    // Test case 5: targetAssetRatio=2.0 (threshold doubled) -> all paths below = 0%
+    it('targetAssetRatio=2.0 -> threshold doubled, all paths below', () => {
+        const simPaths = 10;
+        const dataLen = 361;
+        const finalAssets = Array(simPaths).fill(150_000_000);
+        const initialTotalAssets = 100_000_000;
+        const targetAssetRatio = 200;
+
+        const mock = createMockBuffers(simPaths, dataLen, finalAssets);
+        const result = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [50],
+            bankruptCount: 0,
+            targetAssetRatio,
+            initialTotalAssets,
+        });
+        expect(result.targetAssetMaintainRate).toBe(0);
+    });
+
+    it('handles percentiles array without 50', () => {
+        const simPaths = 10;
+        const dataLen = 361;
+        const mock = createMockBuffers(simPaths, dataLen, Array(10).fill(100_000_000));
+        const result = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [10, 30, 70, 90],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 100_000_000,
+        });
+        expect(result).toBeDefined();
+        expect(result.finalMedian).toBeDefined();
+    });
+
+    it('handles undefined belowInitPeriods and consecutiveSellPeriods gracefully', () => {
+        const simPaths = 2;
+        const dataLen = 2;
+        const result = aggregateResultsProduction({
+            totalsBuffer: new Float32Array(simPaths * dataLen).buffer,
+            cashesBuffer: new Float32Array(simPaths * dataLen).buffer,
+            ddsBuffer: new Float32Array(simPaths * dataLen).buffer,
+            maxDdPerPath: new Float32Array(simPaths),
+            maxUwPerPath: new Float32Array(simPaths),
+            simPaths,
+            dataLen,
+            percentiles: [50],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 100_000_000,
+        });
+        expect(result.belowInitPeriods.length).toBe(simPaths);
+        expect(result.consecutiveSellPeriods.length).toBe(simPaths);
+    });
+});

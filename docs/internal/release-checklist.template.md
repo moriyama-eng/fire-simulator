@@ -100,6 +100,7 @@ When releasing a new version, please perform manual verification using the follo
 
 ## Automated Tests
 - [ ] `npm test` passes all tests — <result or reason>
+- [ ] Automated smoke tool passes (`node <local-smoke-tool>`) — <result or reason>
 
 ## Simulation Tab
 - [ ] Results are displayed by clicking the "Run Simulation" button — <result or reason>

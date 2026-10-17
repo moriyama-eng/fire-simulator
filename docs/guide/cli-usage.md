@@ -2,8 +2,8 @@
 
 ## Overview
 
-`cli.js` is the command-line interface for the FIRE Monte Carlo Simulator.
-Node.js >= 22 is required.
+`dist/cli.js` (built from `src/cli.ts`) is the command-line interface for the FIRE Monte Carlo Simulator.
+Node.js >= 22 is required. Run `npm run build` (or `npm run build:cli`) before executing `dist/cli.js`.
 
 ## Installation (global)
 
@@ -15,7 +15,7 @@ fire-sim --help
 Or run directly:
 
 ```bash
-node cli.js --help
+node dist/cli.js --help
 ```
 
 ## Subcommands
@@ -23,7 +23,7 @@ node cli.js --help
 ### `run` — Run simulation (default)
 
 ```bash
-node cli.js run <params.json> [options]
+node dist/cli.js run <params.json> [options]
 ```
 
 Run a simulation using the specified parameter JSON file.
@@ -31,10 +31,10 @@ If no file is specified, parameters are read from stdin.
 
 ```bash
 # File input
-node cli.js run my-params.json
+node dist/cli.js run my-params.json
 
 # Stdin input
-cat my-params.json | node cli.js run
+cat my-params.json | node dist/cli.js run
 ```
 
 #### Options
@@ -135,8 +135,8 @@ Both fields are preserved in output. They should always agree, but keeping them 
 ### `list-factors` — Output factor definitions
 
 ```bash
-node cli.js list-factors
-node cli.js --list-factors
+node dist/cli.js list-factors
+node dist/cli.js --list-factors
 ```
 
 Outputs the factor definitions (`FACTORS`) used by the Analysis tab as JSON.
@@ -195,17 +195,17 @@ The CLI output is designed so that the exact same simulation run can be reproduc
 1. Take the output JSON from any run mode (summary, file, or `--stdout`).
 2. Spread the top-level `params` object to the top level of a new input JSON.
 3. Attach the top-level `percentiles` array (from summary or `--stdout` mode) to the new input.
-4. Feed the reconstructed JSON into `cli.js run`.
+4. Feed the reconstructed JSON into `dist/cli.js run`.
 
 ```bash
 # First run
-node cli.js run original.json --no-file > summary.json
+node dist/cli.js run original.json --no-file > summary.json
 
 # Reconstruct input for reproduction (example using jq)
 jq '(.params) + {percentiles: .percentiles}' summary.json > reproduce.json
 
 # Reproduce — yields identical usedSeed and all scalar metrics
-node cli.js run reproduce.json --no-file
+node dist/cli.js run reproduce.json --no-file
 ```
 
 > **Note**: The input parser does NOT automatically unwrap nested `params` objects.
@@ -225,7 +225,7 @@ This section documents deliberate design decisions that define what the CLI is
 
 ### Intentionally excluded features
 
-The following features are explicitly out of scope for `cli.js`. They are either
+The following features are explicitly out of scope for `dist/cli.js`. They are either
 the caller's (AI agent's) responsibility or excluded to avoid double-maintenance cost.
 
 | Feature | Reason for exclusion |
@@ -256,28 +256,28 @@ This boundary keeps the CLI small, testable, and free of framework dependencies.
 
 ```bash
 # Basic run
-node cli.js run params.json
+node dist/cli.js run params.json
 
 # Full result to stdout only
-node cli.js run params.json --stdout
+node dist/cli.js run params.json --stdout
 
 # Custom output path
-node cli.js run params.json --out output/my-result.json
+node dist/cli.js run params.json --out output/my-result.json
 
 # Skip file write (summary only)
-node cli.js run params.json --no-file
+node dist/cli.js run params.json --no-file
 
 # Compact (single-line) JSON output
-node cli.js run params.json --compact
+node dist/cli.js run params.json --compact
 
 # List factor definitions
-node cli.js list-factors
+node dist/cli.js list-factors
 
 # Show version
-node cli.js --version
+node dist/cli.js --version
 
 # Show help
-node cli.js --help
+node dist/cli.js --help
 
 # Via npm script
 npm run simulate -- run params.json

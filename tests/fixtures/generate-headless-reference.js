@@ -1,12 +1,12 @@
 // tests/fixtures/generate-headless-reference.js
-// Headless reference data generator script (run via Node.js directly)
-// Run: node tests/fixtures/generate-headless-reference.js
+// Headless reference data generator script
+// Run: npx tsx tests/fixtures/generate-headless-reference.js
 
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { normalizeHeadlessParams } from '../../js/core/headless-params.js';
-import { runSimulationHeadless } from '../../js/headless.js';
+import { normalizeHeadlessParams } from '../../src/core/headless-params.ts';
+import { runSimulationHeadless } from '../../src/headless.ts';
 
 // T1: HEADLESS_DEFAULTS-equivalent params + simPaths=1000
 // Note: normalizeHeadlessParams clamps simPaths to [5000, 50000],
@@ -43,5 +43,5 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const outPath = join(__dirname, 'headless-reference-results.json');
 writeFileSync(outPath, JSON.stringify(ref, null, 2), 'utf-8');
-console.log('✅ 参照データを生成しました:', outPath);
+console.log('Reference data generated:', outPath);
 console.log(JSON.stringify(ref, null, 2));

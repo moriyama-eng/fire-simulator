@@ -1,0 +1,722 @@
+const translations: { ja: Record<string, string>; en: Record<string, string> } = {
+  ja: {
+    "header.title": "FIRE モンテカルロ・シミュレータ",
+    "header.description": "モンテカルロ法（乱数による膨大な反復試行）により何万通りもの市場シナリオを生成し、あなたのFIREプランを統計的に検証します。",
+    "header.docs": "Docs",
+    "asset.title": "資産設定",
+    "asset.riskAsset": "初期リスク資産",
+    "asset.riskAsset.tooltip": "シミュレーション開始時点でのリスク資産（株式や投資資産など）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値（取崩し判定）未満ならば、月間取崩し額をリスク資産から取崩します。",
+    "asset.cashBuffer": "初期現金バッファ",
+    "asset.cashBuffer.tooltip": "シミュレーション開始時点での現金（無リスク資産）の総額です。<br>総資産下落（ドローダウン）がドローダウン閾値以上の場合には、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br>総資産が最高値を超えた時にリスク資産から補充されます。<br>インフレ率の設定に応じて将来の現金バッファ上限（開始時点は初期現金バッファと同額）が計算されます。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>",
+    "asset.expense": "初期月間取崩し額",
+    "asset.expense.tooltip": "シミュレーション開始時点での月間取崩し額です。<br>※税金や社会保険料等を含んだ、資産から減少する総額を入力してください。<br>インフレ率の設定に応じて将来の取崩し額が計算されます。<br>",
+    "asset.targetAsset": "終了時目標資産",
+    "asset.targetAsset.tooltip": "シミュレーション終了時に、初期総資産（リスク資産+現金バッファ）のこの割合以上の資産を維持できる確率を計算します。<br>100%の場合は元本維持確率に相当します。<br>※インフレ調整は行いません。",
+    "asset.targetAsset.hint": "初期総資産に対する割合（100%=元本維持）",
+    "market.title": "マーケット設定",
+    "market.expectedReturn": "期待リターン",
+    "market.expectedReturn.tooltip": "リスク資産の年平均成長率（算術平均）です。<br>過去の市場平均などを参考に設定します。",
+    "market.volatility": "ボラティリティ",
+    "market.volatility.tooltip": "リスク資産のリターンのばらつき（標準偏差）です。<br>この数値が大きいほど、毎年リターンが上下に大きく振れるリスクが高くなります。<br>",
+    "market.inflation": "期待インフレ率",
+    "market.inflation.tooltip": "長期的な平均インフレ率です。<br>（AR-1モデルではこの値を中心にしてインフレ率が変動します）",
+    "market.modelLabel": "リスク資産変動モデル",
+    "market.modelTooltip": "リスク資産の価格変動パターンを選択します。<br>対数正規分布は伝統的な金融理論に基づくモデルです。<br>対数t分布はファットテール（極端な暴落）を考慮した現実的なリスク管理モデルです。",
+    "market.model.lognormal": "対数正規分布（伝統的な金融理論）",
+    "market.model.logt": "対数t分布（現実的なリスク管理）",
+    "market.dfLabel": "t分布 自由度",
+    "market.dfManual": "固定",
+    "market.dfAuto": "自動",
+    "market.dfAutoDisplay": "ボラティリティから自動計算: {0}",
+    "market.dfTooltip": "t分布の裾の重さを制御するパラメータです。<br>値が小さいほど極端な暴落が頻発します。<br>自動モードではボラティリティから自動計算します。",
+    "market.inflationModelLabel": "インフレ変動モデル (AR-1)",
+    "market.inflationFixed": "固定",
+    "market.inflationVariable": "変動",
+    "market.inflationVol": "インフレ・ボラティリティ",
+    "market.inflationVol.tooltip": "毎年のインフレ率の「ブレ幅（標準偏差）」です。<br>米国の過去実績に合わせて 2.0% 程度に設定すると現実的です。<br>この値が大きいほど、想定外のインフレ高騰リスクが高まります。<br>",
+    "market.inflationAr": "インフレ粘着性 (AR係数)",
+    "market.inflationAr.tooltip": "インフレの「長引きやすさ」を設定します。<br>0.0 (ランダム): 毎月完全にランダム。<br>0.5 (標準値): 実際の月次データに近い設定。<br>高インフレが継続しやすくなります（スタグフレーション・リスクの再現）。<br>0.9 (極めて強い): 一度上がった物価が長期間下がらなくなります。<br>",
+    "market.inflationModelTooltip": "インフレ率の変動モデルを選択します。<br>固定：常に一定のインフレ率を使用します。<br>変動(AR-1)：平均回帰型の確率モデルでインフレ率が毎月変動します。",
+    "sim.title": "シミュレーション設定",
+    "sim.years": "シミュレーション年数",
+    "sim.years.tooltip": "資産運用と取崩しを継続する期間（年数）です。<br>",
+    "sim.paths": "シミュレーション回数",
+    "sim.paths.tooltip": "モンテカルロ・シミュレーションを試行する回数です。<br>回数が多いほど確率の精度が増しますが、計算に時間がかかります。",
+    "sim.percentile": "パーセンタイル",
+    "sim.percentile.tooltip": "グラフに表示するパーセンタイル線をカンマ区切りで指定します（例: 10, 25, 50, 75, 90）。<br>設定できるのは最大5本です。数字以外の文字や範囲外の値（0・100など）は自動で除去され、昇順に並び替えて整形されます。<br>色は昇順で 赤→橙→黄→黄緑→緑 のグラデーションで表示されます。",
+    "cb.title": "現金バッファ設定",
+    "cb.off": "OFF",
+    "cb.on": "ON",
+    "cb.ddTrigger": "ドローダウン閾値（取崩し判定）",
+    "cb.ddTrigger.tooltip": "総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、リスク資産の売却を避け、現金バッファを取崩し対象とします。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われ、実際の現金使用は翌月から適用されます。</span>",
+    "cb.ddReplenish": "ドローダウン閾値（補充終了）",
+    "cb.ddReplenish.tooltip": "ドローダウンが改善し総資産の過去最高値を更新すると、現金バッファ不足分をリスク資産から毎月補充する「補充モード」に入ります。<br>再びこの割合を下回り悪化した場合、補充モードを終了します。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われます。</span>",
+    "cb.replenishPace": "補充ペース（月間取崩し額比）",
+    "cb.replenishPace.tooltip": "補充モード中、毎月リスク資産から現金バッファへ補填する額を指定します。「月間取崩し額」に対する倍率です。<br>",
+    "gr.title": "支出ガードレール設定",
+    "gr.off": "OFF",
+    "gr.on": "ON",
+    "gr.trigger": "ドローダウン閾値（ガードレール発動）",
+    "gr.trigger.tooltip": "総資産の過去最高値からの下落（ドローダウン）がこの割合を下回り悪化した場合、支出の自動削減（ガードレール）が発動します。<br>例：-20% = 資産が過去ピーク比20%以上下落したとき発動。<br>ガードレールの解除条件は「ドローダウン閾値（ガードレール終了）」にて設定します。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>",
+    "gr.release": "ドローダウン閾値（ガードレール終了）",
+    "gr.release.tooltip": "ガードレール発動中、ドローダウンが改善しこの割合を上回るとガードレールが自動解除され、元の取崩し額に戻ります。<br>例：-15% = ドローダウンが-15%より改善したとき解除。<br>設定可能範囲：0%（完全回復）から「ドローダウン閾値（ガードレール発動）」の設定値まで。<br><span class=\"text-amber-300\">※判定は月末（支出後）の総資産を基準に行われ、発動は翌月から適用されます。</span>",
+    "gr.reduction": "発動時の支出調整率",
+    "gr.reduction.tooltip": "ガードレール発動中、月間取崩し額にこの割合を掛けて支出を自動調整します。<br>例：-20% = 取崩し額を20%削減して支出を抑制。<br>「ドローダウン閾値（ガードレール終了）」を上回るまで回復すると自動解除され、元の取崩し額に戻ります。",
+    "seed.label": "乱数シード値",
+    "seed.fixed": "固定",
+    "seed.random": "ランダム",
+    "seed.tooltip": "乱数の生成元となるシード値です。<br>固定にすると同一条件で完全に再現されたシミュレーション結果が得られます。<br>「Xにポスト」、「同条件の別タブを開く」、「解析結果のURLリンクをコピー」で共有されるURLには、実行時のシード値が自動的に含まれます。シード値を揃えることで、条件変更による差分を純粋に比較できます。",
+    "button.run": "シミュレーション実行",
+    "button.running": "計算中... {0}%",
+    "button.saveImage": "画像を保存",
+    "button.savingImage": "画像生成中...",
+    "button.imageSaved": "保存しました！",
+    "button.shareX": "Xにポスト",
+    "button.openCompare": "同条件の別タブを開く（比較用）",
+    "button.copyUrl": "解析結果のURLリンクをコピー",
+    "button.copied": "コピーしました！",
+    "button.tooltipDisabled": "シミュレーション実行後に使用できます",
+    "button.tooltipDirty": "入力条件が変更されました。再度シミュレーションを実行してください。",
+    "url.tooltipOpenCompare": "現在の入力条件と同じ乱数シード値に固定したURLを別タブで開きます。<br>別タブ側で一部の条件を変えてシミュレーションすることで、条件変更による影響を同じ乱数で比較できます。<br>別タブを開いた後は、入力値を変更して「シミュレーション実行」ボタンを押してください。",
+    "url.tooltipCopy": "現在の入力条件・シード値・自動実行フラグ（auto=1）を含むURLをクリップボードにコピーします。<br>このURLをブラウザで開くと、同じ条件でシミュレーションが自動的に実行されます。<br>シミュレーション結果の保存や共有に活用できます。",
+    "summary.title": "シミュレーション結果 サマリ",
+    "summary.usedDf": "(自由度: {0})",
+    "form.logt.autoDfPrefix": "ボラティリティから自動計算:",
+    "analysis.selectedFactorsInit": "選択中: 0因子",
+    "analysis.selectedFactors": "選択中: {0}因子",
+    "analysis.runBtn": "分析を実行",
+    "chart.targetAssetSubNote": "※判定は月末（支出後）の総資産を基準に行われます。",
+    "summary.dirtyWarning": "条件変更あり",
+    "summary.successRate": "FIRE 成功率",
+    "summary.finalMedian": "最終総資産 中央値",
+    "summary.notExecuted": "未実行",
+    "summary.targetMaintainRate": "目標資産維持確率",
+    "summary.targetMaintainRate.tooltip": "終了時に初期総資産の指定割合以上を維持できる確率（※インフレ調整なしの名目値）",
+    "summary.riskAsset": "初期リスク資産",
+    "summary.cashBuffer": "初期現金バッファ",
+    "summary.expense": "初期月間取崩し額",
+    "summary.returnVol": "期待リターン / ボラ",
+    "summary.inflation": "期待インフレ率",
+    "summary.simSettings": "シミュレーション設定",
+    "summary.model.label": "変動モデル",
+    "summary.model.logt": "対数t分布",
+    "summary.model.lognormal": "対数正規分布",
+    "summary.model.df": "自由度",
+    "summary.seed": "乱数シード値",
+    "summary.cbSettings": "現金バッファ設定",
+    "summary.grSettings": "支出ガードレール設定",
+    "summary.off": "OFF",
+    "summary.cb.triggerLabel": "取崩し判定",
+    "summary.cb.triggerValue": "ドローダウン {0}%",
+    "summary.cb.replenishStart": "補充開始",
+    "summary.cb.replenishStartValue": "総資産最高値更新",
+    "summary.cb.replenishEnd": "補充終了",
+    "summary.cb.replenishEndValue": "ドローダウン {0}%以下に悪化",
+    "summary.cb.replenishPace": "補充ペース",
+    "summary.cb.replenishPaceValue": "月間取崩し額の{0}倍",
+    "summary.gr.triggerLabel": "ガードレール発動",
+    "summary.gr.triggerValue": "ドローダウン {0}%以下に悪化",
+    "summary.gr.releaseLabel": "ガードレール終了",
+    "summary.gr.releaseValue": "ドローダウン {0}%以上まで回復",
+    "summary.gr.reductionLabel": "発動時の支出調整率",
+    "summary.gr.reductionValue": "{0}%（月間取崩し額に適用）",
+    "summary.inflation.fixed": "固定 ({0}%)",
+    "summary.inflation.ar1": "AR-1変動 ({0}%, Vol:{1}%)",
+    "share.x.template": "【FIREシミュレーション結果】\n💰 リスク資産: {0}\n💴 現金バッファ: {1}\n💸 月間取崩し額: {2}\n📈 リターン/ボラ: {3}% / {4}%\n📉 インフレ率: {5}%\n⏳ 期間: {6}\n🔥 成功確率: {7}%\n\n同じ条件で試す👇\n{8}",
+    "chart.asset.title": "総資産推移（パーセンタイル）",
+    "chart.asset.tooltip": "各経過年数時点における総資産額の分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>上に行くほど強気な相場、下に行くほど弱気な相場のシナリオを反映しています。",
+    "chart.asset.all": "全表示",
+    "chart.asset.downsideOnly": "50%以下のみ",
+    "chart.asset.downsideTooltip": "ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>資産が下振れするリスクに焦点を当てて確認したい場合に便利です。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。",
+    "chart.cash.title": "現金バッファ推移（パーセンタイル）",
+    "chart.cash.tooltip": "各経過年数時点における現金バッファの残高分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>現金バッファが取崩され、資産が回復した際にリスク資産から現金バッファが補充される挙動を可視化しています。",
+    "chart.cash.all": "全表示",
+    "chart.cash.downsideOnly": "50%以下のみ",
+    "chart.cash.downsideTooltip": "ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>現金バッファが尽きやすい悪い状況に絞って確認できます。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。",
+    "chart.dd.title": "最大ドローダウン 発生確率",
+    "chart.dd.axisTitle": "最大ドローダウン",
+    "chart.dd.tooltipTitle": "最大ドローダウン 発生確率",
+    "chart.dd.tooltip": "最大ドローダウン（総資産の過去最高値からの最大下落率）が、特定の値よりも悪化する（下回る）確率を表します。<br>例えばグラフ上で横軸が-50%、縦軸が30%の場合、「最大ドローダウンが-50%より悪化する確率が30%ある」ことを意味します。",
+    "chart.uw.title": "最長停滞期間 発生確率",
+    "chart.uw.axisTitle": "最長停滞期間",
+    "chart.uw.tooltipTitle": "最長停滞期間 発生確率",
+    "chart.uw.tooltip": "総資産が過去最高値を更新できずに停滞し続ける期間（最長停滞期間）が、特定の年数以上長引く確率を表します。<br>例えばグラフ上で横軸が5年、縦軸が20%の場合、「最高値の回復までに5年以上かかる確率が20%ある」ことを意味します。",
+    "chart.tooltip.year": "経過 {0}年",
+    "chart.tooltip.yearMonth": "経過 {0}年{1}ヶ月",
+    "chart.tooltip.uwPeriod": "{0}年{1}ヶ月",
+    "chart.tooltip.dead": "総資産が枯渇する確率: {0}%",
+    "chart.tooltip.ddWorse": "最大ドローダウンが {0}% より悪化する確率: {1}%",
+    "chart.tooltip.uwLonger": "最長停滞期間が {0} 以上続く確率: {1}%",
+    "chart.tooltip.deadLabel": "総資産の枯渇",
+    "chart.tooltip.ddWorseLabel": "最大ドローダウンが {0}% より悪化",
+    "chart.tooltip.uwLongerLabel": "最長停滞期間が {0} 以上",
+    "chart.tooltip.probabilityLabel": "発生確率: {0}%",
+    "analysis.baseScenario": "基準シナリオ",
+    "analysis.editBase": "シミュレーションタブで条件を編集",
+    "analysis.factorsTitle": "分析対象因子",
+    "analysis.factorsHelp": "因子をクリックすると分析対象に追加されます。<br>各因子は基準値から段階的に値を変えた5水準でシミュレーションを実行します。",
+    "analysis.scenarioCount": "シナリオ総数: {0}",
+    "analysis.scenarioCountPrefix": "シナリオ総数:",
+    "analysis.estTime": "目安: {0}秒",
+    "analysis.estTimePrefix": "目安:",
+    "analysis.run": "分析を実行",
+    "analysis.running": "分析を実行中... {0}%",
+    "analysis.noBaseContext": "主画面でシミュレーションを実行してください",
+    "analysis.successRateHigh": "FIRE成功率は95%以上であり既に十分高いため、改善対象外です。",
+    "analysis.outOfRange": "この因子の範囲では改善後の指標値に届きません。",
+    "analysis.factorBaseSuffix": "基準",
+    "analysis.category.asset": "資産",
+    "analysis.category.market": "マーケット",
+    "analysis.category.buffer": "現金バッファ",
+    "analysis.category.guardrail": "ガードレール",
+    "analysis.factors.initial_risk_asset_jpy": "初期リスク資産",
+    "analysis.factors.initial_cash_buffer_jpy": "初期現金バッファ",
+    "analysis.factors.monthly_expense_jpy": "初期月間取崩し額",
+    "analysis.factors.expected_return_pct": "期待リターン",
+    "analysis.factors.volatility_pct": "ボラティリティ",
+    "analysis.factors.inflation_rate_pct": "インフレ率",
+    "analysis.factors.drawdown_trigger_pct": "ドローダウン閾値<br>（取崩し判定）",
+    "analysis.factors.replenish_pace_x_expense": "補充ペース<br>（月間取崩し額比）",
+    "analysis.factors.guardrail_trigger_pct": "ドローダウン閾値<br>（ガードレール発動）",
+    "analysis.factors.guardrail_reduction_pct": "発動時の支出調整率",
+    "analysis.target.title": "指標の改善に必要な因子変動量",
+    "analysis.target.tooltip": "5つの水準のシミュレーション結果をもとに、指標の改善に必要な因子の変動量を<b>線形補間</b>で計算しています。<br>改善後の指標値が隣接する2水準の間に位置する場合、その区間内で線形補間して必要な因子値を求めます。<br>改善後の指標値が水準の範囲外の場合、「この因子の範囲では改善後の指標値に届きません。」と表示します。<br>FIRE成功率の改善後の指標値は、現在の成功率に応じて自動的に調整されます。<br><b class=\"text-amber-300\">⚠️ 線形補間は簡易的な近似計算であり、実際のシミュレーション結果は非線形に変化する場合があります。参考値としてご利用ください。</b>",
+    "analysis.target.metric.successRate": "FIRE成功率 改善 +{0}%pt",
+    "analysis.target.metric.finalP10": "最終総資産 10%タイル +2,000万円",
+    "analysis.target.metric.worst10MaxDd": "最大DD 10%タイル 改善 5%pt",
+    "analysis.target.metric.successRateInitial": "FIRE成功率 改善 +X%pt",
+    "analysis.target.metricTooltip": "<b>FIRE成功率 改善 +X%pt</b>: FIRE成功率を現在値から指定幅改善するのに必要な因子変動を計算します。<br><b>最終総資産 10%タイル +2,000万円</b>: 全シミュレーション結果の下位10%の最終総資産を2,000万円改善するのに必要な因子変動を計算します。<br><b>最大DD 10%タイル 改善 5%pt</b>: 最大ドローダウンの悪化を5%pt改善（落ち幅を小さく）するのに必要な因子変動を計算します。",
+    "analysis.target.currentLabel": "現在の{0}: {1}",
+    "analysis.target.currentPrefix": "現在の",
+    "analysis.target.currentColon": ": ",
+    "analysis.target.factorCol": "因子",
+    "analysis.target.current": "現在値",
+    "analysis.target.need": "必要な変更量",
+    "analysis.target.after": "変更後の値",
+    "analysis.target.metricLabels.successRate": "FIRE成功率",
+    "analysis.target.metricLabels.finalP10": "最終総資産 10%タイル",
+    "analysis.target.metricLabels.worst10MaxDd": "最大DD 10%タイル",
+    "analysis.compare.title": "因子別比較表",
+    "analysis.compare.legend.positive": "改善方向",
+    "analysis.compare.legend.base": "基準",
+    "analysis.compare.legend.negative": "悪化方向",
+    "analysis.compare.badge": "基準",
+    "analysis.compare.headers.successRate": "FIRE成功率",
+    "analysis.compare.headers.finalP10": "最終総資産<br>10%タイル",
+    "analysis.compare.headers.worst10MaxDd": "最大DD<br>10%タイル",
+    "error.noBase": "Base条件が設定されていません。",
+    "error.noFactors": "因子が選択されていません。",
+    "error.simFailed": "シミュレーション中にエラーが発生しました。",
+    "error.imageFailed": "画像の生成に失敗しました。シミュレーション完了後に実行してください。\n\n詳細: {0}",
+    "capture.conditionTitle": "シミュレーション条件",
+    "capture.riskAsset": "リスク資産:",
+    "capture.title": "FIRE モンテカルロ・シミュレータ",
+    "capture.cashBuffer": "現金バッファ:",
+    "capture.expense": "月間取崩し:",
+    "capture.model": "変動モデル:",
+    "capture.returnVol": "ﾘﾀｰﾝ / ﾎﾞﾗ:",
+    "capture.inflation": "インフレ率:",
+    "capture.years": "期間:",
+    "capture.guardrail": "支出ガードレール:",
+    "capture.chartTitle": "総資産推移",
+    "capture.resultTitle": "シミュレーション結果",
+    "capture.execTime": "実行日時:",
+    "capture.successRate": "FIRE 成功率",
+    "capture.finalMedian": "最終総資産(中央値)",
+    "capture.targetMaintainRate": "目標資産維持確率",
+    "capture.targetLabel": "(目標: ",
+    "capture.footerUrl": "https://moriyama-eng.github.io/fire-simulator/ | v{VERSION}",
+    "capture.footerCredit": "Created by @moriyama_eng",
+    "unit.oku": "億円",
+    "unit.man": "万円",
+    "unit.percent": "%",
+    "unit.times": "倍",
+    "unit.minutes": "分",
+    "unit.seconds": "秒",
+    "unit.years": "年",
+    "unit.months": "ヶ月",
+    "tab.simulation": "シミュレーション",
+    "tab.analysis": "分析",
+    "footer.title": "FIRE モンテカルロ・シミュレータ",
+    "chart.tooltip.zeroYears": "0年",
+    "error.simulationFailed": "シミュレーション中にエラーが発生しました",
+    "footer.copyright": "© 2026 もりやま",
+    "unit.multiplier": "倍",
+    "unit.paths": "回",
+    "chart.probability": "発生確率",
+    "chart.belowInit.title": "初期総資産割れ 継続期間 発生確率",
+    "chart.belowInit.tooltip": "総資産がシミュレーション開始時の初期総資産（リスク資産＋現金バッファ）を下回っている状態が、最長で何ヶ月継続するかの確率を表します。<br>初期総資産はインフレ調整を行わない名目値です。<br>例えばグラフ上で横軸が5年、縦軸が30%の場合、「初期総資産割れが5年以上継続する確率が30%ある」ことを意味します。<br>破綻（資産枯渇）したパスは、シミュレーション終了まで割れ状態が継続したものとしてカウントされます。<br>初期総資産と同額（===）になった月は「割れ状態が解消された」ものとみなし、カウントをリセットします。<br>※判定は月末（支出後）の総資産を基準に行われます。",
+    "chart.belowInit.axisTitle": "初期総資産割れ 継続期間",
+    "chart.sell.title": "初期総資産割れ時 リスク資産連続売却期間 発生確率",
+    "chart.sell.tooltip": "初期総資産割れが発生している期間中に、取崩し元としてリスク資産が連続して何ヶ月使われたかの確率を表します。<br>「リスク資産売却」とは、当月の取崩し（生活費の引き出し）においてリスク資産から資金を引き出したことを指します（市場変動による減少は含みません）。<br>補充モード中の取崩しも、実質的にはリスク資産の売却に該当するものとして扱います。<br>カウントは以下のいずれかが発生した月にリセットされます：① 総資産が初期総資産以上に回復した ② 現金バッファから取崩しを行った（または取崩し額が0円だった）<br>※ 補充モード中は、上記②の条件を適用せず、カウントを継続します。<br>例えばグラフ上で横軸が3年、縦軸が20%の場合、「リスク資産の連続売却が3年以上続く確率が20%ある」ことを意味します。<br>破綻（資産枯渇）したパスは、シミュレーション終了まで売却が継続したものとしてカウントされます。<br>※判定は月末（支出後）の総資産を基準に行われます。",
+    "chart.sell.axisTitle": "リスク資産連続売却期間",
+    "chart.tooltip.belowInitLongerLabel": "初期総資産割れが {0} 以上継続",
+    "chart.tooltip.sellLongerLabel": "リスク資産売却が {0} 以上継続",
+    "capture.emptyValue": "-",
+    "capture.emptyModel": "-",
+    "summary.successRate.tooltip": "シミュレーション全体のうち、期間中に一度も資産が枯渇しなかった割合です。",
+    "analysis.compare.headers.worst10MaxDd.tooltip": "全シミュレーション結果の下位10%における最大ドローダウン（総資産の過去最高値からの最大下落率）です。",
+    "tab.comparison": "比較",
+    "comparison.addScenario": "＋ シナリオ追加",
+    "comparison.runAll": "▶ すべて実行",
+    "comparison.running": "実行中... {0}/{1}",
+    "comparison.parameter": "パラメータ",
+    "comparison.maxScenarios": "シナリオは最大10件までです。",
+    "comparison.deleteScenario": "シナリオを削除",
+    "comparison.scenarioName": "シナリオ名（クリックで編集）",
+    "comparison.moveLeft": "左に移動",
+    "comparison.moveRight": "右に移動",
+    "comparison.overwriteFromSim": "シミュレーションタブの現在値で上書き",
+    "comparison.displayConditionNote": "行の表示/非表示はシナリオ1の設定に連動します。",
+    "comparison.auto": "自動",
+    "comparison.manual": "固定",
+    "comparison.fixed": "固定",
+    "comparison.variable": "変動(AR-1)",
+    "comparison.finalMedian.tooltip": "シミュレーション終了時の総資産の中央値（50%タイル）です。",
+    "comparison.median_max_uw": "最長停滞期間 中央値",
+    "comparison.medianMaxUw.tooltip": "全シミュレーションパスの最長停滞期間（最高値を更新できない期間）の中央値です。",
+    "comparison.confirmDelete": "このシナリオを削除してもよろしいですか？",
+    "comparison.overwriteSuccess": "シナリオを上書きしました",
+    "comparison.cannotDeleteLast": "最後の1シナリオは削除できません",
+    "comparison.deleteSuccess": "シナリオを削除しました",
+    "comparison.deleteFailed": "シナリオの削除に失敗しました",
+    "comparison.duplicateTitle": "シナリオを複製",
+    "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き",
+    "comparison.pendingExecution": "未実行のシナリオがあります。シミュレーションを実行してください。",
+    "comparison.section.assets": "初期総資産設定",
+    "comparison.autoIndicator": "(自動)",
+    "comparison.dfLabel": "t分布自由度モデル",
+    "comparison.dfValue": "t分布自由度設定値",
+    "comparison.addSuccess": "シナリオを追加しました。",
+    "comparison.duplicateSuccess": "シナリオを複製しました。",
+    "comparison.moveHintText": "<svg style=\"display:inline-block;vertical-align:middle;margin-right:3px\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z\"/></svg>ドラッグまたは各列 ⋮ メニューボタンから並び替え"
+  },
+  en: {
+    "market.expectedReturn": "Expected return",
+    "market.volatility": "Volatility",
+    "market.inflation": "Expected inflation rate",
+    "sim.years": "Simulation years",
+    "sim.paths": "Number of simulation paths",
+    "sim.percentile": "Percentiles",
+    "cb.title": "Cash Buffer Settings",
+    "gr.title": "Spending Guardrail Settings",
+    "seed.label": "Random seed",
+    "seed.fixed": "Fixed",
+    "seed.random": "Random",
+    "unit.percent": "%",
+    "unit.times": "trials",
+    "unit.seconds": "sec",
+    "unit.minutes": "min",
+    "market.expectedReturn.tooltip": "Average annual growth rate (arithmetic mean) of risk assets.",
+    "market.volatility.tooltip": "Standard deviation of risk asset returns. Higher values mean larger annual fluctuations.",
+    "market.inflation.tooltip": "Long-term average inflation rate. (For AR-1 model, inflation fluctuates around this value.)",
+    "sim.years.tooltip": "Number of years to simulate asset growth and withdrawals.",
+    "sim.paths.tooltip": "Number of Monte Carlo trials. More paths increase accuracy but take longer.",
+    "sim.percentile.tooltip": "Comma-separated percentiles to display (max 5). Example: 10, 25, 50, 75, 90.<br>Invalid values are removed and sorted ascending. Colors gradient from red (low) to green (high).",
+    "cb.ddTrigger.tooltip": "If drawdown falls below this level, withdraw from cash buffer instead of risk assets.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal) and applied next month.</span>",
+    "cb.ddReplenish.tooltip": "When drawdown worsens past this level, replenishment mode ends.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
+    "cb.replenishPace.tooltip": "Each month during replenishment mode, transfer this multiple of the monthly withdrawal from risk assets to cash buffer.",
+    "gr.trigger.tooltip": "If drawdown falls below this level, spending is automatically reduced next month.<br>Example: -20% triggers when assets drop 20% from peak.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
+    "gr.release.tooltip": "When drawdown recovers above this level, guardrail deactivates and spending returns to normal.<br>Example: -15% deactivates when drawdown is better than -15%.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
+    "gr.reduction.tooltip": "When guardrail is active, monthly withdrawal is multiplied by this percentage.<br>Example: -20% reduces spending by 20%.",
+    "seed.tooltip": "Seed for random number generation. Fixed seed ensures reproducible results.<br>Shared URLs include the seed for exact comparison.",
+    "url.tooltipOpenCompare": "Opens a new tab with the same input conditions and fixed seed.<br>Change parameters in the new tab to compare effects using identical random sequences.",
+    "url.tooltipCopy": "Copies a URL containing all current inputs, seed, and auto-run flag.<br>Opening the URL runs the simulation automatically.",
+    "capture.title": "FIRE Monte Carlo Simulator",
+    "capture.conditionTitle": "Simulation Conditions",
+    "capture.chartTitle": "Total Assets",
+    "capture.resultTitle": "Simulation Results",
+    "capture.successRate": "FIRE Success Rate",
+    "capture.finalMedian": "Final Assets (Median)",
+    "analysis.compare.badge": "base",
+    "analysis.factorBaseSuffix": "base",
+    "analysis.category.asset": "Asset",
+    "analysis.category.market": "Market",
+    "analysis.category.buffer": "Cash Buffer",
+    "analysis.category.guardrail": "Guardrail",
+    "header.title": "FIRE Monte Carlo Simulator",
+    "header.docs": "Docs",
+    "asset.title": "Asset Settings",
+    "asset.riskAsset": "Initial risk assets",
+    "asset.riskAsset.tooltip": "Total amount of risk assets (stocks, investments) at the start of the simulation.<br>If the total asset drawdown falls below the drawdown threshold, monthly withdrawals are taken from risk assets.",
+    "asset.cashBuffer": "Initial cash buffer",
+    "asset.cashBuffer.tooltip": "Total amount of cash (risk-free assets) at the start of the simulation.<br>When drawdown reaches the threshold, withdrawals are taken from the cash buffer instead of selling risk assets.<br>When total assets reach a new high, the cash buffer is replenished from risk assets.<br><span class=\"text-amber-300\">※ Monthly decisions are based on end-of-month total assets (after withdrawal) and applied the following month.</span>",
+    "asset.expense": "Initial monthly withdrawal",
+    "asset.expense.tooltip": "Monthly withdrawal amount at the start of simulation (including taxes, social insurance, etc.).<br>Future withdrawals are adjusted for inflation.",
+    "asset.targetAsset": "Target asset at end",
+    "asset.targetAsset.tooltip": "Probability of maintaining at least this percentage of initial total assets (risk assets + cash buffer) at the end of simulation.<br>100% means principal preservation probability.<br>*No inflation adjustment.",
+    "asset.targetAsset.hint": "Percentage of initial total assets (100% = principal preservation)",
+    "market.title": "Market Settings",
+    "market.modelLabel": "Risk asset return model",
+    "market.modelTooltip": "Select the price fluctuation pattern of risk assets.<br>Log-normal: traditional financial model.<br>Log-t: fat-tail distribution for more realistic risk management.",
+    "market.model.lognormal": "Log-normal distribution",
+    "market.model.logt": "Log-t distribution",
+    "market.dfLabel": "Degrees of freedom (t-distribution)",
+    "market.dfManual": "Fixed",
+    "market.dfAuto": "Auto",
+    "market.dfAutoDisplay": "Auto from volatility: {0}",
+    "market.dfTooltip": "Controls the tail weight of the t-distribution. Lower values increase the frequency of extreme crashes.<br>Auto mode calculates from volatility.",
+    "market.inflationModelLabel": "Inflation model (AR-1)",
+    "market.inflationFixed": "Fixed",
+    "market.inflationVariable": "Variable",
+    "market.inflationVol": "Inflation volatility",
+    "market.inflationVol.tooltip": "Annual standard deviation of inflation rate. ~2.0% reflects past US data.",
+    "market.inflationAr": "Inflation persistence (AR coefficient)",
+    "market.inflationAr.tooltip": "How long inflation persists. 0.0 = random, 0.5 = realistic monthly persistence, 0.9 = very sticky.",
+    "market.inflationModelTooltip": "Select inflation model: Fixed (constant rate) or AR-1 (mean-reverting with persistence).",
+    "sim.title": "Simulation Settings",
+    "cb.off": "OFF",
+    "cb.on": "ON",
+    "cb.ddTrigger": "Drawdown threshold (use buffer)",
+    "cb.ddReplenish": "Drawdown threshold (stop replenishment)",
+    "cb.replenishPace": "Replenishment pace (× monthly withdrawal)",
+    "gr.off": "OFF",
+    "gr.on": "ON",
+    "gr.trigger": "Drawdown threshold (activate guardrail)",
+    "gr.release": "Drawdown threshold (deactivate guardrail)",
+    "gr.reduction": "Spending adjustment when active",
+    "button.run": "Run Simulation",
+    "button.running": "Running... {0}%",
+    "button.saveImage": "Save Image",
+    "button.savingImage": "Generating...",
+    "button.imageSaved": "Saved!",
+    "button.shareX": "Post to X",
+    "button.openCompare": "Open same conditions in new tab",
+    "button.copyUrl": "Copy result URL",
+    "button.copied": "Copied!",
+    "button.tooltipDisabled": "Run simulation first",
+    "button.tooltipDirty": "Input changed. Run simulation again.",
+    "summary.title": "Simulation Summary",
+    "summary.usedDf": "(df: {0})",
+    "form.logt.autoDfPrefix": "Auto-calc from Volatility:",
+    "analysis.selectedFactorsInit": "Selected: 0 factors",
+    "analysis.selectedFactors": "Selected: {0} factors",
+    "analysis.runBtn": "Run Analysis",
+    "chart.targetAssetSubNote": "* Judged based on end-of-month (post-expense) total assets.",
+    "summary.dirtyWarning": "Input changed",
+    "summary.successRate": "FIRE Success Rate",
+    "summary.finalMedian": "Final Assets (Median)",
+    "summary.notExecuted": "Not executed",
+    "summary.targetMaintainRate": "Target Asset Maintenance Rate",
+    "summary.targetMaintainRate.tooltip": "Probability of maintaining at least the target percentage of initial total assets at the end (nominal value, not inflation-adjusted)",
+    "summary.riskAsset": "Initial risk assets",
+    "summary.cashBuffer": "Initial cash buffer",
+    "summary.expense": "Initial monthly withdrawal",
+    "summary.returnVol": "Return / Vol",
+    "summary.inflation": "Inflation rate",
+    "summary.simSettings": "Simulation settings",
+    "summary.model.label": "Return model",
+    "summary.model.logt": "Log-t",
+    "summary.model.lognormal": "Log-normal",
+    "summary.model.df": "df",
+    "summary.seed": "Random seed",
+    "summary.cbSettings": "Cash buffer",
+    "summary.grSettings": "Guardrail",
+    "summary.off": "OFF",
+    "summary.cb.triggerLabel": "Use buffer when drawdown below",
+    "summary.cb.triggerValue": "< {0}%",
+    "summary.cb.replenishStart": "Replenish when new high",
+    "summary.cb.replenishStartValue": "after new high",
+    "summary.cb.replenishEnd": "Stop replenish when drawdown below",
+    "summary.cb.replenishEndValue": "< {0}%",
+    "summary.cb.replenishPace": "Replenishment pace",
+    "summary.cb.replenishPaceValue": "{0}x monthly withdrawal",
+    "summary.gr.triggerLabel": "Guardrail triggers when drawdown below",
+    "summary.gr.triggerValue": "< {0}%",
+    "summary.gr.releaseLabel": "Guardrail releases when drawdown above",
+    "summary.gr.releaseValue": "> {0}%",
+    "summary.gr.reductionLabel": "Spending adjustment",
+    "summary.gr.reductionValue": "{0}%",
+    "summary.inflation.fixed": "Fixed ({0}%)",
+    "summary.inflation.ar1": "AR-1 ({0}%, Vol:{1}%)",
+    "share.x.template": "[FIRE Simulation Result]\n💰 Risk assets: {0}\n💴 Cash buffer: {1}\n💸 Monthly withdrawal: {2}\n📈 Return/Vol: {3}% / {4}%\n📉 Inflation: {5}%\n⏳ Period: {6}\n🔥 Success rate: {7}%\n\nTry it yourself👇\n{8}",
+    "chart.asset.title": "Total Assets (Percentiles)",
+    "chart.asset.tooltip": "Distribution of total assets over time, shown as percentiles.<br>Upper lines = optimistic scenarios, lower lines = pessimistic scenarios.",
+    "chart.asset.all": "All",
+    "chart.asset.downsideOnly": "50% or below only",
+    "chart.asset.downsideTooltip": "When ON, only shows percentiles ≤50% (pessimistic to median).<br>Focuses on downside risk.",
+    "chart.cash.title": "Cash Buffer (Percentiles)",
+    "chart.cash.tooltip": "Distribution of cash buffer over time.<br>Shows depletion and replenishment behavior.",
+    "chart.cash.all": "All",
+    "chart.cash.downsideOnly": "50% or below only",
+    "chart.cash.downsideTooltip": "When ON, only shows percentiles ≤50% to focus on worst-case cash buffer scenarios.",
+    "chart.dd.title": "Max Drawdown Probability",
+    "chart.dd.axisTitle": "Max Drawdown",
+    "chart.dd.tooltipTitle": "Max Drawdown Probability",
+    "chart.dd.tooltip": "Probability that the maximum drawdown is worse than a given level.<br>Example: x=-50%, y=30% → 30% chance of dropping more than 50%.",
+    "chart.uw.title": "Longest Underwater Period Probability",
+    "chart.uw.axisTitle": "Longest Underwater Period",
+    "chart.uw.tooltipTitle": "Underwater Period Probability",
+    "chart.uw.tooltip": "Probability that the longest period without reaching a new high exceeds a given length.<br>Example: x=5 years, y=20% → 20% chance of taking more than 5 years to recover.",
+    "chart.tooltip.zeroYears": "0 years",
+    "chart.tooltip.year": "Year {0}",
+    "chart.tooltip.yearMonth": "Year {0}, Month {1}",
+    "chart.tooltip.uwPeriod": "{0}y {1}m",
+    "chart.tooltip.dead": "Probability of depletion: {0}%",
+    "chart.tooltip.ddWorse": "Probability of drawdown worse than {0}%: {1}%",
+    "chart.tooltip.uwLonger": "Probability of underwater period longer than {0}: {1}%",
+    "chart.tooltip.deadLabel": "Total assets depletion",
+    "chart.tooltip.ddWorseLabel": "Drawdown worse than {0}%",
+    "chart.tooltip.uwLongerLabel": "Underwater period longer than {0}",
+    "chart.tooltip.probabilityLabel": "Probability: {0}%",
+    "analysis.baseScenario": "Base Scenario",
+    "analysis.editBase": "Edit conditions in Simulation tab",
+    "analysis.factorsTitle": "Analysis Factors",
+    "analysis.factorsHelp": "Click a factor to add it to the analysis. Each factor is varied over 5 levels around its base value.",
+    "analysis.scenarioCount": "Total scenarios: {0}",
+    "analysis.scenarioCountPrefix": "Total scenarios:",
+    "analysis.estTime": "Est: {0} min",
+    "analysis.estTimePrefix": "Est:",
+    "analysis.run": "Run Analysis",
+    "analysis.running": "Running analysis... {0}%",
+    "analysis.noBaseContext": "Run a simulation in the main tab first",
+    "analysis.successRateHigh": "Success rate is already ≥95% – no improvement target needed.",
+    "analysis.outOfRange": "Improvement target unreachable within this factor's range.",
+    "analysis.factors.initial_risk_asset_jpy": "Initial risk assets",
+    "analysis.factors.initial_cash_buffer_jpy": "Initial cash buffer",
+    "analysis.factors.monthly_expense_jpy": "Monthly withdrawal",
+    "analysis.factors.expected_return_pct": "Expected return",
+    "analysis.factors.volatility_pct": "Volatility",
+    "analysis.factors.inflation_rate_pct": "Inflation rate",
+    "analysis.factors.drawdown_trigger_pct": "Drawdown threshold<br>(use buffer)",
+    "analysis.factors.replenish_pace_x_expense": "Replenishment pace<br>(× withdrawal)",
+    "analysis.factors.guardrail_trigger_pct": "Drawdown threshold<br>(guardrail trigger)",
+    "analysis.factors.guardrail_reduction_pct": "Spending adjustment",
+    "analysis.target.title": "Factor Change Needed to Improve Metric",
+    "analysis.target.tooltip": "Based on 5‑level simulation results, required factor change is calculated via <b>linear interpolation</b> between adjacent levels.<br>If target is outside the range, 'unreachable' is shown.<br>Success rate improvement target is automatically adjusted based on current rate.<br><b class=\"text-amber-300\">⚠️ Linear interpolation is an approximation; actual results may be non‑linear.</b>",
+    "analysis.target.metric.successRate": "Improve FIRE success rate by +{0}%pt",
+    "analysis.target.metric.finalP10": "Increase final assets (10th percentile) by $200k",
+    "analysis.target.metric.worst10MaxDd": "Improve worst 10% max drawdown by 5%pt",
+    "analysis.target.metric.successRateInitial": "Improve FIRE success rate by +X%pt",
+    "analysis.target.metricTooltip": "<b>Improve success rate</b>: Calculate factor change needed to raise success rate by a target amount (auto-adjusted based on current rate).<br><b>Final assets 10th percentile +$200k</b>: Increase the 10th percentile final assets by $200,000 USD.<br><b>Improve max drawdown 10th percentile by 5%pt</b>: Reduce the severity of worst 10% drawdowns by 5 percentage points.",
+    "analysis.target.currentLabel": "Current {0}: {1}",
+    "analysis.target.currentPrefix": "Current ",
+    "analysis.target.currentColon": ": ",
+    "analysis.target.factorCol": "Factor",
+    "analysis.target.current": "Current",
+    "analysis.target.need": "Change needed",
+    "analysis.target.after": "After change",
+    "analysis.target.metricLabels.successRate": "FIRE Success Rate",
+    "analysis.target.metricLabels.finalP10": "Final assets (10th percentile)",
+    "analysis.target.metricLabels.worst10MaxDd": "Max DD (10th %ile)",
+    "analysis.compare.title": "Factor Comparison",
+    "analysis.compare.legend.positive": "Improving direction",
+    "analysis.compare.legend.base": "Base",
+    "analysis.compare.legend.negative": "Worsening direction",
+    "analysis.compare.headers.successRate": "Success Rate",
+    "analysis.compare.headers.finalP10": "Final Assets<br>10th %ile",
+    "analysis.compare.headers.worst10MaxDd": "Max DD<br>10th %ile",
+    "error.noBase": "Base condition not set.",
+    "error.noFactors": "No factors selected.",
+    "error.simFailed": "Simulation error occurred.",
+    "error.imageFailed": "Image generation failed. Run simulation first.\n\nDetails: {0}",
+    "capture.riskAsset": "Risk assets:",
+    "capture.cashBuffer": "Cash buffer:",
+    "capture.expense": "Monthly withdrawal:",
+    "capture.model": "Return model:",
+    "capture.returnVol": "Return / Vol:",
+    "capture.inflation": "Inflation rate:",
+    "capture.years": "Years:",
+    "capture.guardrail": "Guardrail:",
+    "capture.execTime": "Executed:",
+    "capture.targetMaintainRate": "Target Asset Maintenance Rate",
+    "capture.targetLabel": "(Target: ",
+    "capture.footerUrl": "https://moriyama-eng.github.io/fire-simulator/ | v{VERSION}",
+    "capture.footerCredit": "Created by @moriyama_eng",
+    "unit.oku": "M",
+    "unit.man": "K",
+    "error.simulationFailed": "Simulation failed",
+    "footer.copyright": "© 2026 moriyama",
+    "header.description": "Generate tens of thousands of market scenarios using Monte Carlo simulation to statistically validate your FIRE plan.",
+    "unit.years": "years",
+    "unit.months": "months",
+    "unit.multiplier": "x",
+    "tab.simulation": "Simulation",
+    "tab.analysis": "Analysis",
+    "footer.title": "FIRE Monte Carlo Simulator",
+    "unit.paths": "trials",
+    "chart.probability": "Probability",
+    "chart.belowInit.title": "Duration Below Initial Assets Probability",
+    "chart.belowInit.tooltip": "Probability that the total assets remain below the initial total assets (risk assets + cash buffer) for a given number of months.<br>Initial total assets are nominal values and are <strong>not</strong> adjusted for inflation.<br>For example, if the x-axis is 5 years and the y-axis is 30%, it means there is a 30% chance that the assets will stay below the initial level for more than 5 years.<br>Paths that go bankrupt are counted as if the condition persists until the end of the simulation.<br>A month in which total assets are <strong>equal to</strong> the initial level (===) is considered a recovery, and the count is reset.<br>※ Decisions are based on end-of-month total assets (after withdrawal).",
+    "chart.belowInit.axisTitle": "Duration Below Initial Assets",
+    "chart.sell.title": "Consecutive Risk-Asset Sales While Below Initial Assets Probability",
+    "chart.sell.tooltip": "Probability that risk assets are used as the withdrawal source for a consecutive number of months while total assets are below the initial level.<br>\"Risk-asset sale\" means that the monthly withdrawal was funded by selling risk assets (market-driven decreases are not counted).<br>Withdrawals during replenishment mode are also treated as risk-asset sales for the purpose of this metric.<br>The count resets in any month when: ① Total assets recover to or above the initial level, or ② Withdrawal is taken from the cash buffer (or the withdrawal amount is zero).<br>※ During replenishment mode, condition ② is <strong>not applied</strong>, and the count continues.<br>For example, if the x-axis is 3 years and the y-axis is 20%, it means there is a 20% chance that risk assets will be sold for more than 3 consecutive years.<br>Paths that go bankrupt are counted as if sales continue until the end of the simulation.<br>※ Decisions are based on end-of-month total assets (after withdrawal).",
+    "chart.sell.axisTitle": "Consecutive Risk-Asset Sales Duration",
+    "chart.tooltip.belowInitLongerLabel": "Below-initial period longer than {0}",
+    "chart.tooltip.sellLongerLabel": "Risk-asset sales longer than {0}",
+    "capture.emptyValue": "-",
+    "capture.emptyModel": "-",
+    "summary.successRate.tooltip": "Percentage of simulation paths that did not deplete assets during the entire period.",
+    "analysis.compare.headers.worst10MaxDd.tooltip": "Maximum drawdown (largest drop from peak) at the 10th percentile of all simulation results.",
+    "tab.comparison": "Comparison",
+    "comparison.addScenario": "+ Add Scenario",
+    "comparison.runAll": "▶ Run All",
+    "comparison.running": "Running... {0}/{1}",
+    "comparison.parameter": "Parameter",
+    "comparison.maxScenarios": "Maximum 10 scenarios allowed.",
+    "comparison.deleteScenario": "Delete scenario",
+    "comparison.scenarioName": "Scenario name (click to edit)",
+    "comparison.moveLeft": "Move left",
+    "comparison.moveRight": "Move right",
+    "comparison.overwriteFromSim": "Overwrite from Simulation tab",
+    "comparison.displayConditionNote": "Row visibility follows Scenario 1 settings.",
+    "comparison.auto": "Auto",
+    "comparison.manual": "Fixed",
+    "comparison.fixed": "Fixed",
+    "comparison.variable": "Variable (AR-1)",
+    "comparison.finalMedian.tooltip": "Median total assets (50th percentile) at the end of the simulation.",
+    "comparison.median_max_uw": "Median Longest Underwater",
+    "comparison.medianMaxUw.tooltip": "Median of the longest underwater period (time unable to reach a new high) across all simulation paths.",
+    "comparison.confirmDelete": "Are you sure you want to delete this scenario?",
+    "comparison.overwriteSuccess": "Scenario overwritten",
+    "comparison.cannotDeleteLast": "Cannot delete the last scenario",
+    "comparison.deleteSuccess": "Scenario deleted",
+    "comparison.deleteFailed": "Failed to delete scenario",
+    "comparison.duplicateTitle": "Duplicate scenario",
+    "comparison.overwriteTitle": "Overwrite from Simulation tab",
+    "comparison.pendingExecution": "Some scenarios are not executed. Please run the simulation.",
+    "comparison.section.assets": "Initial Assets",
+    "comparison.autoIndicator": "(Auto)",
+    "comparison.dfLabel": "t-distribution df model",
+    "comparison.dfValue": "t-distribution df value",
+    "comparison.addSuccess": "Scenario added.",
+    "comparison.duplicateSuccess": "Scenario duplicated.",
+    "comparison.moveHintText": "<svg style=\"display:inline-block;vertical-align:middle;margin-right:3px\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z\"/></svg>Drag or use each column's \u22ee menu to reorder"
+  }
+};
+
+// Retrieve version number from meta tag (fallback value in test environment)
+function getAppVersion(): string {
+  try {
+    if (typeof document !== 'undefined') {
+      const meta = document.querySelector('meta[name="app-version"]');
+      if (meta) {
+        const content = meta.getAttribute('content') ?? (meta as HTMLMetaElement).content;
+        if (content) return content;
+      }
+    }
+  } catch (_e) { /* In test environments, document may be special */ }
+  return '3.0.0'; // Fallback (sync with the actual latest version)
+}
+const APP_VERSION: string = getAppVersion();
+
+if (typeof globalThis !== 'undefined' && globalThis.__currentLang === undefined) {
+  globalThis.__currentLang = (() => {
+    try { return localStorage.getItem('lang'); } catch (_e) { return null; }
+  })() || 'ja';
+}
+
+function getCurrentLang(): 'ja' | 'en' {
+  if (typeof globalThis !== 'undefined' && globalThis.__currentLang) {
+    return globalThis.__currentLang === 'en' ? 'en' : 'ja';
+  }
+  return 'ja';
+}
+
+export function t(key: string, placeholders: (string | number)[] | Record<string, string | number> = []): string {
+  const lang = getCurrentLang();
+  let text = translations[lang]?.[key];
+  // Fallback only if undefined or null (empty string is valid)
+  if (text === undefined || text === null) {
+    text = '[EN] ' + (translations.ja[key] || key);
+  }
+  // If text is an empty string, return empty string as is (no fallback)
+
+  text = text.replace(/\{VERSION\}/g, APP_VERSION);
+
+  if (Array.isArray(placeholders)) {
+    placeholders.forEach((p, i) => {
+      text = text.replace(new RegExp('\\{' + i + '\\}', 'g'), String(p));
+    });
+  } else if (typeof placeholders === 'object' && placeholders !== null) {
+    for (const [k, v] of Object.entries(placeholders)) {
+      text = text.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v));
+    }
+  }
+  return text;
+}
+
+export function setLanguage(lang: string): void {
+  if (lang !== 'ja' && lang !== 'en') return;
+  if (typeof globalThis !== 'undefined') {
+    globalThis.__currentLang = lang;
+  }
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = lang;
+  }
+  try { localStorage.setItem('lang', lang); } catch (_e) { }
+  if (typeof document !== 'undefined') {
+    document.dispatchEvent(new CustomEvent('languageChanged'));
+  }
+}
+
+export function getLanguage(): string { return getCurrentLang(); }
+export function getSupportedLanguages(): string[] { return ['ja', 'en']; }
+
+export function formatCurrency(valueInJPY: number, displayUnit?: string): string {
+  if (!isFinite(valueInJPY)) return getCurrentLang() === 'ja' ? '－' : 'N/A';
+  if (valueInJPY < 0) return '-' + formatCurrency(-valueInJPY, displayUnit);
+
+  if (getCurrentLang() === 'ja') {
+    if (displayUnit === '億円') {
+      return (valueInJPY / 1e8).toLocaleString('ja-JP', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + '億円';
+    }
+    if (displayUnit === '万円') {
+      return (valueInJPY / 1e4).toLocaleString('ja-JP', { maximumFractionDigits: 0 }) + '万円';
+    }
+    return valueInJPY.toLocaleString('ja-JP');
+  }
+
+  // English mode: USD display (fixed rate $1 = 100 JPY)
+  // Display rules: 0 -> $0, 1-999 -> integer, 1,000-999,999 -> $X.XK, 1,000,000-999,999,999 -> $X.XM, 1e9 or more -> $X.XB
+  // Rounding policy: Fractions less than 1 USD are rounded to the nearest integer dollar (e.g., 99 JPY -> $1)
+  const usd = valueInJPY / 100;
+  if (usd === 0) return '$0';
+  const absUsd = Math.abs(usd);
+  if (absUsd >= 1_000_000_000) {
+    const val = usd / 1_000_000_000;
+    const rounded = Number(val.toFixed(1));
+    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+    return '$' + formatted + 'B';
+  } else if (absUsd >= 1_000_000) {
+    const val = usd / 1_000_000;
+    const rounded = Number(val.toFixed(1));
+    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+    return '$' + formatted + 'M';
+  } else if (absUsd >= 1_000) {
+    const val = usd / 1_000;
+    const rounded = Number(val.toFixed(1));
+    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+    return '$' + formatted + 'K';
+  } else {
+    const formatted = Math.round(usd).toString();
+    return '$' + formatted;
+  }
+}
+
+export function formatPercent(value: number): string {
+  return (value * 100).toFixed(1) + '%';
+}
+
+export function formatDate(date: Date): string {
+  return date.toLocaleString(getCurrentLang() === 'ja' ? 'ja-JP' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+export function formatYears(years: number): string {
+  return getCurrentLang() === 'ja' ? years + '年' : years + ' years';
+}
+
+export function formatNumber(value: number, unitKey?: string): string {
+  const formatted = getCurrentLang() === 'ja' ? value.toLocaleString('ja-JP') : value.toLocaleString('en-US');
+  if (!unitKey) return formatted;
+  const unit = t(unitKey);
+  return formatted + ' ' + unit;
+}
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { __setLanguage?: typeof setLanguage; __getLanguage?: typeof getLanguage }).__setLanguage = setLanguage;
+  (window as unknown as { __setLanguage?: typeof setLanguage; __getLanguage?: typeof getLanguage }).__getLanguage = getLanguage;
+}
+
+export { translations as TRANSLATIONS };
+

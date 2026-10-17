@@ -20,7 +20,33 @@ The FIRE Monte Carlo Simulator is a browser-based personal asset accumulation an
 
 Visit **[https://moriyama-eng.github.io/fire-simulator/](https://moriyama-eng.github.io/fire-simulator/)** — no installation required.
 
-If running locally from a clone, use a live server (e.g., VS Code Live Server extension) because Web Workers require an HTTP origin.
+Opening `index.html` directly in a browser (via `file://`) is not supported because modern browsers cannot parse raw TypeScript modules or bundle ES module Web Workers without an HTTP server and bundler. For local execution from source, use the Vite development server (`npm run dev`) or the production preview server (`npm run preview`).
+
+## Prerequisites
+
+If developing or running the simulator locally from a cloned repository:
+
+- **Node.js**: Requires `Node.js >= 22`.
+- **Install dependencies**:
+  ```bash
+  npm install
+  ```
+- **Local development server**:
+  ```bash
+  npm run dev
+  ```
+  Starts the Vite dev server at `http://localhost:5173/`. If modifying CSS, run `npm run watch:css` in a separate terminal.
+- **Typecheck and Tests**:
+  ```bash
+  npm run typecheck
+  npm test
+  ```
+- **Build and Preview**:
+  Run `npm run build` to compile the production bundle (`dist/client/`) and CLI (`dist/cli.js`). Note that `npm run build` is a prerequisite before running `npm run preview` or the CLI:
+  ```bash
+  npm run build
+  npm run preview
+  ```
 
 ### 2. Set your parameters
 
@@ -57,7 +83,7 @@ Both features are off by default. Enable them in their respective settings secti
 ## CLI Quickstart
 
 ```bash
-node cli.js run params.json
+node dist/cli.js run params.json
 ```
 
 For the full parameter list and options, see [CLI Usage Guide](./cli-usage.md) and [Parameter Reference](../reference/parameter-reference.md).

@@ -2,10 +2,10 @@
 
 ## Overview
 
-`js/headless.js` provides a headless execution module that runs simulations in a single process without Web Workers.
-It is designed primarily for use in Node.js environments and is called by the CLI (`cli.js`).
+`src/headless.ts` provides a headless execution module that runs simulations in a single process without Web Workers.
+It is designed primarily for use in Node.js environments and is called by the CLI (`dist/cli.js`).
 
-Computation results are bit-for-bit identical to the Worker-based version (`js/simulation-engine.js` + `js/worker.js`).
+Computation results are bit-for-bit identical to the Worker-based version (`src/simulation-engine.ts` + `src/worker.ts`).
 
 ## Memory Warning
 
@@ -18,7 +18,7 @@ This is within the Node.js default heap limit (~1.5 GB), but be cautious with la
 ### `runSimulationHeadless(params, percentiles, options)`
 
 ```js
-import { runSimulationHeadless } from './js/headless.js';
+import { runSimulationHeadless } from './src/headless.ts';
 ```
 
 #### Arguments
@@ -57,14 +57,14 @@ The return value of `aggregateResultsProduction()` with the following meta field
 | `currency` | `'JPY' \| 'USD'` | Currency label (no conversion applied) |
 | `dataLen` | `number` | Time series length (`simYears * 12 + 1`) |
 
-> **Important**: `Float32Array` fields (time series and per-path arrays `maxDdPerPath`, `maxUwPerPath`, `belowInitPeriods`, `consecutiveSellPeriods`) cannot be serialized by `JSON.stringify` directly. Apply `toPlain()` (implemented in `cli.js`) before JSON output. In `cli.js` `--no-file` / scalar summary mode, large per-path TypedArrays are intentionally omitted during serialization.
+> **Important**: `Float32Array` fields (time series and per-path arrays `maxDdPerPath`, `maxUwPerPath`, `belowInitPeriods`, `consecutiveSellPeriods`) cannot be serialized by `JSON.stringify` directly. Apply `toPlain()` (implemented in `src/cli.ts` / `dist/cli.js`) before JSON output. In `dist/cli.js` `--no-file` / scalar summary mode, large per-path TypedArrays are intentionally omitted during serialization.
 
 ## Parameter Normalization
 
 ### `normalizeHeadlessParams(raw)`
 
 ```js
-import { normalizeHeadlessParams } from './js/core/headless-params.js';
+import { normalizeHeadlessParams } from './src/core/headless-params.ts';
 ```
 
 Accepts a raw input object (flat JSON in base currency units), fills missing fields with
@@ -102,8 +102,8 @@ and `comparison-runner`. Returns a fully normalized params object.
 ## Usage Example
 
 ```js
-import { normalizeHeadlessParams } from './js/core/headless-params.js';
-import { runSimulationHeadless } from './js/headless.js';
+import { normalizeHeadlessParams } from './src/core/headless-params.ts';
+import { runSimulationHeadless } from './src/headless.ts';
 
 const params = normalizeHeadlessParams({
     initialRiskAsset: 100_000_000,  // 100M JPY
