@@ -26,10 +26,10 @@ Exceptions: `README-ja.md` (Japanese README) and the `TRANSLATIONS.ja` values in
 ## CSS Architecture & Build Pipeline
 
 - **Tailwind CLI (v3.4.17)**: Pre-compiles CSS statically (`npm run build:css`). Tailwind Play CDN (`cdn.tailwindcss.com`) is strictly prohibited.
-- **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./js/**/*.js`).
+- **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./src/**/*.{ts,js}`).
 - **Generated Bundle**: `css/tailwind.css` (minified bundle, committed to repository).
 - **Custom App Styles**: `css/style.css` (custom CSS rules, `@font-face` definitions, animations, and non-utility CSS).
-- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=2.9.0">` followed by `<link rel="stylesheet" href="css/style.css?v=2.9.0">`.
+- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=3.0.0">` followed by `<link rel="stylesheet" href="css/style.css?v=3.0.0">`.
 
 ## Code References
 

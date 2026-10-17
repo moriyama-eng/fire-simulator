@@ -73,6 +73,23 @@ For complete CLI documentation and examples, see the [CLI](#cli) section below.
 | **Browser UI (English Mode)** | Display-only fixed rate ($1 = ¥100) | $1, ¥10K, ¥100M UI units | JPY |
 | **CLI / Headless Mode** | None (label-only `currency` metadata) | Base currency units (JPY or USD as-is) | Base currency units |
 
+### Local Development
+
+For developers and contributors running or developing the application locally:
+
+- **Prerequisites**: Requires `Node.js >= 22`.
+- **Install dependencies**: Run `npm install` to install all tooling and project dependencies.
+- **Development Server**: Run `npm run dev` to launch the Vite local development server at `http://localhost:5173/` (or `localhost:5173`). Vite uses `strictPort: true`, which will immediately fail-fast with an error if port 5173 is already in use instead of silently picking an unexpected port.
+- **CSS Watcher**: In a separate terminal, run `npm run watch:css` if modifying styles in `css/tailwind.src.css`.
+- **Quality Gates**:
+  - Run `npm run typecheck` (`tsc -b`) to verify TypeScript types across all subprojects.
+  - Run `npm test` to execute the full unit and integration test suite.
+- **Production Build & Preview**:
+  - Run `npm run build` to compile Tailwind CSS, bundle the client application with docs assets into `dist/client/`, build the CLI binary into `dist/cli.js`, and run bundle integrity assertions.
+  - Run `npm run preview` to serve the production build locally at `http://localhost:4173/` (or `localhost:4173`). Vite preview also configures `strictPort: true` to fail-fast on port conflict.
+  - Run `node scripts/smoke-subpath-server.mjs` (or `scripts/smoke-subpath-server.mjs`) to test ephemeral subpath hosting and confinement.
+  - Run `node dist/cli.js` to execute the built headless CLI.
+
 ---
 
 ## Features
@@ -143,7 +160,7 @@ The following are intentional scope limitations, not planned future features:
 
 ## Version / Update History
 
-**Current release: v2.9.0**
+**Current release: v3.0.0**
 
 For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
 
@@ -155,17 +172,17 @@ The CLI provides headless simulation execution using the same simulation model a
 
 ```bash
 # Single-run simulation — outputs results to a JSON file
-node cli.js run params.json
+node dist/cli.js run params.json
 
 # Output results to stdout instead of a file
-node cli.js run params.json --stdout
+node dist/cli.js run params.json --stdout
 
 # Specify a custom output path
-node cli.js run params.json --out output/my-result.json
+node dist/cli.js run params.json --out output/my-result.json
 
 
 # List factor definitions used by the Analysis UI
-node cli.js list-factors
+node dist/cli.js list-factors
 ```
 
 ### Subcommands

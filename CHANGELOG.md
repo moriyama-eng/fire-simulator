@@ -5,6 +5,29 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v3.0.0]
+
+### Added
+- **Modern Vite Build System**: Introduced Vite as the build pipeline and development server for client static assets (`dist/client/`) and ESM Web Worker bundling (`src/worker.ts`), providing lightning-fast HMR and optimized production bundles.
+- **Node.js CLI Bundle via tsup**: Configured `tsup` build for `src/cli.ts` outputting standalone executable `dist/cli.js` with `#!/usr/bin/env node` banner and ESM format (`npm run build:cli`), fully preserving existing CLI command-line workflows and `package.json` bin compatibility (`fire-sim`).
+- **Comprehensive TypeScript Type Definitions**: Added complete domain interfaces and types across simulation models, parameter schemas, calculation results, factor definitions, and UI state models.
+- **GitHub Pages Deployment Pipeline**: Added a modern two-job GitHub Pages deployment workflow (`.github/workflows/deploy.yml`) with least-privilege token permissions, relative base path (`./`) support for subpath hosting, and subpath server smoke verification.
+- **Documentation SPA & TypeScript Modularization**: Modularized docs viewer into TypeScript (`src/docs-app.ts`, `src/docs-links.ts`, `src/url-utils.ts`), featuring KaTeX mathematical formula rendering, Vite dev-server markdown middleware, asset path confinement, SVG sanitization, and client-side SPA routing.
+- **Expanded 42 Test Suites**: Expanded automated test suite to 42 test files with 385 test cases (35 unit test files / 336 cases, 7 integration test files / 49 cases), adding comprehensive coverage for path confinement, dev middleware, docs link resolution, LaTeX rendering, and SVG sanitization.
+
+### Changed
+- **Full TypeScript Migration**: Completely migrated the entire codebase from JavaScript to TypeScript:
+  - **Core Calculation Engine**: `src/core/` (random numbers, simulation paths, aggregation, percentile, format, state, URL, params, factor definitions).
+  - **CLI & Headless Execution**: `src/cli.ts` and `src/headless.ts`.
+  - **Web Worker**: `src/worker.ts` with native Vite ESM worker instantiation.
+  - **UI Controllers & Subsystems**: `src/app.ts`, `src/app/` controllers, `src/analysis-*.ts`, `src/comparison-*.ts`, `src/i18n.ts`, and `src/lang-detect.ts`.
+  - **All 42 Test Suites**: All 35 unit tests and 7 integration tests written in TypeScript (`.test.ts`).
+  - Completely decommissioned and deleted the legacy `js/` directory and root `cli.js`.
+- **Strict Zero-`any` Type Safety**: Enforced strict TypeScript configuration across all sub-projects (`tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.tests.json`) via composite solution references (`tsc -b`), ensuring 0 compilation errors and Zero `any` usage. Input boundaries use `unknown` with narrowing type guards.
+- **Preserved Bit-for-Bit Mathematical Reproducibility**: Maintained zero-algorithmic-diff fidelity in the core calculation engine. All random variable drawing sequences, loop indexing, and mathematical formulas are strictly preserved, verified 100% bit-for-bit against historical golden fixtures.
+
+> **Mathematical calculation engine and reproducibility are fully preserved; core simulation results remain bit-for-bit identical to v2.x.**
+
 ## [v2.9.0]
 
 ### Added

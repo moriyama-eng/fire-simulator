@@ -73,6 +73,23 @@ CLIはブラウザを開かずに同一シミュレーションモデルへア�
 | **ブラウザUI（英語モード）** | 表示のみ $1 = 100円 の固定レート換算 | ドル / 万円 / 億円（UI入力単位） | 円 |
 | **CLI / ヘッドレスモード** | なし（`currency` はメタデータラベルのみ） | 基本通貨単位（円またはドルそのまま） | 基本通貨単位 |
 
+### ローカル開発
+
+ローカル環境での開発やコントリビュートを行う場合の手順です：
+
+- **前提条件**: `Node.js >= 22` が必要です。
+- **依存関係のインストール**: `npm install` を実行して、ビルドおよび検証に必要な依存関係をインストールします。
+- **開発サーバー**: `npm run dev` を実行すると、Vite開発サーバーが `http://localhost:5173/`（`localhost:5173`）で起動します。Viteは `strictPort: true` に設定されているため、ポート5173が既に使用中の場合は予期せぬポートへ自動フォールバックせず、即座にエラーで終了（fail-fast）します。
+- **CSSウォッチ**: スタイルを変更する場合は、別ターミナルで `npm run watch:css` を実行します。
+- **品質検証**:
+  - `npm run typecheck`（`tsc -b`）を実行して、プロジェクト全体の型チェックを行います。
+  - `npm test` を実行して、全ユニットテストおよび統合テストをパスすることを確認します。
+- **本番ビルドとプレビュー**:
+  - `npm run build` を実行すると、Tailwind CSSのコンパイル、ドキュメント資産を含むクライアントバンドル（`dist/client/`）、およびCLIバイナリ（`dist/cli.js`）がビルドされ、バンドル検証アサーションが実行されます。
+  - `npm run preview` を実行すると、本番ビルドの成果物を `http://localhost:4173/`（`localhost:4173`）でローカルプレビューできます。プレビューサーバーも `strictPort: true` で競合時にfail-fastします。
+  - `node scripts/smoke-subpath-server.mjs`（`scripts/smoke-subpath-server.mjs`）を実行して、サブパス配信およびパストラバーサル防御のスモークテストを検証します。
+  - `node dist/cli.js` を実行して、ビルドされたヘッドレスCLIを直接実行できます。
+
 ---
 
 ## 主な機能
@@ -143,7 +160,7 @@ CLIはブラウザを開かずに同一シミュレーションモデルへア�
 
 ## バージョン / 更新履歴
 
-**現行リリース: v2.9.0**
+**現行リリース: v3.0.0**
 
 全更新履歴は [CHANGELOG-ja.md](./CHANGELOG-ja.md) を参照してください。
 
@@ -155,16 +172,16 @@ CLIはブラウザUIと同一のシミュレーションモデルを使用する
 
 ```bash
 # 単一シミュレーション実行 — 結果をJSONファイルに出力
-node cli.js run params.json
+node dist/cli.js run params.json
 
 # 結果をファイルではなくstdoutに出力
-node cli.js run params.json --stdout
+node dist/cli.js run params.json --stdout
 
 # カスタム出力ファイルパスを明示指定
-node cli.js run params.json --out output/my-result.json
+node dist/cli.js run params.json --out output/my-result.json
 
 # Analysis UIで使用されるfactor定義を出力
-node cli.js list-factors
+node dist/cli.js list-factors
 ```
 
 ### サブコマンド

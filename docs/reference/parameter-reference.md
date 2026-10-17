@@ -1,7 +1,7 @@
 # Parameter Reference
 
 Complete list of all 26 simulation input parameters accepted by the CLI and the headless API.
-Source of truth: `HEADLESS_DEFAULTS` in `js/core/headless-params.js`.
+Source of truth: `HEADLESS_DEFAULTS` in `src/core/headless-params.ts`.
 
 For CLI usage and subcommand options, see [CLI Usage Guide](../guide/cli-usage.md).
 
