@@ -47,6 +47,7 @@ describe('T7: normalizeHeadlessParams', () => {
         ['simPaths', { simPaths: 99999 }, 'simPaths', 50000],
         ['drawdownTrigger', { drawdownTrigger: 5 }, 'drawdownTrigger', 0],
         ['targetAssetRatio', { targetAssetRatio: 600 }, 'targetAssetRatio', 500],
+        ['targetAssetRatio zero', { targetAssetRatio: 0 }, 'targetAssetRatio', 0],
         ['simDfNum', { simDfNum: 1 }, 'simDfNum', 2.5],
         ['replenishPace', { replenishPace: -5 }, 'replenishPace', 0],
         ['infAr high', { infAr: 1.5 }, 'infAr', 1.0],

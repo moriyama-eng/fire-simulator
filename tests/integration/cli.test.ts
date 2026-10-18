@@ -152,6 +152,15 @@ describe('T3: CLI run subcommand', () => {
     expect(parsed.outputFile).toBeNull();
   });
 
+  it('runs with targetAssetRatio: 0 and preserves targetAssetRatio 0 in output', () => {
+    const paramsFile = setupTmpParams({ targetAssetRatio: 0 });
+    const stdout = runCli(['run', paramsFile, '--no-file']);
+    const parsed = JSON.parse(stdout) as { params: { targetAssetRatio: number }; targetAssetMaintainRate: number };
+    expect(parsed.params.targetAssetRatio).toBe(0);
+    expect(typeof parsed.targetAssetMaintainRate).toBe('number');
+    expect(Number.isFinite(parsed.targetAssetMaintainRate)).toBe(true);
+  });
+
   it('exits with code 1 when given a non-existent file', () => {
     expect(() => {
       runCli(['run', 'nonexistent-file.json']);

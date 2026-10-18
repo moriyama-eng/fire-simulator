@@ -20,7 +20,21 @@ afterEach(() => {
 describe('safeNumber', () => {
     it('converts string with commas to number', () => { expect(safeNumber('10,000', 0)).toBe(10000); });
     it('returns fallback for invalid value', () => { expect(safeNumber('abc', 99)).toBe(99); });
+    it('returns fallback for empty string or whitespace', () => {
+        expect(safeNumber('', 99)).toBe(99);
+        expect(safeNumber('   ', 99)).toBe(99);
+    });
+    it('returns fallback for null and undefined', () => {
+        expect(safeNumber(null, 99)).toBe(99);
+        expect(safeNumber(undefined, 99)).toBe(99);
+    });
+    it('preserves numeric 0 and string 0', () => {
+        expect(safeNumber(0, 99)).toBe(0);
+        expect(safeNumber('0', 99)).toBe(0);
+        expect(safeNumber('0.0', 99)).toBe(0);
+    });
 });
+
 
 describe('calcAutoDf', () => {
     it('returns 5.0 for volatility=10', () => { expect(calcAutoDf(10)).toBe(5.0); });
@@ -97,7 +111,64 @@ describe('getParamsFromInputs - targetAssetRatio fallback', () => {
         expect(params.initialCashBuffer).toBe(10_000_000);
         expect(params.monthlyExpense).toBe(300_000);
     });
+
+    it('accepts 0 for targetAssetRatioNum and preserves 0 without falling back to DEFAULTS', () => {
+        expect(getParamsFromInputs({ targetAssetRatioNum: '0' }).targetAssetRatio).toBe(0);
+        expect(getParamsFromInputs({ targetAssetRatioNum: 0 }).targetAssetRatio).toBe(0);
+        expect(getParamsFromInputs({ targetAssetRatioNum: '0.0' }).targetAssetRatio).toBe(0);
+    });
+
+    it('falls back to DEFAULTS for all fields when inputs is empty object {}', () => {
+        const params = getParamsFromInputs({});
+        expect(params.initialRiskAsset).toBe(DEFAULTS.initialRiskAsset * 100_000_000);
+        expect(params.initialCashBuffer).toBe(DEFAULTS.initialCashBuffer * 10_000);
+        expect(params.monthlyExpense).toBe(DEFAULTS.monthlyExpense * 10_000);
+        expect(params.expectedReturn).toBe(DEFAULTS.expectedReturn);
+        expect(params.volatility).toBe(DEFAULTS.volatility);
+        expect(params.inflationRate).toBe(DEFAULTS.inflationRate);
+        expect(params.simYears).toBe(DEFAULTS.simYears);
+        expect(params.simPaths).toBe(DEFAULTS.simPaths);
+        expect(params.drawdownTrigger).toBe(DEFAULTS.drawdownTrigger);
+        expect(params.drawdownReplenish).toBe(DEFAULTS.drawdownReplenish);
+        expect(params.replenishPace).toBe(DEFAULTS.replenishPace);
+        expect(params.guardrailTrigger).toBe(DEFAULTS.guardrailTrigger);
+        expect(params.guardrailReduction).toBe(DEFAULTS.guardrailReduction);
+        expect(params.guardrailRelease).toBe(DEFAULTS.guardrailRelease);
+        expect(params.infVol).toBe(DEFAULTS.infVol);
+        expect(params.infAr).toBe(DEFAULTS.infAr);
+        expect(params.simDfNum).toBe(DEFAULTS.simDfNum);
+        expect(params.seedNum).toBe(DEFAULTS.seedNum);
+        expect(params.targetAssetRatio).toBe(DEFAULTS.targetAssetRatio);
+    });
+
+    it('falls back to DEFAULTS when values are non-numeric strings', () => {
+        const params = getParamsFromInputs({
+            expectedReturnNum: 'abc',
+            volatilityNum: 'invalid'
+        });
+        expect(params.expectedReturn).toBe(DEFAULTS.expectedReturn);
+        expect(params.volatility).toBe(DEFAULTS.volatility);
+    });
+
+    it('falls back to DEFAULTS when values are empty string or whitespace', () => {
+        const params = getParamsFromInputs({
+            monthlyExpenseNum: '',
+            expectedReturnNum: '   '
+        });
+        expect(params.monthlyExpense).toBe(DEFAULTS.monthlyExpense * 10_000);
+        expect(params.expectedReturn).toBe(DEFAULTS.expectedReturn);
+    });
+
+    it('falls back to DEFAULTS when seedNum or other values are null', () => {
+        const params = getParamsFromInputs({
+            seedNum: null as unknown as string,
+            initialRiskAssetNum: null as unknown as string
+        });
+        expect(params.seedNum).toBe(DEFAULTS.seedNum);
+        expect(params.initialRiskAsset).toBe(DEFAULTS.initialRiskAsset * 100_000_000);
+    });
 });
+
 
 // ===== T10: Shared clamp helper pure functions unit tests =====
 describe('T10: Shared clamp helper functions', () => {

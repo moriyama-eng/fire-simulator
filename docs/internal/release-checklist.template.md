@@ -51,10 +51,10 @@ When releasing a new version, please perform manual verification using the follo
 | README.md / README-ja.md | Current-release marker only |
 | CHANGELOG.md / CHANGELOG-ja.md | New latest vX.Y.Z entry only |
 | index.html | meta, CSS queries, footer, #capFooterUrl |
-| docs.html | CSS query |
+| docs.html | meta |
 | docs/internal/style-guide.md | Example CSS query strings |
-| js/i18n.js | getAppVersion() fallback version |
-| js/... (if modified) | Specific implementation change summary |
+| src/i18n.ts | getAppVersion() fallback version |
+| src/... (if modified) | Specific implementation change summary |
 | tests/... (if modified) | Specific test addition or update summary |
 | docs/internal/release-checklist.md | Overwritten from template; vX.Y.Z H1, scope, and verification records |
 
@@ -65,7 +65,7 @@ When releasing a new version, please perform manual verification using the follo
 - [ ] package.json version is the target release version — <result or reason>
 - [ ] package-lock.json top-level version is the target release version — <result or reason>
 - [ ] package-lock.json packages[""].version is the target release version — <result or reason>
-- [ ] js/i18n.js getAppVersion() fallback is the target release version — <result or reason>
+- [ ] src/i18n.ts getAppVersion() fallback is the target release version — <result or reason>
 - [ ] README.md current release marker is the target release version — <result or reason>
 - [ ] README-ja.md current release marker is the target release version — <result or reason>
 - [ ] CHANGELOG.md latest entry is the target release heading — <result or reason>
@@ -191,18 +191,18 @@ When releasing a new version, please perform manual verification using the follo
 
 Note: `.github/` contains no release workflow; release preparation is operated manually.
 
-- [ ] `node cli.js run <sample.json>` generates a full result JSON under `output/fire-sim/` and outputs a scalar summary to stdout — <result or reason>
+- [ ] `node dist/cli.js run <sample.json>` generates a full result JSON under `output/fire-sim/` and outputs a scalar summary to stdout — <result or reason>
 - [ ] Scalar summary output matches specification (JSON fields `successRate`, `finalMedian`, `targetAssetMaintainRate`, etc. per `docs/guide/cli-usage.md`) — <result or reason>
 - [ ] Confirm that `output/` output files do **not** appear in `git status` (`output/` is gitignored) — <result or reason>
-- [ ] `node cli.js run <file> --no-file` outputs summary to stdout without creating any output file — <result or reason>
-- [ ] `node cli.js run <file> --stdout` outputs full result JSON directly to stdout — <result or reason>
-- [ ] `node cli.js run <file> --compact` outputs minified single-line JSON — <result or reason>
-- [ ] `node cli.js run <file> --out output/custom/output.json` creates the directory automatically and writes the file — <result or reason>
+- [ ] `node dist/cli.js run <file> --no-file` outputs summary to stdout without creating any output file — <result or reason>
+- [ ] `node dist/cli.js run <file> --stdout` outputs full result JSON directly to stdout — <result or reason>
+- [ ] `node dist/cli.js run <file> --compact` outputs minified single-line JSON — <result or reason>
+- [ ] `node dist/cli.js run <file> --out output/custom/output.json` creates the directory automatically and writes the file — <result or reason>
 
 ## Version Consistency & Exhaustive Search (Prevention of Missed Updates)
 
 - [ ] `package.json` version matches the target release version — <result or reason>
-- [ ] `js/i18n.js` `getAppVersion()` fallback return value matches target release version — <result or reason>
+- [ ] `src/i18n.ts` `getAppVersion()` fallback return value matches target release version — <result or reason>
 - [ ] `index.html` all version occurrences match target release version: — <result or reason>
   - [ ] `<meta name="app-version">` — <result or reason>
   - [ ] `<link rel="stylesheet" href="css/tailwind.css?v=...">` — <result or reason>
@@ -210,10 +210,10 @@ Note: `.github/` contains no release workflow; release preparation is operated m
   - [ ] Modal / Footer version span `<span>vX.Y.Z</span>` — <result or reason>
   - [ ] Image capture footer element `#capFooterUrl` (`| vX.Y.Z`) — <result or reason>
 - [ ] `{VERSION}` placeholders resolve to the `meta[name="app-version"]` target release version — <result or reason>
-- [ ] `docs.html` CSS query strings match target release version — <result or reason>
+- [ ] `docs.html` meta tag matches target release version — <result or reason>
 - [ ] `docs/internal/style-guide.md` example query strings match target release version — <result or reason>
 - [ ] Run exhaustive workspace grep (`grep_search` for previous version string `vX.Y.Z-1`) to physically prove 0 missed occurrences across all source files — <result or reason>
-- [ ] Run semver allowlist scan across executable source files (`js/`, `index.html`, `docs.html`, `cli.js`) to verify zero unapproved semver literals remain — <result or reason>
+- [ ] Run semver allowlist scan across executable source files (`src/`, `index.html`, `docs.html`, `dist/cli.js`) to verify zero unapproved semver literals remain — <result or reason>
 
 ## README 3.0 & Documentation Human Inspection Preview
 
