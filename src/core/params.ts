@@ -33,10 +33,65 @@ export const DEFAULTS: DefaultsConfig = Object.freeze({
     targetAssetRatio: 100.0
 });
 
+export type NumericInputKey =
+    | 'initialRiskAssetNum'
+    | 'initialCashBufferNum'
+    | 'monthlyExpenseNum'
+    | 'expectedReturnNum'
+    | 'volatilityNum'
+    | 'inflationRateNum'
+    | 'simYearsNum'
+    | 'simPathsNum'
+    | 'drawdownTriggerNum'
+    | 'drawdownReplenishNum'
+    | 'replenishPaceNum'
+    | 'guardrailTriggerNum'
+    | 'guardrailReductionNum'
+    | 'guardrailReleaseNum'
+    | 'infVolNum'
+    | 'infArNum'
+    | 'simDfNum'
+    | 'seedNum'
+    | 'targetAssetRatioNum';
+
+export const INPUT_TO_DEFAULT_KEY: Record<NumericInputKey, keyof DefaultsConfig> = Object.freeze({
+    initialRiskAssetNum: 'initialRiskAsset',
+    initialCashBufferNum: 'initialCashBuffer',
+    monthlyExpenseNum: 'monthlyExpense',
+    expectedReturnNum: 'expectedReturn',
+    volatilityNum: 'volatility',
+    inflationRateNum: 'inflationRate',
+    simYearsNum: 'simYears',
+    simPathsNum: 'simPaths',
+    drawdownTriggerNum: 'drawdownTrigger',
+    drawdownReplenishNum: 'drawdownReplenish',
+    replenishPaceNum: 'replenishPace',
+    guardrailTriggerNum: 'guardrailTrigger',
+    guardrailReductionNum: 'guardrailReduction',
+    guardrailReleaseNum: 'guardrailRelease',
+    infVolNum: 'infVol',
+    infArNum: 'infAr',
+    simDfNum: 'simDfNum',
+    seedNum: 'seedNum',
+    targetAssetRatioNum: 'targetAssetRatio'
+});
+
+export function getDefaultValue(key: NumericInputKey): number {
+    return DEFAULTS[INPUT_TO_DEFAULT_KEY[key]];
+}
+
 export function safeNumber(val: unknown, fallback: number): number {
-    if (typeof val === 'string') val = val.replace(/,/g, '');
-    const n = Number(val);
-    return Number.isFinite(n) ? n : fallback;
+    if (val === null || val === undefined) return fallback;
+    if (typeof val === 'string') {
+        const cleaned = val.replace(/,/g, '').trim();
+        if (cleaned === '') return fallback;
+        const n = Number(cleaned);
+        return Number.isFinite(n) ? n : fallback;
+    }
+    if (typeof val === 'number') {
+        return Number.isFinite(val) ? val : fallback;
+    }
+    return fallback;
 }
 
 export function calcAutoDf(volatility: number): number {
@@ -48,11 +103,10 @@ export function calcAutoDf(volatility: number): number {
 }
 
 export function getParamsFromInputs(inputs: RawInputs): SimulationParams {
-    const raw = (key: string): number => {
-        const fallback = (DEFAULTS as unknown as Record<string, number>)[key] ?? 0;
+    const raw = (key: NumericInputKey): number => {
+        const fallback = getDefaultValue(key);
         const inputVal = inputs[key];
-        const val = inputVal !== undefined ? inputVal : (DEFAULTS as unknown as Record<string, unknown>)[key];
-        return safeNumber(val, fallback);
+        return safeNumber(inputVal, fallback);
     };
 
     const lang = getLanguage();
@@ -70,7 +124,7 @@ export function getParamsFromInputs(inputs: RawInputs): SimulationParams {
     }
 
     const targetRaw = inputs['targetAssetRatioNum'] !== undefined
-        ? safeNumber(inputs['targetAssetRatioNum'], DEFAULTS.targetAssetRatio)
+        ? safeNumber(inputs['targetAssetRatioNum'], getDefaultValue('targetAssetRatioNum'))
         : NaN;
 
     return {
@@ -99,7 +153,7 @@ export function getParamsFromInputs(inputs: RawInputs): SimulationParams {
         useFixedSeed: !inputs.seedToggle,
         seedNum: raw('seedNum'),
         // targetAssetRatio: Ratio relative to initial total assets (%), default 100%. Not a currency, so no exchange rate conversion is applied (not affected by the fixed rate of 100 yen = $1).
-        targetAssetRatio: targetRaw || DEFAULTS.targetAssetRatio
+        targetAssetRatio: Number.isFinite(targetRaw) ? targetRaw : DEFAULTS.targetAssetRatio
     };
 }
 

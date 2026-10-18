@@ -5,6 +5,14 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v3.0.1] - 2026-10-18
+
+### Fixed
+- **Target Asset Ratio 0% Handling in UI and URL Paths**: Fixed an issue where entering `0` (or `0.0`) for `targetAssetRatio` in the UI or loading it via URL query parameter (`tar=0.0`) incorrectly evaluated to the default value of 100% due to falsy `||` coercion. `targetAssetRatio` now preserves `0%` across UI, CLI, and URL round-trip paths (`Number.isFinite` check), matching the `[0, 500]` specification and headless API behavior.
+- **Default Value Fallback Key Alignment in `getParamsFromInputs`**: Fixed a parameter resolution bug where `getParamsFromInputs` queried `DEFAULTS` using `...Num` input keys (e.g., `expectedReturnNum`), which did not match `DEFAULTS` property names (e.g., `expectedReturn`), causing omitted or invalid inputs to fall back to `0` instead of configured defaults. Introduced a type-safe input-to-default key mapping table (`INPUT_TO_DEFAULT_KEY`) and strengthened `safeNumber` to properly fall back to defaults on `null`, empty string, whitespace, and non-numeric values without type assertion casting.
+
+> **Mathematical calculation engine and reproducibility are fully preserved; core simulation results remain bit-for-bit identical to v2.x and v3.0.0.**
+
 ## [v3.0.0]
 
 ### Added

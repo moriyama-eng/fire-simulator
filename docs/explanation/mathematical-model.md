@@ -1,7 +1,7 @@
 # Mathematical Model
 
 This document explains the stochastic equations used by the FIRE Monte Carlo Simulator.
-All equations are cross-referenced to `js/core/simulation.js`.
+All equations are cross-referenced to `src/core/simulation.ts`.
 
 ## 1. Asset Update (Log-Normal Model)
 
@@ -13,7 +13,7 @@ where `Z_t` is a standard-normal random variable, and:
 
 $$\mu_m = \frac{\mu_{\text{annual}}}{12}, \quad \sigma_m = \frac{\sigma_{\text{annual}}}{\sqrt{12}}$$
 
-In code (`js/core/simulation.js`):
+In code (`src/core/simulation.ts`):
 ```javascript
 currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
 ```

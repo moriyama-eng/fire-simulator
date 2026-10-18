@@ -4,12 +4,27 @@ import path from 'node:path';
 
 describe('stale v2 path sweep', () => {
   const stalePaths = [
+    'node cli.js',
     'js/app.js',
     'js/i18n.js',
     'js/headless.js',
-    'js/core/headless-params.js',
     'js/analysis-runner.js',
-    'js/analysis-ui.js'
+    'js/analysis-ui.js',
+    'js/comparison-runner.js',
+    'js/comparison-ui.js',
+    'js/comparison-state.js',
+    'js/lang-detect.js',
+    'js/core/aggregation.js',
+    'js/core/factors.js',
+    'js/core/format.js',
+    'js/core/headless-params.js',
+    'js/core/params.js',
+    'js/core/percentile.js',
+    'js/core/random.js',
+    'js/core/simulation.js',
+    'js/core/state.js',
+    'js/core/url.js',
+    'js/app/charts.js'
   ];
 
   const checkFiles = [
@@ -60,12 +75,75 @@ describe('stale v2 path sweep', () => {
     scanDirectory(path.resolve(process.cwd(), '.github'), (name) => name.endsWith('.yml') || name.endsWith('.yaml'));
   });
 
-  it('confirms absence of obsolete v2 paths across public docs/', () => {
+  it('confirms absence of obsolete v2 paths across docs/ (excluding only historic release-checklist.md)', () => {
     scanDirectory(path.resolve(process.cwd(), 'docs'), (name, full) => {
-      // Exclude internal release documentation which contains historical checklists
+      // Exclude only the historic working release checklist
       const rel = path.relative(process.cwd(), full).replace(/\\/g, '/');
-      if (rel.startsWith('docs/internal/')) return false;
+      if (rel === 'docs/internal/release-checklist.md') return false;
       return name.endsWith('.md');
     });
   });
+
+  it('confirms absence of obsolete .test.js references across docs/ and READMEs', () => {
+    const docsDir = path.resolve(process.cwd(), 'docs');
+    const docFiles = [
+      path.resolve(process.cwd(), 'README.md'),
+      path.resolve(process.cwd(), 'README-ja.md')
+    ];
+
+    function collectMd(dir: string) {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          collectMd(full);
+        } else if (entry.isFile() && entry.name.endsWith('.md')) {
+          const rel = path.relative(process.cwd(), full).replace(/\\/g, '/');
+          if (rel !== 'docs/internal/release-checklist.md') {
+            docFiles.push(full);
+          }
+        }
+      }
+    }
+    collectMd(docsDir);
+
+    for (const file of docFiles) {
+      const content = fs.readFileSync(file, 'utf-8');
+      expect(content, `File ${file} contains obsolete .test.js reference`).not.toMatch(/[a-zA-Z0-9_-]+\.test\.js\b/);
+    }
+  });
+
+  it('confirms absence of local agent paths (.agent/, .agents/, AGENTS.md) across public codebase and tests', () => {
+    const internalPaths = ['.' + 'agent/', '.' + 'agents/', 'AGENTS' + '.md'];
+    const publicDirs = ['src', 'tests', 'docs', 'scripts'];
+
+    for (const file of checkFiles) {
+      const content = fs.readFileSync(file, 'utf-8');
+      for (const p of internalPaths) {
+        expect(content, `Public file ${file} contains internal path ${p}`).not.toContain(p);
+      }
+    }
+
+    const scanForInternal = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scanForInternal(full);
+        } else if (entry.isFile() && !full.endsWith('stale-paths.test.ts')) {
+          if (full.endsWith('.ts') || full.endsWith('.js') || full.endsWith('.mjs') || full.endsWith('.md') || full.endsWith('.html') || full.endsWith('.css')) {
+            const content = fs.readFileSync(full, 'utf-8');
+            for (const p of internalPaths) {
+              expect(content, `File ${full} contains leaked internal path ${p}`).not.toContain(p);
+            }
+          }
+        }
+      }
+    };
+
+    for (const dirName of publicDirs) {
+      scanForInternal(path.resolve(process.cwd(), dirName));
+    }
+  });
 });
+

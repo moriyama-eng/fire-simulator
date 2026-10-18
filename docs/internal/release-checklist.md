@@ -1,4 +1,4 @@
-# Pre-Release Smoke Test Manual (v3.0.0)
+# Pre-Release Smoke Test Manual (v3.0.1)
 
 When releasing a new version, please perform manual verification using the following checklist.
 
@@ -38,9 +38,9 @@ When releasing a new version, please perform manual verification using the follo
 
 ## Release Scope
 
-- Target version: 3.0.0
-- Working branch name: release/v3.0.0
-- What changed in this release: Full-scale TypeScript migration across core calculation engine, CLI, Web Worker, UI controllers, and all 33 tests. Modern Vite build system for client bundles and ESM Web Worker. Standalone Node.js CLI executable bundled via tsup (`dist/cli.js`). Zero any strict type safety.
+- Target version: 3.0.1
+- Working branch name: release/v3.0.1
+- What changed in this release: Target asset ratio 0% preservation across UI, CLI, URL, INPUT_TO_DEFAULT_KEY mapping and strict fallback, 7 parity verification components, and leaked agent paths CI hygiene.
 - What did not change: Mathematical calculation algorithms and numerical reproducibility (zero algorithmic diff against golden fixtures), 2 frozen-seed canary reference fixtures untouched, serverless client-only web app architecture preserved.
 
 ### Document-Impact Table

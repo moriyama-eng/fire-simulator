@@ -4,14 +4,14 @@ The simulator guarantees **bit-for-bit reproducibility**: running the same param
 
 ## RNG Pipeline
 
-The random number generation pipeline in `js/core/random.js` has four layers:
+The random number generation pipeline in `src/core/random.ts` has four layers:
 
 ### 1. `splitmix32` — Seed Expansion
 
 A 32-bit hash function used to expand a single integer seed into four independent 32-bit state words for xoshiro128**:
 
 ```javascript
-// js/core/random.js
+// src/core/random.ts
 export function splitmix32(seed) {
     let s = seed | 0;
     return function () {
@@ -91,9 +91,9 @@ Z = tRand / Math.sqrt(simDf / (simDf - 2));   // requires df > 2
 
 ## Reproducibility Test
 
-`tests/unit/simulation.test.js` compares the simulator's current output against a golden reference (`tests/fixtures/reference-results.json`) generated at v1.8.3. Any change to the core RNG or simulation loop would break this test.
+`tests/unit/simulation.test.ts` compares the simulator's current output against a golden reference (`tests/fixtures/reference-results.json`) generated at v1.8.3. Any change to the core RNG or simulation loop would break this test.
 
-For the headless API, `tests/unit/headless.test.js` (T1, T2, T8) verifies:
+For the headless API, `tests/unit/headless.test.ts` (T1, T2, T8) verifies:
 - Bit-for-bit match against `tests/fixtures/headless-reference-results.json`.
 - Two runs with identical params produce identical results.
 - Worker-based and headless execution produce identical output.

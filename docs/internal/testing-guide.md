@@ -10,13 +10,13 @@
 
 ## 1. Test Overview
 
-This project uses two layers of automated testing with Vitest + jsdom across 42 TypeScript test files.
+This project uses two layers of automated testing with Vitest + jsdom across 45 TypeScript test files.
 
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
 |---|---|---|---|---|
-| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 35 files (336 test cases) |
-| Integration tests | `tests/integration/` | Vitest (jsdom) | DOM operations, UI state transitions, CLI subprocess execution | 7 files (49 test cases) |
-| **Total** | `tests/` | Vitest | Full test suite coverage | **42 files (385 test cases)** |
+| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 38 files (370 test cases) |
+| Integration tests | `tests/integration/` | Vitest (jsdom) | DOM operations, UI state transitions, CLI subprocess execution | 7 files (50 test cases) |
+| **Total** | `tests/` | Vitest | Full test suite coverage | **45 files (420 test cases)** |
 
 ### 1.1 Test Target Module Map
 
@@ -24,8 +24,8 @@ This project uses two layers of automated testing with Vitest + jsdom across 42 
 src/core/
 ├── aggregation.ts       → tests/unit/aggregation.test.ts
 ├── format.ts            → tests/unit/format.test.ts
-├── params.ts            → tests/unit/params.test.ts
-├── percentile.ts        → tests/unit/percentile.test.ts
+├── params.ts            → tests/unit/params.test.ts, tests/unit/pbt-core.test.ts
+├── percentile.ts        → tests/unit/percentile.test.ts, tests/unit/pbt-core.test.ts
 ├── random.ts            → tests/unit/random.test.ts
 ├── simulation.ts        → tests/unit/simulation.test.ts, tests/unit/simulation-edge-cases.test.ts
 ├── state.ts             → tests/integration/ui-state.test.ts, tests/unit/core-state.test.ts
@@ -34,7 +34,7 @@ src/core/
 └── headless-params.ts   → tests/unit/headless.test.ts
 
 src/app/
-├── charts.ts            → tests/unit/chart-helpers.test.ts
+├── charts.ts            → tests/unit/chart-helpers.test.ts, tests/integration/belowinit-charts.test.ts
 ├── actions-url-options.ts → tests/unit/actions-url-options.test.ts
 ├── ui-helpers.ts        → tests/unit/ui-helpers-currency.test.ts
 ├── summary.ts           → tests/unit/summary.test.ts
@@ -58,6 +58,22 @@ src/
 ├── app.ts               → tests/integration/init-dirty.test.ts (boot)
 ├── headless.ts          → tests/unit/headless.test.ts
 └── cli.ts               → tests/integration/cli.test.ts (via dist/cli.js)
+
+scripts/ & build/
+├── confinement.mjs      → tests/unit/confinement.test.ts, tests/unit/svg-sanitizer.test.ts
+├── copy-docs.mjs        → tests/unit/copy-docs.test.ts
+└── dev-middleware.mjs   → tests/unit/dev-middleware.test.ts
+
+tests/helpers/
+├── async-utils.ts       → tests/unit/async-utils.test.ts
+└── stub-worker.ts       → tests/unit/stub-worker.test.ts
+
+Documentation & Repository Parity
+├── README.md            → tests/unit/readme-parity.test.ts
+├── docs/**/*.md         → tests/unit/doc-links-integrity.test.ts
+├── testing-guide.md     → tests/unit/testing-guide-parity.test.ts
+├── stale paths sweep    → tests/unit/stale-paths.test.ts
+└── version surfaces     → tests/unit/version-parity.test.ts
 ```
 
 ### 1.2 Coverage Targets
@@ -126,7 +142,7 @@ npm test
 
 ### 2.5 Browser Smoke Testing (Headless and Headful)
 
-The project includes an end-to-end browser smoke test tool (`<local-smoke-tool>`) that verifies DOM interactions, simulation runs, Web Worker execution, subpath routing, docs SPA navigation, and SRI script loading against a real Chromium browser instance across 47 verification points.
+The project includes an end-to-end browser smoke test tool (`<local-smoke-tool>`) that verifies DOM interactions, simulation runs, Web Worker execution, subpath routing, docs SPA navigation, and SRI script loading against a real Chromium browser instance across 56 verification points.
 
 #### Headless Mode (Default / CI)
 
@@ -204,15 +220,15 @@ They differ from actual simulation results (output from running with default par
 
 ### 3.3 Mock Strategy
 
-- **`runSimulation` (simulation-engine.js)**: Mocked in most tests (analysis, comparison, below-init charts, init-dirty, and similar). Those tests do not start a real Web Worker; they substitute `makeDummySimResult()` or another mock return value.
-  Exception: `tests/unit/simulation-engine.test.js` replaces the global `Worker` with a stub that calls production `runWorkerBatch`, then awaits production `runSimulation`. Constructing `new Worker('js/worker.js')` is not a success condition.
+- **`runSimulation` (simulation-engine.ts)**: Mocked in most tests (analysis, comparison, below-init charts, init-dirty, and similar). Those tests do not start a real Web Worker; they substitute `makeDummySimResult()` or another mock return value.
+  Exception: `tests/unit/simulation-engine.test.ts` replaces the global `Worker` with a stub that calls production `runWorkerBatch`, then awaits production `runSimulation`. Constructing `new Worker(...)` is not a success condition.
 - **`vi.resetAllMocks()`**: Executed in `beforeEach` of each test to completely remove
   the residual counter of `mockRejectedValueOnce`.
 
 ### 3.4 Handling Asynchronous Tests
 
 Since Vitest 1.6 does not have `vi.waitFor`,
-use the `waitFor` function in `tests/helpers/async-utils.js` instead.
+use the `waitFor` function in `tests/helpers/async-utils.ts` instead.
 ```javascript
 await waitFor(() => {
   expect(element.classList.contains('hidden')).toBe(false);
@@ -224,19 +240,19 @@ Since CI environments may be slower than local environments, extend the `timeout
 
 ### 4.1 Unit Tests (`tests/unit/`)
 
-- Targets: Pure functions and state management modules under `js/core/`, plus some app helpers
+- Targets: Pure functions and state management modules under `src/core/`, plus some app helpers
 - Characteristics: Fast. Many cases are DOM-free pure functions. Some unit files use a jsdom DOM or a global `Worker` stub (`params-accessor`, `summary`, `ui-helpers-currency`, `simulation-engine`)
-- Naming: `{module-name}.test.js`
+- Naming: `{module-name}.test.ts`
 - Examples: Correctness of parameter conversion, reproducibility of random seeds, percentile calculation
 
 ### 4.2 Integration Tests (`tests/integration/`)
 
 - Targets: DOM operations, UI state transitions, event delegation
 - Characteristics: Executed in a `jsdom` environment with fixture HTML injected into `document.body.innerHTML`
-- Naming: `{feature-name}.test.js`
+- Naming: `{feature-name}.test.ts`
 - Examples: Toggle behavior of the factor selection UI, state transitions of the analysis execution flow
 
-### 4.3 Reproducibility Tests (`tests/unit/simulation.test.js`)
+### 4.3 Reproducibility Tests (`tests/unit/simulation.test.ts`)
 
 - Special unit test: Compares the current implementation's output with the fixed-seed execution results from v1.8.3 saved in `tests/fixtures/reference-results.json`
 - **Purpose**: To ensure that results have not changed during refactoring of the core calculation logic
@@ -244,11 +260,11 @@ Since CI environments may be slower than local environments, extend the `timeout
 - **Note**: Reference data was generated with `paths=1000`. Since `getParamsFromInputs` clamps `simPaths` to 5000, `params.simPaths = 1000` is set directly in the test code to maintain consistency with this reference data.
 - Headless T1 uses a **separate** fixture (`tests/fixtures/headless-reference-results.json`) and must not be compared to the UI reference numbers.
 
-### 4.4 Comparison Tab Tests (`tests/unit/comparison-*.test.js`, `tests/integration/comparison-ui.test.js`)
+### 4.4 Comparison Tab Tests (`tests/unit/comparison-*.test.ts`, `tests/integration/comparison-ui.test.ts`)
 
-- **State management** (`comparison-state.js`): Scenario addition, deletion, duplication, movement; clearing results when common settings change; movement processing when the array is empty, etc.
-- **Execution logic** (`comparison-runner.js`): Parameter conversion (including fixed rate 100 yen = 1 dollar), sequential execution, error handling, preventing interference of progress callbacks.
-- **UI helpers** (`comparison-ui.js`): Currency conversion (JPY ↔ USD), dynamic conversion of step/min/max in English mode, inverse conversion consistency, prevention of conversion of non-currency parameters.
+- **State management** (`comparison-state.ts`): Scenario addition, deletion, duplication, movement; clearing results when common settings change; movement processing when the array is empty, etc.
+- **Execution logic** (`comparison-runner.ts`): Parameter conversion (including fixed rate 100 yen = 1 dollar), sequential execution, error handling, preventing interference of progress callbacks.
+- **UI helpers** (`comparison-ui.ts`): Currency conversion (JPY ↔ USD), dynamic conversion of step/min/max in English mode, inverse conversion consistency, prevention of conversion of non-currency parameters.
 - **Integration tests**: Scenario addition/deletion (including confirmation cancel, which leaves the scenario count unchanged), reordering, conditional display (row hiding when CB/GR OFF), prevention of NaN when changing select boxes.
 
 ### 4.5 About E2E Tests (Reasons for Not Adopting)
@@ -294,7 +310,7 @@ Start each release-prep cycle from `release-checklist.template.md` (overwrite th
 ### 5.2 How to Create Fixtures
 
 ```javascript
-import { makeBaseMetrics, makeScenarioPoint, makeDummySimResult } from '../helpers/analysis-fixtures.js';
+import { makeBaseMetrics, makeScenarioPoint, makeDummySimResult } from '../helpers/analysis-fixtures.ts';
 
 // Basic metrics (default values)
 const metrics = makeBaseMetrics();

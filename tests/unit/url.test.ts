@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildSimulationUrl, parseQueryParams, applyParsedParams, applyQueryParams } from '../../src/core/url.js';
+import { getParamsFromInputs } from '../../src/core/params.js';
 import type { SimulationParams } from '../../src/types/params.js';
 
 beforeEach(() => {
@@ -36,6 +37,11 @@ describe('buildSimulationUrl - targetAssetRatio (tar)', () => {
     it('includes tar parameter when targetAssetRatio is provided', () => {
         const url = buildSimulationUrl(sampleParamsWithTar, { baseUrl: 'https://example.com/', percentileRaw: '10, 50, 90', seed: 123456 });
         expect(url.searchParams.get('tar')).toBe('1.2');
+    });
+
+    it('encodes tar=0.0 when targetAssetRatio is 0', () => {
+        const url = buildSimulationUrl({ ...sampleParams, targetAssetRatio: 0 }, { baseUrl: 'https://example.com/', percentileRaw: '10, 50, 90', seed: 123456 });
+        expect(url.searchParams.get('tar')).toBe('0.0');
     });
 
     it('excludes tar parameter when targetAssetRatio is undefined', () => {
@@ -140,6 +146,14 @@ describe('applyParsedParams and applyQueryParams', () => {
         expect((document.getElementById('returnModelSelect') as HTMLSelectElement).value).toBe('log-t');
         expect((document.getElementById('cashBufferToggle') as HTMLInputElement).checked).toBe(true);
         expect((document.getElementById('targetAssetRatioNum') as HTMLInputElement).value).toBe('150.0');
+    });
+
+    it('applies tar=0.0 to targetAssetRatioNum and resolves to targetAssetRatio=0 via getParamsFromInputs', () => {
+        applyParsedParams({ tar: '0.0' });
+        const el = document.getElementById('targetAssetRatioNum') as HTMLInputElement;
+        expect(el.value).toBe('0.0');
+        const params = getParamsFromInputs({ targetAssetRatioNum: el.value });
+        expect(params.targetAssetRatio).toBe(0);
     });
 
     it('applyQueryParams runs without error when no query params exist', () => {
