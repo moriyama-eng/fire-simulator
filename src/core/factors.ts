@@ -1,7 +1,7 @@
 // src/core/factors.ts
 // Strategy lever definitions (pure data).
 // paramKey must match the corresponding property name in effectiveParams.
-// This file is re-exported from analysis-state.js.
+// This file is re-exported from analysis-state.ts.
 import type { FactorDefinition } from '../types/params.js';
 
 export const FACTORS: readonly FactorDefinition[] = [

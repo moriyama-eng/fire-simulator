@@ -34,7 +34,6 @@ interface OutputRowDef {
     getValue: (r: AggregatedMetrics | null | undefined) => number | undefined;
     format: (v: number | undefined) => string | null;
     isPercentage: boolean;
-    isLowerBetter?: boolean;
 }
 
 
@@ -73,13 +72,13 @@ const PARAM_ROWS: ParamRowDef[] = [
     { key: 'guardrail_reduction', labelKey: 'gr.reduction', inputType: 'number', unitKey: 'unit.percent', tooltipKey: 'gr.reduction.tooltip', field: 'guardrailReduction', step: 5.0, min: -100, max: 0, scale: 1, displayCondition: (inputs) => inputs.guardrailEnabled },
 ];
 
-// ----- Output row definitions (removed isLowerBetter from worst10_max_dd) -----
+// ----- Output row definitions -----
 const OUTPUT_ROWS: OutputRowDef[] = [
     { key: 'success_rate', labelKey: 'summary.successRate', unitKey: 'unit.percent', tooltipKey: 'summary.successRate.tooltip', getValue: (r) => r?.successRate, format: (v) => v !== undefined ? v.toFixed(1) + '%' : null, isPercentage: true },
-    { key: 'final_median', labelKey: 'summary.finalMedian', unitKey: 'unit.oku', tooltipKey: 'comparison.finalMedian.tooltip', getValue: (r) => r?.finalMedian, format: (v) => v !== undefined ? formatCurrency(v, '億円') : null, isPercentage: false },
+    { key: 'final_median', labelKey: 'summary.finalMedian', unitKey: 'unit.oku', tooltipKey: 'comparison.finalMedian.tooltip', getValue: (r) => r?.finalMedian, format: (v) => v !== undefined ? formatCurrency(v, '\u5104\u5186') : null, isPercentage: false },
     { key: 'target_maintain_rate', labelKey: 'summary.targetMaintainRate', unitKey: 'unit.percent', tooltipKey: 'summary.targetMaintainRate.tooltip', getValue: (r) => r?.targetAssetMaintainRate, format: (v) => v !== undefined ? v.toFixed(1) + '%' : null, isPercentage: true },
     { key: 'worst10_max_dd', labelKey: 'analysis.compare.headers.worst10MaxDd', unitKey: 'unit.percent', tooltipKey: 'analysis.compare.headers.worst10MaxDd.tooltip', getValue: (r) => r?.worst10MaxDd, format: (v) => v !== undefined ? (v * 100).toFixed(1) + '%' : null, isPercentage: true },
-    { key: 'median_max_uw', labelKey: 'comparison.median_max_uw', unitKey: 'unit.years', tooltipKey: 'comparison.medianMaxUw.tooltip', getValue: (r) => r?.medianMaxUw, format: (v) => v !== undefined ? (v / 12).toFixed(1) + ' ' + t('unit.years') : null, isPercentage: false, isLowerBetter: true },
+    { key: 'median_max_uw', labelKey: 'comparison.median_max_uw', unitKey: 'unit.years', tooltipKey: 'comparison.medianMaxUw.tooltip', getValue: (r) => r?.medianMaxUw, format: (v) => v !== undefined ? (v / 12).toFixed(1) + ' ' + t('unit.years') : null, isPercentage: false },
 ];
 
 // ----- Helper functions (currency conversion and boundary value conversion) -----

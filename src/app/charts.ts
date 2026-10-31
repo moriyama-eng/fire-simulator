@@ -168,7 +168,7 @@ export function applyDownsideFocus(chart: ChartInstance | null | undefined, enab
 }
 
 // ====================================================================
-// v2.3.0: Common CCDF point generation helper (with thinning for reduced UI load)
+// Common CCDF point generation helper (with thinning for reduced UI load)
 // ====================================================================
 export function buildCdfPoints(
     sortedData: ArrayLike<number>,
@@ -218,9 +218,9 @@ export function formatAssetTooltipLabel({
         const oku = (value / 100000000).toFixed(2);
         const maxLen = Math.max(...allValues.map(v =>
             (v !== null && v !== undefined) ? (v / 100000000).toFixed(2).length : 1));
-        return `${label}:${oku.padStart(maxLen + 1)} 億円`;
+        return `${label}:${oku.padStart(maxLen + 1)} \u5104\u5186`;
     }
-    return `${label}: ${formatCurrency(value, '億円')}`;
+    return `${label}: ${formatCurrency(value, '\u5104\u5186')}`;
 }
 
 // ====================================================================
@@ -373,7 +373,7 @@ export function renderAssetChart(result: AggregatedMetrics, isLogScale?: boolean
                                     if (!isAllowed) return null;
                                 }
                             }
-                            return formatCurrency(numVal, numVal >= 1e8 ? '億円' : '万円');
+                            return formatCurrency(numVal, numVal >= 1e8 ? '\u5104\u5186' : '\u4e07\u5186');
                         },
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -466,7 +466,7 @@ export function renderCashChart(result: AggregatedMetrics): void {
                             const allItems = ctxObj.chart.tooltip.dataPoints;
                             const maxLblLen = Math.max(...allItems.map(item => item.dataset.label.length));
                             const lbl = ctxObj.dataset.label.padStart(maxLblLen);
-                            return `${lbl}: ${formatCurrency(val, '万円')}`;
+                            return `${lbl}: ${formatCurrency(val, '\u4e07\u5186')}`;
                         },
                     },
                 },
@@ -496,7 +496,7 @@ export function renderCashChart(result: AggregatedMetrics): void {
                         font: { size: 13 },
                         callback: function (value: unknown) {
                             const numVal = Number(value);
-                            return formatCurrency(numVal, numVal >= 1e8 ? '億円' : '万円');
+                            return formatCurrency(numVal, numVal >= 1e8 ? '\u5104\u5186' : '\u4e07\u5186');
                         },
                     },
                     grid: { color: 'rgba(100,116,139,0.1)' },
@@ -720,7 +720,7 @@ export function renderUwCdfChart(result: AggregatedMetrics): void {
 }
 
 // ====================================================================
-// v2.3.0: Below-initial-assets continuous period CCDF chart rendering
+// Below-initial-assets continuous period CCDF chart rendering
 // ====================================================================
 export function renderBelowInitCdfChart(result: AggregatedMetrics): void {
     const ChartClass = typeof Chart !== 'undefined' ? Chart : undefined;
@@ -811,7 +811,7 @@ export function renderBelowInitCdfChart(result: AggregatedMetrics): void {
 }
 
 // ====================================================================
-// v2.3.0: Consecutive risk asset sell period CCDF chart rendering
+// Consecutive risk asset sell period CCDF chart rendering
 // ====================================================================
 export function renderConsecutiveSellCdfChart(result: AggregatedMetrics): void {
     const ChartClass = typeof Chart !== 'undefined' ? Chart : undefined;

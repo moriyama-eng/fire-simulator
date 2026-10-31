@@ -29,7 +29,7 @@ Exceptions: `README-ja.md` (Japanese README) and the `TRANSLATIONS.ja` values in
 - **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./src/**/*.{ts,js}`).
 - **Generated Bundle**: `css/tailwind.css` (minified bundle, committed to repository).
 - **Custom App Styles**: `css/style.css` (custom CSS rules, `@font-face` definitions, animations, and non-utility CSS).
-- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=3.0.1">` followed by `<link rel="stylesheet" href="css/style.css?v=3.0.1">`.
+- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=3.0.2">` followed by `<link rel="stylesheet" href="css/style.css?v=3.0.2">`.
 
 ## Code References
 

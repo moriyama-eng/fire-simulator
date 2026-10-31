@@ -1,6 +1,4 @@
 // src/types/global.d.ts
-import type { SimulationParams } from './params.js';
-import type { AggregatedMetrics, BatchResult } from './simulation.js';
 
 // ---- Ambient Declarations for External CDN Libraries (Zero any) ----
 
@@ -107,7 +105,6 @@ export type HTML2CanvasFunction = (element: HTMLElement, options?: HTML2CanvasOp
 declare global {
   interface Window {
     __currentLang?: string;
-    lastMainExecutionMs?: number;
     lastSimOnlyMs?: number;
     __setLanguage?: (lang: string) => void;
     __getLanguage?: () => string;
@@ -116,47 +113,9 @@ declare global {
     html2canvas?: HTML2CanvasFunction;
   }
   var __currentLang: string | undefined;
-  var lastMainExecutionMs: number | undefined;
   var lastSimOnlyMs: number | undefined;
   var Chart: ChartConstructor | undefined;
   var Sortable: SortableConstructor | undefined;
   var html2canvas: HTML2CanvasFunction | undefined;
-}
-
-// ---- Ambient Declarations for Transitionally Referenced Modules ----
-
-declare module '*/i18n.js' {
-  export function getLanguage(): string;
-  export function setLanguage(lang: string): void;
-  export function getSupportedLanguages(): string[];
-  export function t(key: string, placeholders?: unknown[] | Record<string, string | number>): string;
-  export function formatCurrency(v: number, unit?: string): string;
-  export function formatPercent(v: number): string;
-  export function formatDate(d: Date): string;
-  export function formatNumber(v: number): string;
-  export function formatYears(v: number): string;
-  export const TRANSLATIONS: Record<string, Record<string, string>>;
-}
-
-declare module '*/worker.js' {
-  export function runWorkerBatch(
-    params: SimulationParams,
-    pathsCount: number,
-    seedOffset: number,
-    dataLen: number,
-    onProgress?: (completed: number) => void
-  ): BatchResult;
-}
-
-declare module '*/headless.js' {
-  export function runSimulationHeadless(
-    params: SimulationParams,
-    percentiles?: number[],
-    numWorkers?: number
-  ): AggregatedMetrics;
-}
-
-declare module '*/params-accessor.js' {
-  export function getCurrentSimParams(): SimulationParams;
 }
 

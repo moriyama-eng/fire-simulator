@@ -182,4 +182,71 @@ Actual live counts:
       `Test files on disk missing from Section 1.1 module map: ${unmappedOnDisk.join(', ')}`
     ).toEqual([]);
   });
+
+  it('verifies all target modules in Section 1.1 and all tests/helpers and tests/fixtures paths in testing-guide.md exist on disk', () => {
+    const guideContent = fs.readFileSync(guidePath, 'utf-8');
+
+    const startSection11 = guideContent.indexOf('### 1.1 Test Target Module Map');
+    expect(startSection11, 'Section 1.1 not found').toBeGreaterThan(-1);
+
+    const endSection11 = guideContent.indexOf('### 1.2 Coverage Targets', startSection11);
+    expect(endSection11, 'Section 1.2 not found').toBeGreaterThan(startSection11);
+
+    const section11Text = guideContent.slice(startSection11, endSection11);
+    const lines = section11Text.split(/\r?\n/);
+
+    let activePrefix: string | null = null;
+    const missingTargets: string[] = [];
+
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+      if (
+        trimmed === 'src/core/' ||
+        trimmed === 'src/app/' ||
+        trimmed === 'src/' ||
+        trimmed === 'tests/helpers/'
+      ) {
+        activePrefix = trimmed;
+        continue;
+      }
+      if (trimmed === 'scripts/ & build/') {
+        activePrefix = '';
+        continue;
+      }
+      if (trimmed === 'Documentation & Repository Parity') {
+        activePrefix = null;
+        continue;
+      }
+
+      if (activePrefix !== null) {
+        const treeMatch = trimmed.match(/^[├└]──\s+(.+?)\s+→/);
+        if (treeMatch) {
+          const rawTarget = treeMatch[1].replace(/\s*\([^)]*\)\s*$/, '').trim();
+          const resolvedRel = activePrefix + rawTarget;
+          if (!fs.existsSync(path.resolve(root, resolvedRel))) {
+            missingTargets.push(resolvedRel);
+          }
+        }
+      }
+    }
+
+    expect(
+      missingTargets,
+      `Target modules in Section 1.1 that do not exist on disk: ${missingTargets.join(', ')}`
+    ).toEqual([]);
+
+    const helperFixtureMatches =
+      guideContent.match(/\btests\/(?:helpers|fixtures)\/[a-zA-Z0-9_.-]+\.(?:ts|js|json|html)\b/g) || [];
+    const missingHelperFixtures: string[] = [];
+    for (const relPath of new Set(helperFixtureMatches)) {
+      if (!fs.existsSync(path.resolve(root, relPath))) {
+        missingHelperFixtures.push(relPath);
+      }
+    }
+
+    expect(
+      missingHelperFixtures,
+      `tests/helpers or tests/fixtures paths in testing-guide.md that do not exist on disk: ${missingHelperFixtures.join(', ')}`
+    ).toEqual([]);
+  });
 });

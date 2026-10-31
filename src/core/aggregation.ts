@@ -20,13 +20,13 @@ export function transposeFlat(
     return result;
 }
 
-// Changed to sequential transposition method in v1.10.0 for memory efficiency. Same implementation maintained in v2.0.0.
+// Sequential transposition method for memory efficiency.
 // Calculate and release each of the three types of buffers (total assets, cash, drawdown) one at a time.
 export function aggregateResultsProduction({
     totalsBuffer, cashesBuffer, ddsBuffer,
     maxDdPerPath, maxUwPerPath,
-    belowInitPeriods,        // v2.3.0: Longest consecutive period below initial total assets per path
-    consecutiveSellPeriods,  // v2.3.0: Longest consecutive risk asset sell period per path
+    belowInitPeriods,        // Longest consecutive period below initial total assets per path
+    consecutiveSellPeriods,  // Longest consecutive risk asset sell period per path
     simPaths, dataLen, percentiles, bankruptCount,
     targetAssetRatio,
     initialTotalAssets

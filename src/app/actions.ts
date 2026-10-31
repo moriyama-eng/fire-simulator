@@ -19,7 +19,6 @@ import {
     getIsRunning, setIsRunning,
     getIsResultDirty, setIsResultDirty,
     getLastExecutedParams, setLastExecutedParams,
-    setLastMainExecutionMs,
 } from './state.js';
 import {
     renderAssetChart, renderCashChart,
@@ -33,7 +32,7 @@ import type { BaseEffectiveParams } from '../analysis-state.js';
 
 // ====================================================================
 // Update the input change flag
-// Wrapper for markInputChanged in core/state.js
+// Wrapper for markInputChanged in core/state.ts
 // ====================================================================
 export function markInputChanged(): void {
     coreMarkInputChanged(); // Internally calls setDirty(true) and disables the button
@@ -91,7 +90,6 @@ function getParamsFromDom(): SimulationParams {
 // ====================================================================
 export async function runMain(): Promise<void> {
     if (getIsRunning()) return;
-    const _analysisStartTime = performance.now();
     setIsRunning(true);
 
     const runBtn = document.getElementById('runBtn') as HTMLButtonElement | null;
@@ -121,7 +119,7 @@ export async function runMain(): Promise<void> {
         const percentiles = parsePercentiles(pctVal);
         const simStartTime = performance.now();
         const result = await runSimulation(params, percentiles);
-        // Stored on window because analysis-runner.js references it
+        // Stored on window because analysis-ui.ts references it
         if (typeof window !== 'undefined') {
             window.lastSimOnlyMs = performance.now() - simStartTime;
         }
@@ -138,7 +136,7 @@ export async function runMain(): Promise<void> {
         if (params.cashBufferToggle) renderCashChart(result);
         renderDdCdfChart(result);
         renderUwCdfChart(result);
-        // v2.3.0: Render new indicator charts
+        // Render additional indicator charts
         renderBelowInitCdfChart(result);
         renderConsecutiveSellCdfChart(result);
         markResultClean(); // Enable the share button
@@ -167,7 +165,6 @@ export async function runMain(): Promise<void> {
         const lastSimResult = getLastSimResult();
         if (lastSimResult) {
             setLastExecutedParams(getParamsFromDom());
-            setLastMainExecutionMs(performance.now() - _analysisStartTime);
             syncBaseToAnalysisIfOpen();
         }
     }
@@ -202,20 +199,16 @@ export async function saveImage(): Promise<void> {
         const capRiskAsset = document.getElementById('capRiskAsset');
         if (capRiskAsset) {
             capRiskAsset.textContent = isJa
-                ? (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '億円'
-                : formatCurrency(params.initialRiskAsset, '億円');
+                ? (params.initialRiskAsset / 100000000).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '\u5104\u5186'
+                : formatCurrency(params.initialRiskAsset, '\u5104\u5186');
         }
         const capCash = document.getElementById('capCash');
         if (capCash) {
-            capCash.textContent = isJa
-                ? formatCurrency(params.initialCashBuffer, '万円')
-                : formatCurrency(params.initialCashBuffer, '万円');
+            capCash.textContent = formatCurrency(params.initialCashBuffer, '\u4e07\u5186');
         }
         const capExpense = document.getElementById('capExpense');
         if (capExpense) {
-            capExpense.textContent = isJa
-                ? formatCurrency(params.monthlyExpense, '万円')
-                : formatCurrency(params.monthlyExpense, '万円');
+            capExpense.textContent = formatCurrency(params.monthlyExpense, '\u4e07\u5186');
         }
 
         const modelText = lastSimResult.modelType === 'log-t' ? t('summary.model.logt') : t('summary.model.lognormal');
@@ -241,7 +234,7 @@ export async function saveImage(): Promise<void> {
         const capSuccess = document.getElementById('capSuccess');
         if (capSuccess) capSuccess.textContent = formatPercent(lastSimResult.successRate / 100);
         const capMedian = document.getElementById('capMedian');
-        if (capMedian) capMedian.textContent = formatCurrency(lastSimResult.finalMedian, '億円');
+        if (capMedian) capMedian.textContent = formatCurrency(lastSimResult.finalMedian, '\u5104\u5186');
         const capTargetMaintainRate = document.getElementById('capTargetMaintainRate');
         if (capTargetMaintainRate) capTargetMaintainRate.textContent = lastSimResult.targetAssetMaintainRate.toFixed(1) + '%';
         const capTargetRatio = document.getElementById('capTargetRatio');
@@ -423,9 +416,9 @@ export function shareToX(): void {
         lang: getLanguage()
     }));
     const text = t('share.x.template', [
-        formatCurrency(p.initialRiskAsset, '億円'),
-        formatCurrency(p.initialCashBuffer, '万円'),
-        formatCurrency(p.monthlyExpense, '万円'),
+        formatCurrency(p.initialRiskAsset, '\u5104\u5186'),
+        formatCurrency(p.initialCashBuffer, '\u4e07\u5186'),
+        formatCurrency(p.monthlyExpense, '\u4e07\u5186'),
         p.expectedReturn.toFixed(1),
         p.volatility.toFixed(1),
         p.inflationRate.toFixed(1),

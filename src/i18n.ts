@@ -596,7 +596,7 @@ function getAppVersion(): string {
       }
     }
   } catch (_e) { /* In test environments, document may be special */ }
-  return '3.0.1'; // Fallback (sync with the actual latest version)
+  return '3.0.2'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION: string = getAppVersion();
 

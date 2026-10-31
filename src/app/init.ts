@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (getDdHistChart() && lastSimResult) renderDdCdfChart(lastSimResult);
             if (getUwHistChart() && lastSimResult) renderUwCdfChart(lastSimResult);
-            // v2.3.0: Redraw new indicator charts on language switch
+            // Redraw additional indicator charts on language switch
             if (getBelowInitChart() && lastSimResult) renderBelowInitCdfChart(lastSimResult);
             if (getSellChart() && lastSimResult) renderConsecutiveSellCdfChart(lastSimResult);
             import('../analysis-ui.js').then(AUI => {

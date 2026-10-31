@@ -14,9 +14,9 @@ This project uses two layers of automated testing with Vitest + jsdom across 45 
 
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
 |---|---|---|---|---|
-| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 38 files (370 test cases) |
+| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 38 files (372 test cases) |
 | Integration tests | `tests/integration/` | Vitest (jsdom) | DOM operations, UI state transitions, CLI subprocess execution | 7 files (50 test cases) |
-| **Total** | `tests/` | Vitest | Full test suite coverage | **45 files (420 test cases)** |
+| **Total** | `tests/` | Vitest | Full test suite coverage | **45 files (422 test cases)** |
 
 ### 1.1 Test Target Module Map
 
@@ -60,9 +60,9 @@ src/
 └── cli.ts               → tests/integration/cli.test.ts (via dist/cli.js)
 
 scripts/ & build/
-├── confinement.mjs      → tests/unit/confinement.test.ts, tests/unit/svg-sanitizer.test.ts
-├── copy-docs.mjs        → tests/unit/copy-docs.test.ts
-└── dev-middleware.mjs   → tests/unit/dev-middleware.test.ts
+├── scripts/lib/confinement.mjs → tests/unit/confinement.test.ts, tests/unit/svg-sanitizer.test.ts
+├── scripts/copy-docs.mjs       → tests/unit/copy-docs.test.ts
+└── vite.config.ts (createDocsMiddleware) → tests/unit/dev-middleware.test.ts
 
 tests/helpers/
 ├── async-utils.ts       → tests/unit/async-utils.test.ts
@@ -227,9 +227,8 @@ They differ from actual simulation results (output from running with default par
 
 ### 3.4 Handling Asynchronous Tests
 
-Since Vitest 1.6 does not have `vi.waitFor`,
-use the `waitFor` function in `tests/helpers/async-utils.ts` instead.
-```javascript
+Use the `waitFor` helper in `tests/helpers/async-utils.ts` (which delegates to Vitest's native `vi.waitFor` with custom timeout diagnostic formatting):
+```typescript
 await waitFor(() => {
   expect(element.classList.contains('hidden')).toBe(false);
 }, { timeout: 5000 });
@@ -309,7 +308,7 @@ Start each release-prep cycle from `release-checklist.template.md` (overwrite th
 
 ### 5.2 How to Create Fixtures
 
-```javascript
+```typescript
 import { makeBaseMetrics, makeScenarioPoint, makeDummySimResult } from '../helpers/analysis-fixtures.ts';
 
 // Basic metrics (default values)
@@ -327,7 +326,7 @@ const simResult = makeDummySimResult({ finalMedian: 500_000_000 });
 
 ### 5.3 DOM Test Patterns
 
-```javascript
+```typescript
 import { readFileSync } from 'fs';
 
 // Read fixture HTML
@@ -350,8 +349,7 @@ it('toggles state on click', () => {
 
 ### 5.4 Known Constraints and Precautions
 
-- **`vi.mocked()` is prohibited**: Since it is unstable in Vitest 1.6,
-  access mock function properties (`.mock.calls`, etc.) directly
+- **Avoid `vi.mocked()`**: Access mock function properties (`.mock.calls`, etc.) or typed mock helpers directly for consistency across test files
 - **Cleanup in `afterEach`**: Since `vi.resetAllMocks()` is executed in `beforeEach`,
   cleanup of mock state within test functions is unnecessary (completely reset at the start of the next test)
 - **Countermeasure for undefined `window.alert`**: In the test environment, `window.alert` may not exist,
@@ -359,7 +357,7 @@ it('toggles state on click', () => {
 - **Asynchronous assertions**: Use the `waitFor` helper and set the timeout appropriately
   (considering that CI environments may be slower than local environments)
 
-## v2.4.x Additional Tests
+## Additional Headless, CLI, and Clamp Tests
 
 | Test ID | File | Description |
 | --- | --- | --- |

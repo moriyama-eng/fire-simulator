@@ -167,7 +167,7 @@ export function applyQueryParams(runMainFn: () => void): void {
     if (Object.keys(parsed).length === 0) return;
 
     // Initialization order contract:
-    // boot script (lang resolved) -> i18n.js guard passthrough -> step 17 (translate + render)
+    // boot script (lang resolved) -> i18n.ts guard passthrough -> step 17 (translate + render)
     // -> step 18 (EN: convertCurrencyInputs HTML defaults) -> step 23 (applyQueryParams URL values)
     // Language is already set at boot; setLanguage must NOT be called here to avoid
     // double-conversion of currency inputs.

@@ -145,5 +145,92 @@ describe('stale v2 path sweep', () => {
       scanForInternal(path.resolve(process.cwd(), dirName));
     }
   });
+
+  it('confirms absence of bare legacy .js module names in docs, entry HTML, and src/ comments', () => {
+    const bareLegacyModules = [
+      'app.js',
+      'actions.js',
+      'actions-url-options.js',
+      'ui-helpers.js',
+      'charts.js',
+      'init.js',
+      'summary.js',
+      'simulation.js',
+      'simulation-engine.js',
+      'worker.js',
+      'analysis-runner.js',
+      'analysis-ui.js',
+      'analysis-state.js',
+      'comparison-runner.js',
+      'comparison-ui.js',
+      'comparison-state.js',
+      'factors.js',
+      'headless-params.js',
+      'params.js',
+      'percentile.js',
+      'random.js',
+      'aggregation.js',
+      'format.js',
+      'url.js',
+      'state.js',
+      'i18n.js'
+    ];
+    const bareLegacyPattern = new RegExp(
+      '(?<![/.a-zA-Z0-9_-])(?:' +
+        bareLegacyModules.map(m => m.replace('.', '\\.')).join('|') +
+        ')\\b'
+    );
+
+    const docAndEntryFiles = [...checkFiles];
+    const collectDocs = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          collectDocs(full);
+        } else if (entry.isFile() && entry.name.endsWith('.md')) {
+          const rel = path.relative(process.cwd(), full).replace(/\\/g, '/');
+          if (rel !== 'docs/internal/release-checklist.md') {
+            docAndEntryFiles.push(full);
+          }
+        }
+      }
+    };
+    collectDocs(path.resolve(process.cwd(), 'docs'));
+
+    for (const file of docAndEntryFiles) {
+      const content = fs.readFileSync(file, 'utf-8');
+      expect(
+        content,
+        `File ${file} contains bare legacy .js module reference`
+      ).not.toMatch(bareLegacyPattern);
+    }
+
+    const scanSrcComments = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scanSrcComments(full);
+        } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+          const lines = fs.readFileSync(full, 'utf-8').split(/\r?\n/);
+          lines.forEach((line, idx) => {
+            const trimmed = line.trim();
+            if (
+              trimmed.startsWith('//') ||
+              trimmed.startsWith('/*') ||
+              trimmed.startsWith('*')
+            ) {
+              expect(
+                line,
+                `Comment in ${full}:${idx + 1} contains bare legacy .js module reference`
+              ).not.toMatch(bareLegacyPattern);
+            }
+          });
+        }
+      }
+    };
+    scanSrcComments(path.resolve(process.cwd(), 'src'));
+  });
 });
 

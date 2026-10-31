@@ -191,7 +191,7 @@ export function clampMinDf(v: unknown): number {
 }
 
 // Guardrail cross-validation (PURE function -- no DOM side effects).
-// Source: actions.js runMain UI path, but the DOM write-back (releaseInput.value=...)
+// Source: app/actions.ts runMain UI path, but the DOM write-back (releaseInput.value=...)
 // is intentionally excluded; this returns only the resolved release value.
 export function resolveGuardrailRelease(toggle: boolean, trigger: number, release: number): number {
     return (toggle && release < trigger) ? trigger : release;

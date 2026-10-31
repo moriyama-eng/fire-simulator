@@ -17,7 +17,7 @@ This is within the Node.js default heap limit (~1.5 GB), but be cautious with la
 
 ### `runSimulationHeadless(params, percentiles, options)`
 
-```js
+```typescript
 import { runSimulationHeadless } from './src/headless.ts';
 ```
 
@@ -63,7 +63,7 @@ The return value of `aggregateResultsProduction()` with the following meta field
 
 ### `normalizeHeadlessParams(raw)`
 
-```js
+```typescript
 import { normalizeHeadlessParams } from './src/core/headless-params.ts';
 ```
 
@@ -101,7 +101,7 @@ and `comparison-runner`. Returns a fully normalized params object.
 
 ## Usage Example
 
-```js
+```typescript
 import { normalizeHeadlessParams } from './src/core/headless-params.ts';
 import { runSimulationHeadless } from './src/headless.ts';
 

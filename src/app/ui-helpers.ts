@@ -1,7 +1,7 @@
 // ====================================================================
 // src/app/ui-helpers.ts
 // UI helper functions
-// Dependencies: i18n.js, core/params.js only (does not reference state.js)
+// Dependencies: i18n.ts, core/params.ts only (does not reference state.ts)
 // ====================================================================
 
 import { t } from '../i18n.js';
@@ -284,7 +284,7 @@ export function setupHybridInputs(): void {
 
             // Fire event when value changes
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            // Notify via custom event because markInputChanged is defined in actions.js
+            // Notify via custom event because markInputChanged is defined in actions.ts
             input.dispatchEvent(new Event('change', { bubbles: true }));
         };
 

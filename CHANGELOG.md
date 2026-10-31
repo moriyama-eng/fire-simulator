@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v3.0.2] - 2026-10-31
+
+### Fixed
+- **Stale Documentation & Code Comments Sweep**: Updated outdated `.js` module file extensions and historic version/issue references across documentation (`docs/`), entry HTML (`index.html`), source code comments (`src/`), and test suites (`tests/`) to point accurately to current TypeScript files (`.ts`).
+- **HTML Tooltip & CI Trigger Hygiene**: Removed duplicate note `<span>` and erroneous `data-i18n` attribute in `index.html` drawdown replenish tooltip. Updated `.github/workflows/deploy.yml` push triggers to track only `[main]` branch.
+- **Ambient Type Declarations & Unused Property Cleanup**: Removed obsolete ambient module declarations (`declare module '*/...js'`) in `src/types/global.d.ts`, removed dead execution timer state `lastMainExecutionMs`, and removed unused `isLowerBetter` property from comparison UI output definitions.
+
+### Added
+- **Automated Parity & Stale Path Regression Tests**: Strengthened `tests/unit/stale-paths.test.ts` to enforce absence of bare legacy `.js` module names across public documentation, entry HTML, and source comments. Hardened `tests/unit/testing-guide-parity.test.ts` to verify existence of all target modules in `docs/internal/testing-guide.md` Section 1.1 and all referenced helper/fixture files on disk.
+
+> **Mathematical calculation engine and reproducibility are fully preserved; core simulation results remain bit-for-bit identical to v2.x, v3.0.0, and v3.0.1.**
+
 ## [v3.0.1] - 2026-10-18
 
 ### Fixed
