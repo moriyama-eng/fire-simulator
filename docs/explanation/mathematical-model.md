@@ -14,7 +14,7 @@ where `Z_t` is a standard-normal random variable, and:
 $$\mu_m = \frac{\mu_{\text{annual}}}{12}, \quad \sigma_m = \frac{\sigma_{\text{annual}}}{\sqrt{12}}$$
 
 In code (`src/core/simulation.ts`):
-```javascript
+```typescript
 currentRiskAsset *= Math.exp(monthlyDrift + monthlyVol * Z);
 ```
 
@@ -27,7 +27,7 @@ unbiased in the log-normal sense:
 $$\mu_{\text{annual}} = \ln(1 + \mu_{\text{arith}}) - \frac{\sigma_{\text{annual}}^2}{2}$$
 
 In code:
-```javascript
+```typescript
 const adjustedAnnualDrift = Math.log(1 + arithmeticReturn) - (annualVol * annualVol) / 2;
 const monthlyDrift = adjustedAnnualDrift / 12;
 ```
@@ -65,7 +65,7 @@ This rescaling normalizes the distribution to unit variance, keeping the same dr
 parameterization as the log-normal model while introducing heavier tails (fat-tail risk).
 
 In code:
-```javascript
+```typescript
 const tRand = rngs.tRand(simDf);
 Z = tRand / Math.sqrt(simDf / (simDf - 2));
 ```
@@ -85,7 +85,7 @@ where:
 - \(\bar{r}_{\inf}\) = `inflationRate / 100`
 
 In code:
-```javascript
+```typescript
 const C = (1 - infAr) * expectedLongTermInf;
 currentInfRate = C + (infAr * currentInfRate) + (monthlyInfVol * InfZ);
 infMultiplier *= Math.exp(currentInfRate / 12);

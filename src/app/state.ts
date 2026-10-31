@@ -12,16 +12,12 @@ let assetChart: ChartInstance | null = null;
 let cashChart: ChartInstance | null = null;
 let ddHistChart: ChartInstance | null = null;
 let uwHistChart: ChartInstance | null = null;
-let belowInitChart: ChartInstance | null = null;  // v2.3.0: Chart for the consecutive period below initial total assets
-let sellChart: ChartInstance | null = null;       // v2.3.0: Chart for the consecutive risk asset sell period
+let belowInitChart: ChartInstance | null = null;  // Chart for the consecutive period below initial total assets
+let sellChart: ChartInstance | null = null;       // Chart for the consecutive risk asset sell period
 let lastSimResult: AggregatedMetrics | null = null;
 let isRunning = false;
 let isResultDirty = false;  // Flag indicating un-executed state after input change
 let lastExecutedParams: SimulationParams | null = null;      // Parameters of the last successful execution
-let lastMainExecutionMs: number | null = null;     // Execution time in milliseconds
-if (typeof window !== 'undefined') {
-    window.lastMainExecutionMs = undefined;
-}
 
 // Getters
 export function getAssetChart(): ChartInstance | null { return assetChart; }
@@ -34,7 +30,6 @@ export function getLastSimResult(): AggregatedMetrics | null { return lastSimRes
 export function getIsRunning(): boolean { return isRunning; }
 export function getIsResultDirty(): boolean { return isResultDirty; }
 export function getLastExecutedParams(): SimulationParams | null { return lastExecutedParams; }
-export function getLastMainExecutionMs(): number | null { return lastMainExecutionMs; }
 
 // Setters
 export function setAssetChart(val: ChartInstance | null): void { assetChart = val; }
@@ -47,10 +42,3 @@ export function setLastSimResult(val: AggregatedMetrics | null): void { lastSimR
 export function setIsRunning(val: boolean): void { isRunning = val; }
 export function setIsResultDirty(val: boolean): void { isResultDirty = val; }
 export function setLastExecutedParams(val: SimulationParams | null): void { lastExecutedParams = val; }
-export function setLastMainExecutionMs(val: number | null): void {
-    lastMainExecutionMs = val;
-    // Sync because analysis-runner.js references window.lastMainExecutionMs
-    if (typeof window !== 'undefined') {
-        window.lastMainExecutionMs = val ?? undefined;
-    }
-}

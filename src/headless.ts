@@ -53,7 +53,7 @@ export function runSimulationHeadless(
 
   // ---- Step 2: Per-path simulation ----
   for (let p = 0; p < simPaths; p++) {
-    // Generator creation order must exactly match worker.js (critical for bit-identical results)
+    // Generator creation order must exactly match worker.ts (critical for bit-identical results)
     const rng = xoshiro128ss(seedNum + p);
     const normalGen = createNormalGenerator(rng);
     const gammaRand = createGammaGenerator(rng, normalGen);
@@ -61,7 +61,7 @@ export function runSimulationHeadless(
 
     const result = runSinglePath({ rng, normalGen, gammaRand, tRand }, params);
 
-    // Store results at the correct buffer offset (same layout as worker.js)
+    // Store results at the correct buffer offset (same layout as worker.ts)
     const baseIdx = p * dataLen;
     totalsBuffer.set(result.totals, baseIdx);
     cashesBuffer.set(result.cashes, baseIdx);
@@ -73,7 +73,7 @@ export function runSimulationHeadless(
     consecutiveSellPeriods[p] = result.maxConsecutiveSellPeriod;
     if (result.bankrupt) bankruptCount++;
 
-    // Progress callback matches worker.js cadence (every 100 paths)
+    // Progress callback matches worker.ts cadence (every 100 paths)
     if (options.onProgress && p % 100 === 0) {
       options.onProgress(Math.round((p / simPaths) * 100));
     }

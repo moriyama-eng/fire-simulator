@@ -12,7 +12,7 @@ export type { AnalysisResult, BaseMetrics, ScenarioPoint };
 
 /**
  * Converts the analysis effective parameters (ep) to the format required by the simulation engine.
- * This is the inverse conversion relationship to convertToEffectiveParams in app.js.
+ * This is the inverse conversion relationship to convertToEffectiveParams in app/actions.ts.
  */
 export function convertToLegacyParams(ep: BaseEffectiveParams): SimulationParams {
     return {

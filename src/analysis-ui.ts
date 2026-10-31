@@ -13,7 +13,7 @@ import type { BaseMetrics } from './analysis-state.js';
 export function renderAnalysisTab(): void {
     renderBaseCard();
 
-    // Show/hide error message (#3)
+    // Show/hide error message
     const errorEl = document.getElementById('analysisError');
     const errMsg = AS.getErrorMessage();
     if (errorEl) {
@@ -54,7 +54,7 @@ function renderBaseCard(): void {
         kpiHtml = `
         <div class="pt-1">
              <p>${t('analysis.target.metricLabels.successRate')} <span class="font-bold text-emerald-400">${m.success_rate_pct.toFixed(1)}%</span></p>
-             <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(m.final_median_jpy, '億円')}</span></p>
+             <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(m.final_median_jpy, '\u5104\u5186')}</span></p>
          </div>`;
     } else {
         // Analysis not yet run -> display the most recent simulation KPIs from baseContext
@@ -66,7 +66,7 @@ function renderBaseCard(): void {
             kpiHtml = `
             <div class="pt-1">
                 <p>${t('analysis.target.metricLabels.successRate')} <span class="font-bold text-emerald-400">${successPct}%</span></p>
-                <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(finalMedian, '億円')}</span></p>
+                <p>${t('summary.finalMedian')} <span class="font-bold text-blue-300">${formatCurrency(finalMedian, '\u5104\u5186')}</span></p>
             </div>`;
         } else {
             kpiHtml = `<p class="text-slate-500 text-sm">${t('analysis.noBaseContext')}</p>`;
@@ -76,9 +76,9 @@ function renderBaseCard(): void {
     // --- Condition list (always displayed) ---
     const detailHtml = `
         <div class="space-y-1">
-            <p>${t('summary.riskAsset')}: ${formatCurrency(bp.initialRiskAsset, '億円')}</p>
-            <p>${t('summary.cashBuffer')}: ${bp.cashBufferToggle ? formatCurrency(bp.initialCashBuffer, '万円') : t('summary.off')}</p>
-            <p>${t('summary.expense')}: ${formatCurrency(bp.monthlyExpense, '万円')}</p>
+            <p>${t('summary.riskAsset')}: ${formatCurrency(bp.initialRiskAsset, '\u5104\u5186')}</p>
+            <p>${t('summary.cashBuffer')}: ${bp.cashBufferToggle ? formatCurrency(bp.initialCashBuffer, '\u4e07\u5186') : t('summary.off')}</p>
+            <p>${t('summary.expense')}: ${formatCurrency(bp.monthlyExpense, '\u4e07\u5186')}</p>
             <p>${t('summary.returnVol')}: ${bp.expectedReturn.toFixed(1)}% / ${bp.volatility.toFixed(1)}%</p>
             <p>${t('summary.inflation')}: ${bp.inflationRate.toFixed(1)}%</p>
             <p>${t('summary.simSettings')}: ${formatYears(bp.simYears)} / ${formatNumber(bp.simPaths)} ${t('unit.paths')}</p>
@@ -114,7 +114,7 @@ function renderFactorSelector(): void {
         runAnalysisBtn.textContent = t('analysis.run');
     }
 
-    // Dynamic update of execution time estimate (#5)
+    // Dynamic update of execution time estimate
     const bp = AS.getBaseEffectiveParams();
     const estTimeEl = document.getElementById('estTime');
     if (estTimeEl) {
@@ -195,7 +195,7 @@ function fmtFactorVal(factor: FactorDefinition, value: number | null | undefined
     const isCurrency = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
     if (isCurrency) {
         const valueInJPY = value * (factor.scale || 1);
-        return formatCurrency(valueInJPY, '円');
+        return formatCurrency(valueInJPY, '\u5186');
     }
 
     // Multiplier factor (unit.multiplier): append 'x' without a space
@@ -290,7 +290,7 @@ function updateTargetTableContent(
     };
     const displayFns: Record<'success_rate_pct' | 'final_p10_jpy' | 'worst10_max_dd', (v: number) => string> = {
         success_rate_pct: v => v.toFixed(1) + '%',
-        final_p10_jpy: v => formatCurrency(v, '億円'),
+        final_p10_jpy: v => formatCurrency(v, '\u5104\u5186'),
         worst10_max_dd: v => (v * 100).toFixed(1) + '%'
     };
     const targetMetricLabelEl = document.getElementById('targetMetricLabel');
@@ -408,7 +408,7 @@ function renderCompareCards(): void {
     const factorOrder = AS.FACTORS.map(f => f.key);
     selected.sort((a, b) => factorOrder.indexOf(a) - factorOrder.indexOf(b));
 
-    // Get base metrics (#9)
+    // Get base metrics
     const baseMetrics = result.baseScenario.metrics;
 
     let maxSuccess = baseMetrics.success_rate_pct;
@@ -437,7 +437,7 @@ function renderCompareCards(): void {
         const rPlus2 = augmentedRes.find(r => r.level === 2)?.metrics;
         const rMinus2 = augmentedRes.find(r => r.level === -2)?.metrics;
 
-        // ---- Helper functions (v2.1.0 unchanged) ----
+        // ---- Helper functions ----
         const barClassFromTrend = (level: number, valPlus2: number | undefined, valMinus2: number | undefined, isBase: boolean): 'positive' | 'negative' | 'base' => {
             if (isBase) return 'base';
             if (valPlus2 === undefined || valMinus2 === undefined) return level > 0 ? 'positive' : 'negative';
@@ -451,7 +451,7 @@ function renderCompareCards(): void {
             return { bar: 'base', text: 'text-indigo-300' };
         };
 
-        // ---- HTML generation (complete reproduction of v2.1.0) ----
+        // ---- HTML generation ----
         html += `<div class="glass-card compare-card rounded-xl">`;
         html += `<div class="compare-header-row">
             <div class="text-center">${t(`analysis.factors.${factor.key}`)}</div>
@@ -478,14 +478,14 @@ function renderCompareCards(): void {
             const p10Colors = getMetricColorClasses(p10BarClass);
             const ddColors = getMetricColorClasses(ddBarClass);
 
-            // Bar width (strictly follow the v2.1.0 formula)
+            // Bar width calculation
             const successWidth = Math.max(0, Math.min(100, ((m.success_rate_pct - 70) / (100 - 70)) * 100)).toFixed(0);
             const p10Width = (m.final_p10_jpy / maxP10 * 100).toFixed(0);
             const ddAbsWidth = (Math.abs(m.worst10_max_dd) / maxAbsDD * 100).toFixed(0);
             const ddPercent = (m.worst10_max_dd * 100).toFixed(1);
 
             html += `<div class="compare-row">`;
-            // ---- Factor value display (existing logic maintained; the following is an example implementation from v2.1.0) ----
+            // ---- Factor value display ----
             const isCurrencyFactor = factor.unitKey === 'unit.oku' || factor.unitKey === 'unit.man';
             const isEnglish = getLanguage() === 'en';
             const skipUnit = isEnglish && factor.unitKey === 'unit.multiplier';
@@ -503,7 +503,7 @@ function renderCompareCards(): void {
             // ---- Final asset 10th percentile bar ----
             html += `<div class="bar-stack">
                 <div class="bar-track"><div class="bar-fill ${p10Colors.bar}" style="width:${p10Width}%"></div></div>
-                <span class="bar-value ${p10Colors.text}">${formatCurrency(m.final_p10_jpy, '億円')}</span>
+                <span class="bar-value ${p10Colors.text}">${formatCurrency(m.final_p10_jpy, '\u5104\u5186')}</span>
             </div>`;
             // ---- Max DD 10th percentile bar (note the track class for DD) ----
             html += `<div class="bar-stack">
@@ -573,7 +573,7 @@ async function executeAnalysis(): Promise<void> {
     btn.disabled = true;
     btn.textContent = t('analysis.running', ['0']);
 
-    // Disable the simulation tab's progress callback while analysis is running (#10)
+    // Disable the simulation tab's progress callback while analysis is running
     const savedCallback = getProgressCallback();
     setProgressCallback(null);
 
@@ -590,13 +590,13 @@ async function executeAnalysis(): Promise<void> {
         const msg = errMessage.startsWith('error.') ? t(errMessage) : errMessage;
         AS.setErrorMessage(msg);
     } finally {
-        // Restore the progress callback (#10)
+        // Restore the progress callback
         setProgressCallback(savedCallback);
         btn.disabled = AS.getSelectedFactors().length === 0;
         btn.textContent = t('analysis.run');
         btn.style.background = '';
         renderAnalysisTab();
-        // Auto-scroll after analysis execution (#2)
+        // Auto-scroll after analysis execution
         setTimeout(() => {
             const target = document.getElementById('cardTarget');
             if (target) {

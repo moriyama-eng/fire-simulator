@@ -95,7 +95,7 @@ export async function runSimulation(
   const mergedDds = new Float32Array(simPaths * dataLen);
   const maxDdPerPath = new Float32Array(simPaths);
   const maxUwPerPath = new Float32Array(simPaths);
-  // v2.3.0: Arrays for merging new indicator buffers
+  // Arrays for merging below-initial and consecutive sell indicator buffers
   const belowInitPeriods = new Float32Array(simPaths);
   const consecutiveSellPeriods = new Float32Array(simPaths);
   let bankruptCount = 0;
@@ -109,7 +109,7 @@ export async function runSimulation(
     mergedDds.set(new Float32Array(res.ddsBuffer), offset);
     maxDdPerPath.set(new Float32Array(res.maxDdsBuffer), globalPathIndex);
     maxUwPerPath.set(new Float32Array(res.maxUwsBuffer), globalPathIndex);
-    // v2.3.0: Merge new indicator buffers
+    // Merge below-initial and consecutive sell indicator buffers
     belowInitPeriods.set(new Float32Array(res.belowInitPeriodsBuffer), globalPathIndex);
     consecutiveSellPeriods.set(new Float32Array(res.consecutiveSellPeriodsBuffer), globalPathIndex);
     bankruptCount += res.bankruptCount;
@@ -127,8 +127,8 @@ export async function runSimulation(
     ddsBuffer: mergedDds.buffer,
     maxDdPerPath,
     maxUwPerPath,
-    belowInitPeriods, // v2.3.0: New indicator (longest consecutive period below initial assets per path)
-    consecutiveSellPeriods, // v2.3.0: New indicator (longest consecutive sell period per path)
+    belowInitPeriods, // Longest consecutive period below initial assets per path
+    consecutiveSellPeriods, // Longest consecutive sell period per path
     simPaths,
     dataLen,
     percentiles,

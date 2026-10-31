@@ -87,7 +87,7 @@ describe('Reproducibility', () => {
 });
 
 // ====================================================================
-// v2.3.0: Unit tests for new metrics (below-initial-assets continuous period / consecutive risk asset sell period)
+// Unit tests for below-initial-assets continuous period / consecutive risk asset sell period metrics
 // ====================================================================
 describe('New below-initial metrics', () => {
     it('maxConsecutiveSellPeriod <= maxBelowInitPeriod always holds', () => {

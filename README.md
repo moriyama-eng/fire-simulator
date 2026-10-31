@@ -160,7 +160,7 @@ The following are intentional scope limitations, not planned future features:
 
 ## Version / Update History
 
-**Current release: v3.0.1**
+**Current release: v3.0.2**
 
 For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
 

@@ -27,7 +27,7 @@ function getPackageVersion(): string {
       // Continue to next candidate
     }
   }
-  return '3.0.1';
+  return '3.0.2';
 }
 
 const VERSION = getPackageVersion();

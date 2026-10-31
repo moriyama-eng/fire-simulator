@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 // tests/integration/belowinit-charts.test.ts
-// v2.3.0: Integration tests for the new metric charts (belowInitChart, sellChart)
+// Integration tests for the metric charts (belowInitChart, sellChart)
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runSimulation } from '../../src/simulation-engine.js';
 import { readFileSync } from 'fs';
 import type { AggregatedMetrics } from '../../src/types/simulation.js';
 
-// Mock url.js to prevent isRunning from unintentionally becoming true due to automatic execution on load
+// Mock url.ts to prevent isRunning from unintentionally becoming true due to automatic execution on load
 vi.mock('../../src/core/url.js', async () => {
     const actual = await vi.importActual<typeof import('../../src/core/url.js')>('../../src/core/url.js');
     return {
@@ -16,7 +16,7 @@ vi.mock('../../src/core/url.js', async () => {
     };
 });
 
-// Mock analysis-ui.js / comparison-ui.js to prevent Unhandled Rejection
+// Mock analysis-ui.ts / comparison-ui.ts to prevent Unhandled Rejection
 // caused by asynchronous execution after the test environment is destroyed during language switching
 vi.mock('../../src/analysis-ui.js', () => ({
     renderAnalysisTab: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock('../../src/simulation-engine.js');
 
 const runSimulationMock = runSimulation as unknown as ReturnType<typeof vi.fn>;
 
-// Generate dummy simulation results containing the new v2.3.0 metrics
+// Generate dummy simulation results containing the below-initial and consecutive sell metrics
 function makeDummyResultWithNewMetrics(overrides: Partial<AggregatedMetrics> = {}): AggregatedMetrics {
     const simPaths = 1000;
     const dataLen = 361; // 30 years * 12 months + 1
@@ -53,7 +53,7 @@ function makeDummyResultWithNewMetrics(overrides: Partial<AggregatedMetrics> = {
         worst10MaxUw: 310,
         maxDdPerPath: new Float32Array(simPaths),
         maxUwPerPath: new Float32Array(simPaths),
-        // v2.3.0: New metrics data
+        // Below-initial and consecutive sell metrics data
         belowInitPeriods: new Float32Array(simPaths).fill(60),    // Dummy value (60 months for all paths)
         consecutiveSellPeriods: new Float32Array(simPaths).fill(36), // Dummy value (36 months for all paths)
         params: { simPaths, totalMonths: dataLen - 1 },
@@ -72,13 +72,13 @@ const domSnippet = readFileSync('tests/fixtures/dom-snippet.html', 'utf-8');
 document.body.innerHTML = `
     <div id="simulationTab">
         ${domSnippet}
-        <!-- Gray-out target panels required for app.js initialization -->
+        <!-- Gray-out target panels required for app.ts initialization -->
         <div id="tDistParams"></div>
         <div id="guardrailParams"></div>
         <div id="cashBufferParams"></div>
         <div id="seedInputWrapper"></div>
         <div id="arModelParams"></div>
-        <!-- v2.3.0: New metrics chart titles -->
+        <!-- Metrics chart titles -->
         <h2 id="belowInitTitle" data-i18n="chart.belowInit.title">初期総資産割れ 継続期間 発生確率</h2>
         <h2 id="sellTitle" data-i18n="chart.sell.title">初期総資産割れ時 リスク資産連続売却期間 発生確率</h2>
         <canvas id="belowInitChartCanvas"></canvas>
@@ -109,11 +109,11 @@ document.body.innerHTML = `
     <div id="tooltip-container"></div>
 `;
 
-// Import app.js only once with DOM constructed
+// Import app.ts only once with DOM constructed
 await import('../../src/app.js');
 
 // After load is complete, explicitly dispatch DOMContentLoaded to trigger
-// event registration and initialization in the DOMContentLoaded listener in app.js
+// event registration and initialization in the DOMContentLoaded listener in app.ts
 document.dispatchEvent(new Event('DOMContentLoaded'));
 
 describe('Below-Initial charts integration', () => {

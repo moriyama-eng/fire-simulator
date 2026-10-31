@@ -10,7 +10,7 @@ The random number generation pipeline in `src/core/random.ts` has four layers:
 
 A 32-bit hash function used to expand a single integer seed into four independent 32-bit state words for xoshiro128**:
 
-```javascript
+```typescript
 // src/core/random.ts
 export function splitmix32(seed) {
     let s = seed | 0;
@@ -29,7 +29,7 @@ export function splitmix32(seed) {
 
 The primary uniform RNG. Its four 32-bit state words are initialized by four calls to `splitmix32`. It passes BigCrush and has a period of \(2^{128} - 1\):
 
-```javascript
+```typescript
 export function xoshiro128ss(seed) {
     const sm = splitmix32(seed);
     let s0 = sm(), s1 = sm(), s2 = sm(), s3 = sm();
@@ -47,7 +47,7 @@ Output: uniformly distributed floats in `[0, 1)`.
 
 Pairs of uniform samples are converted to standard-normal draws using the Box-Muller transform. The implementation caches one of the two outputs to halve RNG calls:
 
-```javascript
+```typescript
 export function createNormalGenerator(uniformRng) {
     let hasCached = false; let cached = 0.0;
     return function () {
@@ -67,7 +67,7 @@ export function createNormalGenerator(uniformRng) {
 
 When `useTDistribution: true`, Student-t draws are generated using the **definition-based representation**: a standard normal `Z` divided by the square root of an independent chi-squared variate scaled by its degrees of freedom. The chi-squared variate is produced by `createGammaGenerator` (Marsaglia-Tsang Gamma algorithm), and the t-variate is:
 
-```javascript
+```typescript
 export function createTGenerator(normalGen, gammaRand) {
     return function randomT(df) {
         const Z = normalGen();
@@ -77,8 +77,8 @@ export function createTGenerator(normalGen, gammaRand) {
 }
 ```
 
-This is then scaled in `simulation.js` to unit variance:
-```javascript
+This is then scaled in `src/core/simulation.ts` to unit variance:
+```typescript
 Z = tRand / Math.sqrt(simDf / (simDf - 2));   // requires df > 2
 ```
 

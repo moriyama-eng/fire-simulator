@@ -1,7 +1,6 @@
 // ====================================================================
 // src/core/simulation.ts
 // Single-path simulation logic. Called from Workers.
-// No changes when used from the Analysis tab.
 // ====================================================================
 
 import { calcAutoDf } from './params.js';
@@ -93,7 +92,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     const releaseGR = guardrailRelease / 100;
     const simDf = simDfManual ? simDfNum : calcAutoDf(volatility);
 
-    // v2.3.0: Initial total assets (nominal value, not inflation-adjusted)
+    // Initial total assets (nominal value, not inflation-adjusted)
     // When CB is OFF, activeInitialCashBuffer is 0, so only risk assets are the initial total assets
     const initialTotalAssets = initialRiskAsset + activeInitialCashBuffer;
 
@@ -112,7 +111,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     let maxUwMonths = 0;
     let maxDD = 0;
 
-    // v2.3.0: State variables for new indicators
+    // State variables for below-initial and consecutive sell indicators
     // Indicator (1): Longest consecutive period below initial total assets
     let currentBelowInitPeriod = 0;
     let maxBelowInitPeriod = 0;
@@ -137,7 +136,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     for (let t = 1; t <= totalMonths; t++) {
         if (bankrupt) break;
 
-        // v2.3.0: Reset the soldFromRisk flag at the beginning of each month (set appropriately in the withdrawal process)
+        // Reset the soldFromRisk flag at the beginning of each month (set appropriately in the withdrawal process)
         soldFromRisk = false;
 
         // Inflation
@@ -206,7 +205,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
             currentUwMonths += (totalMonths - t) + 1;
             if (currentUwMonths > maxUwMonths) maxUwMonths = currentUwMonths;
 
-            // v2.3.0: After bankruptcy, add remaining months to both new indicators (bankruptcy = below initial assets and selling continues until end of simulation)
+            // After bankruptcy, add remaining months to both indicators (bankruptcy = below initial assets and selling continues until end of simulation)
             const remainingMonths = (totalMonths - t) + 1;
             // Indicator (1): Add remaining months including the bankruptcy month
             currentBelowInitPeriod += remainingMonths;
@@ -221,7 +220,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
             break;
         }
 
-        // v2.3.0: If the withdrawal amount is 0 yen or less in a month, it is treated as no selling (reset condition (2))
+        // If the withdrawal amount is 0 yen or less in a month, it is treated as no selling (reset condition (2))
         if (currentExpense <= 0) {
             soldFromRisk = false;
         }
@@ -265,7 +264,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
         maxDD = newState.maxDD;
         highWaterMark = newState.highWaterMark;
 
-        // ---- v2.3.0: Calculation of new indicators (determined based on end-of-month total assets eomAsset) ----
+        // ---- Calculation of below-initial and consecutive sell indicators (determined based on end-of-month total assets eomAsset) ----
         // (1) Determination of whether below initial total assets (equal or above = recovery, below = below state)
         const isBelowInit = eomAsset < initialTotalAssets;
 
@@ -302,8 +301,8 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     return {
         totals, cashes, dds,
         maxDD, maxUW: maxUwMonths,
-        maxBelowInitPeriod,      // v2.3.0: Longest consecutive period below initial total assets (months)
-        maxConsecutiveSellPeriod, // v2.3.0: Longest consecutive risk asset sell period (months)
+        maxBelowInitPeriod,      // Longest consecutive period below initial total assets (months)
+        maxConsecutiveSellPeriod, // Longest consecutive risk asset sell period (months)
         bankrupt
     };
 }

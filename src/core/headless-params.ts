@@ -99,7 +99,7 @@ export function normalizeHeadlessParams(raw?: Record<string, unknown> | Partial<
     // simYears: minimum 1 (prevents negative dataLen)
     p.simYears = Math.max(1, Math.round(Number(p.simYears)));
 
-    // seedNum: clamp to [1, 99999999] (consistent with comparison-state.js setCommonSeed)
+    // seedNum: clamp to [1, 99999999] (consistent with comparison-state.ts setCommonSeed)
     p.seedNum = Math.min(99999999, Math.max(1, Math.floor(Number(p.seedNum) || HEADLESS_DEFAULTS.seedNum)));
 
     // Monetary values: guard against negatives
@@ -131,7 +131,7 @@ export function normalizeHeadlessParams(raw?: Record<string, unknown> | Partial<
 
     // ----- Guardrail cross-validation -----
     // When guardrailToggle is true and guardrailRelease < guardrailTrigger,
-    // snap guardrailRelease to guardrailTrigger (matches actions.js in the UI path).
+    // snap guardrailRelease to guardrailTrigger (matches actions.ts in the UI path).
     p.guardrailRelease = resolveGuardrailRelease(Boolean(p.guardrailToggle), p.guardrailTrigger, p.guardrailRelease);
 
     // currency: accept only 'JPY' or 'USD' (label-only, no conversion)
