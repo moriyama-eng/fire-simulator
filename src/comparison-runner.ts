@@ -1,8 +1,8 @@
 // src/comparison-runner.ts
 // Comparison tab execution logic
 
-import { runSimulation, setProgressCallback, getProgressCallback } from './simulation-engine.js';
-import { setScenarioResult, setScenarioError, setIsRunning, getScenarios, getCommonSeed, getCommonPaths } from './comparison-state.js';
+import { runSimulation } from './simulation-engine.js';
+import { setScenarioResult, setScenarioError, setIsRunning, getIsRunning, getScenarios, getCommonSeed, getCommonPaths } from './comparison-state.js';
 import type { ComparisonScenarioInputs } from './comparison-state.js';
 import type { SimulationParams } from './types/params.js';
 import type { AggregatedMetrics } from './types/simulation.js';
@@ -54,6 +54,7 @@ export async function runAllScenarios(
     onAllComplete: () => void,
     onError: (id: string, errorMsg: string) => void
 ): Promise<void> {
+    if (getIsRunning()) return;
     const scenarios = getScenarios();
     if (scenarios.length === 0) {
         onAllComplete();
@@ -65,16 +66,13 @@ export async function runAllScenarios(
     const paths = getCommonPaths();
     const percentiles = [10, 30, 50, 70, 90];
 
-    const savedCallback = getProgressCallback();
-    setProgressCallback(null);
-
     try {
         for (let i = 0; i < scenarios.length; i++) {
             const scenario = scenarios[i];
             onProgress(i + 1, scenarios.length);
             try {
                 const legacyParams = convertComparisonParamsToLegacy(scenario.inputs, seed, paths);
-                const result = await runSimulation(legacyParams, percentiles);
+                const result = await runSimulation(legacyParams, percentiles, null);
                 setScenarioResult(scenario.id, result);
                 onScenarioComplete(scenario.id, result);
             } catch (err: unknown) {
@@ -88,7 +86,6 @@ export async function runAllScenarios(
         // Do not call onProgress after the loop ends (prevents double execution)
     } finally {
         setIsRunning(false);
-        setProgressCallback(savedCallback);
         onAllComplete();
     }
 }

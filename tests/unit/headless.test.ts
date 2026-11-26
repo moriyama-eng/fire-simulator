@@ -325,3 +325,47 @@ describe('T8: Worker vs Headless equivalence check', () => {
         expect(payload.totalsBuffer).toBeInstanceOf(ArrayBuffer);
     });
 });
+
+describe('normalizeHeadlessParams sanitization (NaN, Infinity, null, empty, booleans, rate floors)', () => {
+    it('falls back to HEADLESS_DEFAULTS for NaN, Infinity, undefined, null, empty string, and non-numeric strings', () => {
+        const p = normalizeHeadlessParams({
+            simPaths: Number.NaN,
+            simYears: Number.POSITIVE_INFINITY,
+            initialRiskAsset: 'bad' as unknown as number,
+            initialCashBuffer: undefined,
+            monthlyExpense: null as unknown as number,
+            drawdownTrigger: '' as unknown as number,
+            replenishPace: true as unknown as number,
+            infVol: Number.NEGATIVE_INFINITY,
+            targetAssetRatio: 'NaN' as unknown as number,
+        });
+        expect(p.simPaths).toBe(HEADLESS_DEFAULTS.simPaths);
+        expect(p.simYears).toBe(HEADLESS_DEFAULTS.simYears);
+        expect(p.initialRiskAsset).toBe(HEADLESS_DEFAULTS.initialRiskAsset);
+        expect(p.initialCashBuffer).toBe(HEADLESS_DEFAULTS.initialCashBuffer);
+        expect(p.monthlyExpense).toBe(HEADLESS_DEFAULTS.monthlyExpense);
+        expect(p.drawdownTrigger).toBe(HEADLESS_DEFAULTS.drawdownTrigger);
+        expect(p.replenishPace).toBe(HEADLESS_DEFAULTS.replenishPace);
+        expect(p.infVol).toBe(HEADLESS_DEFAULTS.infVol);
+        expect(p.targetAssetRatio).toBe(HEADLESS_DEFAULTS.targetAssetRatio);
+    });
+
+    it('normalizes boolean flags strictly (only literal true enables a flag) and clamps rate floors', () => {
+        const p = normalizeHeadlessParams({
+            cashBufferToggle: 'false' as unknown as boolean,
+            guardrailToggle: 'true' as unknown as boolean,
+            useArInflation: 1 as unknown as boolean,
+            useTDistribution: true,
+            expectedReturn: -200,
+            inflationRate: -200,
+            guardrailReduction: -150,
+        });
+        expect(p.cashBufferToggle).toBe(false);
+        expect(p.guardrailToggle).toBe(false);
+        expect(p.useArInflation).toBe(false);
+        expect(p.useTDistribution).toBe(true);
+        expect(p.expectedReturn).toBe(-99.99);
+        expect(p.inflationRate).toBe(-99.99);
+        expect(p.guardrailReduction).toBe(-100);
+    });
+});

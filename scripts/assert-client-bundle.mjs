@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export function assertClientBundle(clientDist = path.resolve(process.cwd(), 'dist', 'client')) {
   console.log('Asserting client bundle integrity in', clientDist);
@@ -170,7 +171,7 @@ export function assertClientBundle(clientDist = path.resolve(process.cwd(), 'dis
 }
 
 const isDirectRun = process.argv[1] && (
-  path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 );
 
 if (isDirectRun) {

@@ -150,9 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. Language change event listener
     document.addEventListener('languageChanged', () => {
-        // Skip language switching while simulation is running (main app or comparison tab)
-        import('../comparison-state.js').then(CS => {
-            if (getIsRunning() || CS.getIsRunning()) return;
+        // Skip language switching while simulation is running (main app, comparison tab, or analysis tab)
+        Promise.all([
+            import('../comparison-state.js'),
+            import('../analysis-state.js'),
+        ]).then(([CS, AS]) => {
+            if (getIsRunning() || CS.getIsRunning() || AS.getState().isRunning) return;
             applyTranslations();
             updateDfPanel();
             // Convert currency inputs on language switch
@@ -309,7 +312,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cbToggle.checked) {
                 // When turned ON: restore to default value (only if the current value is 0)
                 if (parseFloat(cbInput.value.replace(/,/g, '')) === 0) {
-                    cbInput.value = DEFAULTS.initialCashBuffer.toLocaleString('en-US');
+                    const defaultCb = getLanguage() === 'en'
+                        ? DEFAULTS.initialCashBuffer / 10
+                        : DEFAULTS.initialCashBuffer;
+                    cbInput.value = defaultCb.toLocaleString('en-US');
                     cbInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             } else {

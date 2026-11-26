@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { runSimulation } from '../../src/simulation-engine.js';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { runSimulation, setProgressCallback } from '../../src/simulation-engine.js';
 import { normalizeHeadlessPercentiles } from '../../src/core/headless-params.js';
 import { StubWorker } from '../helpers/stub-worker.js';
 import type { SimulationParams } from '../../src/types/params.js';
@@ -80,5 +80,24 @@ describe('runSimulation Worker stub orchestration', () => {
     expect(result.percentiles).toEqual([10, 25, 50, 75, 90]);
     expect(headlessDefault).toEqual([10, 30, 50, 70, 90]);
     expect(result.percentiles).not.toEqual(headlessDefault);
+  });
+
+  it('supports optional per-call progressCallback (undefined fallback, null suppression, custom callback)', async () => {
+    const globalCb = vi.fn();
+    const customCb = vi.fn();
+    setProgressCallback(globalCb);
+    try {
+      await runSimulation(makeEngineParams({ simPaths: 100 }), [50], null);
+      expect(globalCb).not.toHaveBeenCalled();
+
+      await runSimulation(makeEngineParams({ simPaths: 100 }), [50], customCb);
+      expect(globalCb).not.toHaveBeenCalled();
+      expect(customCb).toHaveBeenCalled();
+
+      await runSimulation(makeEngineParams({ simPaths: 100 }), [50]);
+      expect(globalCb).toHaveBeenCalled();
+    } finally {
+      setProgressCallback(null);
+    }
   });
 });

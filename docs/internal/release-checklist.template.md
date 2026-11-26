@@ -54,6 +54,7 @@ When releasing a new version, please perform manual verification using the follo
 | docs.html | meta |
 | docs/internal/style-guide.md | Example CSS query strings |
 | src/i18n.ts | getAppVersion() fallback version |
+| src/cli.ts | getCliVersion() fallback version |
 | src/... (if modified) | Specific implementation change summary |
 | tests/... (if modified) | Specific test addition or update summary |
 | docs/internal/release-checklist.md | Overwritten from template; vX.Y.Z H1, scope, and verification records |
@@ -66,6 +67,7 @@ When releasing a new version, please perform manual verification using the follo
 - [ ] package-lock.json top-level version is the target release version — <result or reason>
 - [ ] package-lock.json packages[""].version is the target release version — <result or reason>
 - [ ] src/i18n.ts getAppVersion() fallback is the target release version — <result or reason>
+- [ ] src/cli.ts getCliVersion() fallback is the target release version — <result or reason>
 - [ ] README.md current release marker is the target release version — <result or reason>
 - [ ] README-ja.md current release marker is the target release version — <result or reason>
 - [ ] CHANGELOG.md latest entry is the target release heading — <result or reason>
@@ -203,6 +205,7 @@ Note: `.github/` contains no release workflow; release preparation is operated m
 
 - [ ] `package.json` version matches the target release version — <result or reason>
 - [ ] `src/i18n.ts` `getAppVersion()` fallback return value matches target release version — <result or reason>
+- [ ] `src/cli.ts` `getCliVersion()` fallback return value matches target release version — <result or reason>
 - [ ] `index.html` all version occurrences match target release version: — <result or reason>
   - [ ] `<meta name="app-version">` — <result or reason>
   - [ ] `<link rel="stylesheet" href="css/tailwind.css?v=...">` — <result or reason>
@@ -212,7 +215,7 @@ Note: `.github/` contains no release workflow; release preparation is operated m
 - [ ] `{VERSION}` placeholders resolve to the `meta[name="app-version"]` target release version — <result or reason>
 - [ ] `docs.html` meta tag matches target release version — <result or reason>
 - [ ] `docs/internal/style-guide.md` example query strings match target release version — <result or reason>
-- [ ] Run exhaustive workspace grep (`grep_search` for previous version string `vX.Y.Z-1`) to physically prove 0 missed occurrences across all source files — <result or reason>
+- [ ] Run exhaustive workspace text search (searching for previous version string `vX.Y.Z-1`) to physically prove 0 missed occurrences across all source files — <result or reason>
 - [ ] Run semver allowlist scan across executable source files (`src/`, `index.html`, `docs.html`, `dist/cli.js`) to verify zero unapproved semver literals remain — <result or reason>
 
 ## README 3.0 & Documentation Human Inspection Preview

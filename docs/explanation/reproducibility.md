@@ -27,7 +27,7 @@ export function splitmix32(seed) {
 
 ### 2. `xoshiro128**` — Uniform Random Numbers
 
-The primary uniform RNG. Its four 32-bit state words are initialized by four calls to `splitmix32`. It passes BigCrush and has a period of \(2^{128} - 1\):
+The primary uniform RNG. Its four 32-bit state words are initialized by four calls to `splitmix32`. It passes BigCrush and has a period of \\(2^{128} - 1\\):
 
 ```typescript
 export function xoshiro128ss(seed) {

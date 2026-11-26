@@ -80,11 +80,13 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     const totalMonths = simYears * 12;
     const dataLen = totalMonths + 1;
 
-    const arithmeticReturn = expectedReturn / 100;
+    const arithmeticReturn = Math.max(-0.999999, expectedReturn / 100);
     const annualVol = volatility / 100;
     const adjustedAnnualDrift = Math.log(1 + arithmeticReturn) - (annualVol * annualVol) / 2;
     const monthlyDrift = adjustedAnnualDrift / 12;
     const monthlyVol = annualVol / Math.sqrt(12);
+    const safeInflationRate = Math.max(-99.9999, inflationRate);
+    const safeGuardrailReduction = Math.max(-100, Math.min(0, guardrailReduction));
     const activeInitialCashBuffer = cashBufferToggle ? initialCashBuffer : 0;
     const ddThreshold = -Math.abs(drawdownTrigger / 100);
     const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
@@ -130,7 +132,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
         guardrailToggle, triggerGR, releaseGR
     };
 
-    let currentInfRate = inflationRate / 100;
+    let currentInfRate = safeInflationRate / 100;
     let infMultiplier = 1.0;
 
     for (let t = 1; t <= totalMonths; t++) {
@@ -144,12 +146,12 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
             const annualInfVol = infVol / 100;
             const monthlyInfVol = annualInfVol / Math.sqrt(12);
             const InfZ = rngs.normalGen();
-            const expectedLongTermInf = inflationRate / 100;
+            const expectedLongTermInf = safeInflationRate / 100;
             const C = (1 - infAr) * expectedLongTermInf;
             currentInfRate = C + (infAr * currentInfRate) + (monthlyInfVol * InfZ);
             infMultiplier *= Math.exp(currentInfRate / 12);
         } else {
-            infMultiplier = Math.pow(1 + inflationRate / 100, t / 12);
+            infMultiplier = Math.pow(1 + safeInflationRate / 100, t / 12);
         }
 
         // Market return
@@ -167,7 +169,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
         const currentBufferLimit = activeInitialCashBuffer * infMultiplier;
 
         if (isGuardrailActive) {
-            currentExpense *= (1 + guardrailReduction / 100);
+            currentExpense *= (1 + safeGuardrailReduction / 100);
         }
 
         // ---- Withdrawal processing ----
@@ -199,7 +201,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
             bankrupt = true;
             totals[t] = 0;
             cashes[t] = 0;
-            dds[t] = -1.0;
+            dds.fill(-1.0, t);
             maxDD = -1.0;
             // Existing stagnation period: add remaining months after bankruptcy
             currentUwMonths += (totalMonths - t) + 1;

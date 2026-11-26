@@ -249,7 +249,7 @@ This boundary keeps the CLI small, testable, and free of framework dependencies.
 | Code | Meaning |
 |---|---|
 | `0` | Success |
-| `1` | Input error (file not found, JSON parse failure, TTY stdin, invalid percentiles) |
+| `1` | Input error (file not found, JSON parse failure, non-object/array JSON root, TTY stdin, missing `--out` path) |
 | `2` | Runtime error (simulation failure, file write failure) |
 
 ## Examples

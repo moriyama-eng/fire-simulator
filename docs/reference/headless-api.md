@@ -36,6 +36,7 @@ The return value of `aggregateResultsProduction()` with the following meta field
 
 | Field | Type | Description |
 |---|---|---|
+| `percentiles` | `number[]` | Percentile levels computed (e.g., `[10, 30, 50, 70, 90]`) |
 | `successRate` | `number` | Success rate (%) |
 | `finalMedian` | `number` | Median total assets at final month |
 | `worst10MaxDd` | `number` | Worst 10th-percentile maximum drawdown |
@@ -55,6 +56,7 @@ The return value of `aggregateResultsProduction()` with the following meta field
 | `modelType` | `'log-normal' \| 'log-t'` | Fluctuation model used |
 | `usedDf` | `number` | Degrees of freedom used |
 | `currency` | `'JPY' \| 'USD'` | Currency label (no conversion applied) |
+| `params` | `{ simPaths: number; totalMonths: number }` | Summary of executed path count and total months |
 | `dataLen` | `number` | Time series length (`simYears * 12 + 1`) |
 
 > **Important**: `Float32Array` fields (time series and per-path arrays `maxDdPerPath`, `maxUwPerPath`, `belowInitPeriods`, `consecutiveSellPeriods`) cannot be serialized by `JSON.stringify` directly. Apply `toPlain()` (implemented in `src/cli.ts` / `dist/cli.js`) before JSON output. In `dist/cli.js` `--no-file` / scalar summary mode, large per-path TypedArrays are intentionally omitted during serialization.
@@ -96,7 +98,7 @@ and `comparison-runner`. Returns a fully normalized params object.
 - `currency` is a label (metadata) only. It does not affect any monetary calculations.
 - No fixed-rate conversion ($1 = 100 JPY) is applied.
 - When running in USD mode, pass monetary values in dollar units as-is.
-- For a comparison between Browser UI and CLI/Headless currency handling, see the [Currency Semantics table in README.md](../../README.md#currency-semantics).
+- For a comparison between Browser UI and CLI/Headless currency handling, see [Currency Semantics in Parameter Reference](./parameter-reference.md#currency-semantics).
 
 
 ## Usage Example

@@ -27,7 +27,7 @@ function getPackageVersion(): string {
       // Continue to next candidate
     }
   }
-  return '3.0.2';
+  return '3.0.3';
 }
 
 const VERSION = getPackageVersion();
@@ -146,7 +146,11 @@ async function main(): Promise<void> {
   let outPath: string | null = null;
   const filteredArgs: string[] = [];
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--out' && i + 1 < args.length) {
+    if (args[i] === '--out') {
+      if (i + 1 >= args.length || args[i + 1].startsWith('--')) {
+        process.stderr.write('Error: --out requires a file path argument.\n');
+        process.exit(1);
+      }
       outPath = args[i + 1];
       i++; // skip the value token
     } else {
@@ -159,19 +163,19 @@ async function main(): Promise<void> {
   const positional = filteredArgs.filter((a) => !a.startsWith('--'));
 
   // Determine subcommand from first positional arg
-  const subCommand = positional[0] || 'run';
+  const firstPositional = positional[0];
 
   // ---- list-factors subcommand ----
-  if (subCommand === 'list-factors' || args.includes('--list-factors')) {
+  if (firstPositional === 'list-factors' || args.includes('--list-factors')) {
     // Output FACTORS as-is; i18n keys (labelKey etc.) are not resolved.
     const indent = flags.has('--compact') ? 0 : 2;
     process.stdout.write(JSON.stringify({ factors: FACTORS }, null, indent) + '\n');
     return;
   }
 
-  // ---- run subcommand ----
+  // ---- run subcommand (explicit 'run' or implicit default) ----
   let rawJson: string;
-  const paramFile = positional[1];
+  const paramFile = firstPositional === 'run' ? positional[1] : firstPositional;
   if (paramFile) {
     try {
       rawJson = readFileSync(resolve(paramFile), 'utf-8');
@@ -194,7 +198,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (typeof rawParams !== 'object' || rawParams === null) {
+  if (typeof rawParams !== 'object' || rawParams === null || Array.isArray(rawParams)) {
     process.stderr.write('Error: JSON parse failed.\nExpected object.\n');
     process.exit(1);
   }

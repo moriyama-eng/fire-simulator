@@ -130,4 +130,38 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         expect(result.belowInitPeriods.length).toBe(simPaths);
         expect(result.consecutiveSellPeriods.length).toBe(simPaths);
     });
+
+    it('computes accurate percentiles for unsorted input and true finalMedian when 50 is omitted or percentiles is empty', () => {
+        const simPaths = 10;
+        const dataLen = 2;
+        const finalValues = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+        const mock = createMockBuffers(simPaths, dataLen, finalValues);
+
+        const unsorted = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [90, 10],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 50,
+        });
+        // Order matches caller percentiles [90, 10]
+        expect(unsorted.totalPercentileData[0][1]).toBe(90);
+        expect(unsorted.totalPercentileData[1][1]).toBe(10);
+        // True 50th percentile (index floor(0.5 * 9) = 4 -> value 50), not P10 or P90
+        expect(unsorted.finalMedian).toBe(50);
+
+        const emptyPct = aggregateResultsProduction({
+            ...mock,
+            simPaths,
+            dataLen,
+            percentiles: [],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 50,
+        });
+        expect(emptyPct.totalPercentileData).toEqual([]);
+        expect(emptyPct.finalMedian).toBe(50);
+    });
 });

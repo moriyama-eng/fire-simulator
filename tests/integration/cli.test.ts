@@ -250,6 +250,30 @@ describe('CLI Options', () => {
     const lines = stdout.trim().split('\n');
     expect(lines.length).toBe(1);
   });
+
+  it('supports implicit default run subcommand when file path is first positional arg', () => {
+    const paramsFile = setupTmpParams();
+    const stdout = runCli([paramsFile, '--no-file']);
+    const parsed = JSON.parse(stdout) as { successRate: number };
+    expect(typeof parsed.successRate).toBe('number');
+  });
+
+  it('exits with code 1 when --out is missing a value or followed by a flag', () => {
+    const paramsFile = setupTmpParams();
+    expect(() => runCli(['run', paramsFile, '--out'])).toThrow();
+    expect(() => runCli(['run', paramsFile, '--out', '--compact'])).toThrow();
+  });
+
+  it('exits with code 1 when JSON root is an array', () => {
+    expect(() =>
+      execFileSync(process.execPath, [join(ROOT, 'dist', 'cli.js'), 'run', '--no-file'], {
+        cwd: ROOT,
+        input: '[1, 2, 3]',
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+    ).toThrow();
+  });
 });
 
 // ===== T9: round-trip reproducibility =====

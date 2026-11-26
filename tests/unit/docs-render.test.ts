@@ -159,5 +159,28 @@ describe('docs-render DOM tree builder', () => {
 
       delete (window as unknown as { renderMathInElement?: unknown }).renderMathInElement;
     });
+
+    it('preserves inline KaTeX delimiters after marked.lexer on mathematical-model.md and reproducibility.md', async () => {
+      const { readFileSync } = await import('node:fs');
+      const { resolve } = await import('node:path');
+      const { marked } = await import('marked');
+
+      for (const relPath of ['docs/explanation/mathematical-model.md', 'docs/explanation/reproducibility.md']) {
+        const md = readFileSync(resolve(process.cwd(), relPath), 'utf-8');
+        const tokens = marked.lexer(md);
+        const { container } = renderDocTokens(tokens, 'explanation', 'http://localhost/');
+        const text = container.textContent || '';
+        expect(text).toContain('\\(');
+        expect(text).toContain('\\)');
+      }
+    });
+
+    it('cancels stale loadDoc requests in docs-app.ts when a newer navigation occurs', async () => {
+      const { readFileSync } = await import('node:fs');
+      const { resolve } = await import('node:path');
+      const src = readFileSync(resolve(process.cwd(), 'src/docs-app.ts'), 'utf-8');
+      expect(src).toContain('activeFetchController.abort()');
+      expect(src).toContain('if (reqId !== loadRequestId) return;');
+    });
   });
 });

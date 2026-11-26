@@ -79,10 +79,10 @@ When `useArInflation: true`, the monthly inflation rate follows a mean-reverting
 $$r_{\inf,t} = C + \rho \cdot r_{\inf,t-1} + \sigma_{\inf,m} \cdot Z_{\inf,t}$$
 
 where:
-- \(C = (1 - \rho) \cdot \bar{r}_{\inf}\) — intercept ensuring reversion to the long-run mean \(\bar{r}_{\inf}\)
-- \(\rho\) = `infAr` — AR coefficient (persistence of inflation shocks; 0 = random, 0.9 = highly persistent)
-- \(\sigma_{\inf,m} = \sigma_{\inf,\text{annual}} / \sqrt{12}\)
-- \(\bar{r}_{\inf}\) = `inflationRate / 100`
+- \\(C = (1 - \rho) \cdot \bar{r}_{\inf}\\) — intercept ensuring reversion to the long-run mean \\(\bar{r}_{\inf}\\)
+- \\(\rho\\) = `infAr` — AR coefficient (persistence of inflation shocks; 0 = random, 0.9 = highly persistent)
+- \\(\sigma_{\inf,m} = \sigma_{\inf,\text{annual}} / \sqrt{12}\\)
+- \\(\bar{r}_{\inf}\\) = `inflationRate / 100`
 
 In code:
 ```typescript

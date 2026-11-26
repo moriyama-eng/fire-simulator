@@ -35,40 +35,48 @@ export function aggregateResultsProduction({
     const cashPercentileData = percentiles.map(() => new Float32Array(dataLen));
     const ddPercentileData = percentiles.map(() => new Float32Array(dataLen));
 
-    const ks = new Int32Array(percentiles.length);
-    for (let i = 0; i < percentiles.length; i++) ks[i] = Math.floor((percentiles[i] / 100) * (simPaths - 1));
+    // Ensure non-decreasing ks for multiSelectTrue while preserving caller percentile order
+    const sortedOrder = percentiles
+        .map((p, idx) => ({ p, idx }))
+        .sort((a, b) => a.p - b.p);
+    const ks = new Int32Array(sortedOrder.length);
+    for (let i = 0; i < sortedOrder.length; i++) {
+        ks[i] = Math.floor((sortedOrder[i].p / 100) * (simPaths - 1));
+    }
 
     const workBuffer = new Float32Array(simPaths);
-    const resultBuf = new Float32Array(percentiles.length);
+    const resultBuf = new Float32Array(sortedOrder.length);
 
-    // Percentile calculation for total assets (totals)
-    {
-        const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
-        for (let t = 0; t < dataLen; t++) {
-            workBuffer.set(totalT[t]);
-            multiSelectTrue(workBuffer, ks, resultBuf);
-            for (let i = 0; i < ks.length; i++) totalPercentileData[i][t] = resultBuf[i];
+    if (ks.length > 0) {
+        // Percentile calculation for total assets (totals)
+        {
+            const totalT = transposeFlat(totalsBuffer, simPaths, dataLen);
+            for (let t = 0; t < dataLen; t++) {
+                workBuffer.set(totalT[t]);
+                multiSelectTrue(workBuffer, ks, resultBuf);
+                for (let i = 0; i < ks.length; i++) totalPercentileData[sortedOrder[i].idx][t] = resultBuf[i];
+            }
+            // totalT is released when this scope exits
         }
-        // totalT is released when this scope exits
-    }
 
-    // Percentile calculation for cash buffer (cashes)
-    {
-        const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
-        for (let t = 0; t < dataLen; t++) {
-            workBuffer.set(cashT[t]);
-            multiSelectTrue(workBuffer, ks, resultBuf);
-            for (let i = 0; i < ks.length; i++) cashPercentileData[i][t] = resultBuf[i];
+        // Percentile calculation for cash buffer (cashes)
+        {
+            const cashT = transposeFlat(cashesBuffer, simPaths, dataLen);
+            for (let t = 0; t < dataLen; t++) {
+                workBuffer.set(cashT[t]);
+                multiSelectTrue(workBuffer, ks, resultBuf);
+                for (let i = 0; i < ks.length; i++) cashPercentileData[sortedOrder[i].idx][t] = resultBuf[i];
+            }
         }
-    }
 
-    // Percentile calculation for drawdown (dds)
-    {
-        const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
-        for (let t = 0; t < dataLen; t++) {
-            workBuffer.set(ddT[t]);
-            multiSelectTrue(workBuffer, ks, resultBuf);
-            for (let i = 0; i < ks.length; i++) ddPercentileData[i][t] = resultBuf[i];
+        // Percentile calculation for drawdown (dds)
+        {
+            const ddT = transposeFlat(ddsBuffer, simPaths, dataLen);
+            for (let t = 0; t < dataLen; t++) {
+                workBuffer.set(ddT[t]);
+                multiSelectTrue(workBuffer, ks, resultBuf);
+                for (let i = 0; i < ks.length; i++) ddPercentileData[sortedOrder[i].idx][t] = resultBuf[i];
+            }
         }
     }
 
@@ -85,9 +93,6 @@ export function aggregateResultsProduction({
     const medianMaxUw = quickselectSafe(uwCopy, medianIdx, 0, uwCopy.length - 1);
     const worst10MaxUw = quickselectSafe(uwCopy, worst10UwIdx, 0, uwCopy.length - 1);
 
-    let medianPIdx = percentiles.indexOf(50);
-    if (medianPIdx === -1) medianPIdx = Math.floor(percentiles.length / 2);
-
     // Calculation of target asset maintenance probability
     // targetAssetThreshold = initial total assets * targetAssetRatio
     // Determine if the total assets in the final month (index dataLen-1) are at or above the threshold
@@ -95,13 +100,20 @@ export function aggregateResultsProduction({
     const targetThreshold = initialTotalAssets * (targetAssetRatio / 100);
     let maintainCount = 0;
     const totalsArray = new Float32Array(totalsBuffer);
+    const finalMonthTotals = new Float32Array(simPaths);
     for (let p = 0; p < simPaths; p++) {
         const finalAsset = totalsArray[p * dataLen + (dataLen - 1)];
+        finalMonthTotals[p] = finalAsset;
         if (finalAsset >= targetThreshold) {
             maintainCount++;
         }
     }
     const targetAssetMaintainRate = (maintainCount / simPaths) * 100;
+
+    const medianPIdx = percentiles.indexOf(50);
+    const finalMedian = medianPIdx !== -1
+        ? totalPercentileData[medianPIdx][dataLen - 1]
+        : quickselectSafe(finalMonthTotals, medianIdx, 0, finalMonthTotals.length - 1);
 
     return {
         percentiles,
@@ -109,7 +121,7 @@ export function aggregateResultsProduction({
         cashPercentileData,
         ddPercentileData,
         successRate: ((simPaths - bankruptCount) / simPaths * 100),
-        finalMedian: totalPercentileData[medianPIdx][dataLen - 1],
+        finalMedian,
         worst10MaxDd, worst5MaxDd,
         medianMaxUw, worst10MaxUw,
         maxDdPerPath: maxDdPerPath as Float32Array,

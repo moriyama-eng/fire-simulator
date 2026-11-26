@@ -2,7 +2,6 @@
 // Analysis tab UI control
 
 import * as AS from './analysis-state.js';
-import { setProgressCallback, getProgressCallback } from './simulation-engine.js';
 import { t, formatCurrency, formatYears, formatNumber, getLanguage } from './i18n.js';
 import type { FactorDefinition } from './types/params.js';
 import type { BaseMetrics } from './analysis-state.js';
@@ -107,7 +106,7 @@ function renderFactorSelector(): void {
     const selectedFactorCountEl = document.getElementById('selectedFactorCount');
     if (selectedFactorCountEl) selectedFactorCountEl.textContent = t('analysis.selectedFactors', [selected.length]);
     const scenarioCountEl = document.getElementById('scenarioCount');
-    if (scenarioCountEl) scenarioCountEl.textContent = t('analysis.scenarioCount', [AS.getScenarioCount()]);
+    if (scenarioCountEl) scenarioCountEl.textContent = String(AS.getScenarioCount());
     const runAnalysisBtn = document.getElementById('runAnalysisBtn') as HTMLButtonElement | null;
     if (runAnalysisBtn) {
         runAnalysisBtn.disabled = selected.length === 0 || AS.getState().isRunning;
@@ -366,7 +365,8 @@ function updateTargetTableContent(
                     break;
                 }
             }
-            const fraction = (targetValue - lower.metricValue) / (upper.metricValue - lower.metricValue);
+            const denom = upper.metricValue - lower.metricValue;
+            const fraction = denom === 0 ? 0 : (targetValue - lower.metricValue) / denom;
             const requiredFactorValue = lower.factorValue + fraction * (upper.factorValue - lower.factorValue);
             const delta = requiredFactorValue - baseVal;
             const deltaColor = delta > 0 ? 'text-emerald-400' : 'text-rose-400';
@@ -480,8 +480,8 @@ function renderCompareCards(): void {
 
             // Bar width calculation
             const successWidth = Math.max(0, Math.min(100, ((m.success_rate_pct - 70) / (100 - 70)) * 100)).toFixed(0);
-            const p10Width = (m.final_p10_jpy / maxP10 * 100).toFixed(0);
-            const ddAbsWidth = (Math.abs(m.worst10_max_dd) / maxAbsDD * 100).toFixed(0);
+            const p10Width = maxP10 > 0 ? (m.final_p10_jpy / maxP10 * 100).toFixed(0) : '0';
+            const ddAbsWidth = maxAbsDD > 0 ? (Math.abs(m.worst10_max_dd) / maxAbsDD * 100).toFixed(0) : '0';
             const ddPercent = (m.worst10_max_dd * 100).toFixed(1);
 
             html += `<div class="compare-row">`;
@@ -520,10 +520,15 @@ function renderCompareCards(): void {
 // ====================================================================
 // Event delegation
 // ====================================================================
+function handleLanguageChanged(): void {
+    if (AS.getState().isRunning) return;
+    renderAnalysisTab();
+}
+
 let delegationDone = false;
 export function setupAnalysisEventDelegation(): void {
     if (delegationDone) return;
-    document.addEventListener('languageChanged', renderAnalysisTab);
+    document.addEventListener('languageChanged', handleLanguageChanged);
     delegationDone = true;
     const tab = document.getElementById('analysisTab');
     if (!tab) return;
@@ -573,10 +578,6 @@ async function executeAnalysis(): Promise<void> {
     btn.disabled = true;
     btn.textContent = t('analysis.running', ['0']);
 
-    // Disable the simulation tab's progress callback while analysis is running
-    const savedCallback = getProgressCallback();
-    setProgressCallback(null);
-
     try {
         const { runAnalysis } = await import('./analysis-runner.js');
         const result = await runAnalysis(progress => {
@@ -590,8 +591,6 @@ async function executeAnalysis(): Promise<void> {
         const msg = errMessage.startsWith('error.') ? t(errMessage) : errMessage;
         AS.setErrorMessage(msg);
     } finally {
-        // Restore the progress callback
-        setProgressCallback(savedCallback);
         btn.disabled = AS.getSelectedFactors().length === 0;
         btn.textContent = t('analysis.run');
         btn.style.background = '';

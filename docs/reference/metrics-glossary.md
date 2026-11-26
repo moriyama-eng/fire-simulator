@@ -57,7 +57,7 @@ Source: `src/core/aggregation.ts`, lines 73–79.
 
 ### Stagnation Period (Underwater Duration)
 
-Number of consecutive months a path spends with total assets below the initial total assets. Longest such period per path is tracked (`maxUwMonths`).
+Number of consecutive months a path spends with total assets below its previous peak (high-water mark). Longest such period per path is tracked (`maxUwMonths`). Note that consecutive months below the *initial* total assets are tracked separately by `belowInitPeriods` (`maxBelowInitPeriod`).
 
 `medianMaxUw` and `worst10MaxUw` are the median and 90th-percentile worst values across all paths, computed via `quickselectSafe` on `maxUwPerPath`.
 

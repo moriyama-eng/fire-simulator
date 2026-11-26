@@ -118,9 +118,31 @@ interface TooltipTriggerElement extends HTMLElement {
 // ====================================================================
 // Tooltip initialization (applies to all tooltips, both static and dynamic)
 // ====================================================================
+interface ManagedTooltipEntry {
+    trigger: TooltipTriggerElement;
+    tooltip: HTMLElement;
+    cleanupScroll: () => void;
+}
+
+const managedTooltips = new Set<ManagedTooltipEntry>();
+
 export function initTooltips(): void {
-    const tooltipContainer = document.getElementById('tooltip-container');
-    if (!tooltipContainer) return;
+    let tooltipContainer = document.getElementById('tooltip-container');
+    if (!tooltipContainer) {
+        tooltipContainer = document.createElement('div');
+        tooltipContainer.id = 'tooltip-container';
+        tooltipContainer.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;';
+        document.body.appendChild(tooltipContainer);
+    }
+
+    // Prune orphaned tooltips whose trigger elements were removed by DOM re-renders
+    for (const entry of managedTooltips) {
+        if (!entry.trigger.isConnected) {
+            entry.cleanupScroll();
+            entry.tooltip.remove();
+            managedTooltips.delete(entry);
+        }
+    }
 
     document.querySelectorAll('.tooltip-container').forEach(node => {
         if (!(node instanceof HTMLElement)) return;
@@ -164,6 +186,10 @@ export function initTooltips(): void {
             tooltip.style.transform = 'translateX(-50%)';
         };
 
+        const cleanupScroll = (): void => {
+            window.removeEventListener('scroll', positionTooltip);
+        };
+
         const mouseEnterHandler = (): void => {
             positionTooltip();
             tooltip.style.visibility = 'visible';
@@ -173,7 +199,7 @@ export function initTooltips(): void {
         const mouseLeaveHandler = (): void => {
             tooltip.style.visibility = 'hidden';
             tooltip.style.opacity = '0';
-            window.removeEventListener('scroll', positionTooltip);
+            cleanupScroll();
         };
 
         // Save handlers so they can be removed later
@@ -186,6 +212,8 @@ export function initTooltips(): void {
         trigger.addEventListener('mouseleave', mouseLeaveHandler);
         trigger.addEventListener('focusin', mouseEnterHandler);
         trigger.addEventListener('focusout', mouseLeaveHandler);
+
+        managedTooltips.add({ trigger, tooltip, cleanupScroll });
     });
 }
 

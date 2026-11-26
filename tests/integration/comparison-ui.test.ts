@@ -136,4 +136,24 @@ describe('comparison-ui integration', () => {
         expect(seedInput?.value).not.toBe(oldSeed);
         expect(seedInput?.value).toBe(CS.getCommonSeed().toString());
     });
+
+    it('does not leak orphaned .tooltip-text nodes across repeated renderComparisonTab() calls', () => {
+        renderComparisonTab();
+        const firstCount = document.querySelectorAll('#tooltip-container .tooltip-text').length;
+        expect(firstCount).toBeGreaterThan(0);
+
+        renderComparisonTab();
+        renderComparisonTab();
+        const afterCount = document.querySelectorAll('#tooltip-container .tooltip-text').length;
+        expect(afterCount).toBe(firstCount);
+    });
+
+    it('escapes HTML in scenario error messages rendered in comparison table', () => {
+        const scenario = CS.getScenarios()[0]!;
+        CS.setScenarioError(scenario.id, '<img src=x onerror=alert(1)>');
+        renderComparisonTab();
+        const container = document.getElementById('comparisonTableContainer');
+        expect(container?.querySelector('img')).toBeNull();
+        expect(container?.textContent).toContain('<img src=x onerror=alert(1)>');
+    });
 });

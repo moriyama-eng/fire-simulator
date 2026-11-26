@@ -19,8 +19,10 @@ export function getProgressCallback(): ProgressCallback | null {
 
 export async function runSimulation(
   params: SimulationParams,
-  userPercentiles?: number[]
+  userPercentiles?: number[],
+  progressCallback?: ProgressCallback | null
 ): Promise<AggregatedMetrics> {
+  const effectiveOnProgress = progressCallback === undefined ? onProgress : progressCallback;
   const percentiles =
     userPercentiles && userPercentiles.length > 0 ? userPercentiles : [10, 25, 50, 75, 90];
   const { simYears, simPaths } = params;
@@ -60,7 +62,7 @@ export async function runSimulation(
           workerProgress[i] = data.completed;
           const totalCompleted = workerProgress.reduce((a, b) => a + b, 0);
           const progress = Math.round((totalCompleted / simPaths) * 100);
-          if (onProgress) onProgress(progress);
+          if (effectiveOnProgress) effectiveOnProgress(progress);
         }
       };
       worker.onerror = (err: unknown) => {
