@@ -141,6 +141,8 @@ export async function runMain(): Promise<void> {
         renderConsecutiveSellCdfChart(result);
         markResultClean(); // Enable the share button
         updateSummaryCard(result, params);
+        setLastExecutedParams(params);
+        syncBaseToAnalysisIfOpen();
         setTimeout(() => {
             const target = document.getElementById('summaryCardContainer');
             if (target) {
@@ -162,11 +164,6 @@ export async function runMain(): Promise<void> {
             runBtn.style.background = '';
         }
         setIsRunning(false);
-        const lastSimResult = getLastSimResult();
-        if (lastSimResult) {
-            setLastExecutedParams(getParamsFromDom());
-            syncBaseToAnalysisIfOpen();
-        }
     }
 }
 
@@ -426,7 +423,7 @@ export function shareToX(): void {
         s,
         url.toString()
     ]);
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
 
 // ====================================================================
@@ -442,7 +439,7 @@ export function openCompareTab(): void {
         percentileRaw: pctInput ? pctInput.value : '',
         lang: getLanguage()
     }));
-    window.open(url.toString(), '_blank');
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
 }
 
 // ====================================================================

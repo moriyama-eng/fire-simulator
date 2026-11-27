@@ -403,8 +403,18 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     document.title = 'Page Not Found — FIRE Monte Carlo Simulator Docs';
   }
 
+  let loadRequestId = 0;
+  let activeFetchController: AbortController | null = null;
+
   async function loadDoc(docPath: string): Promise<void> {
     if (!contentEl || !loadingEl || !notFoundEl) return;
+
+    const reqId = ++loadRequestId;
+    if (activeFetchController) {
+      activeFetchController.abort();
+    }
+    const controller = new AbortController();
+    activeFetchController = controller;
 
     contentEl.style.display = 'none';
     notFoundEl.style.display = 'none';
@@ -429,10 +439,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     let md = '';
     try {
       const docUrl = new URL(`docs/${category}/${name}.md`, document.baseURI).href;
-      const res = await fetch(docUrl);
+      const res = await fetch(docUrl, { signal: controller.signal });
+      if (reqId !== loadRequestId) return;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       md = await res.text();
+      if (reqId !== loadRequestId) return;
     } catch {
+      if (reqId !== loadRequestId) return;
       showNotFound();
       return;
     }
@@ -442,7 +455,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
     renderMath(container);
 
-    contentEl.appendChild(container);
+    contentEl.replaceChildren(container);
     loadingEl.style.display = 'none';
     contentEl.style.display = 'block';
 

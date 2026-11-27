@@ -60,7 +60,7 @@ export async function runAnalysis(onProgress?: (progress: AnalysisProgress) => v
     const totalScenarios = 1 + selected.length * 4;
     if (onProgress) onProgress({ done: 0, total: totalScenarios });
 
-    const baseRes = await runSimulation(baseLegacy, pcts);
+    const baseRes = await runSimulation(baseLegacy, pcts, null);
     const baseMetrics = extractMetrics(baseRes);
 
     const perFactorResults: Record<string, ScenarioPoint[]> = {};
@@ -77,7 +77,7 @@ export async function runAnalysis(onProgress?: (progress: AnalysisProgress) => v
             // Pass the value in UI units. applyFactorChange internally multiplies by scale to convert to the raw value.
             applyFactorChange(modifiedEp, factor, baseValue + factor.step * level);
             const leg = convertToLegacyParams(modifiedEp);
-            const res = await runSimulation(leg, pcts);
+            const res = await runSimulation(leg, pcts, null);
             // Calculate the display value after change (divide by scale to convert back to UI units)
             const rawValue = modifiedEp[factor.paramKey];
             const displayValue = (typeof rawValue === 'number' ? rawValue : 0) / (factor.scale || 1);

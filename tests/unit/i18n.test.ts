@@ -65,6 +65,12 @@ describe('i18n module', () => {
         .map(([key]) => key);
       expect(emptyKeys).toEqual([]);
     });
+
+    it('should describe risk-asset withdrawals accurately in asset.riskAsset.tooltip (EN)', () => {
+      const tip = TRANSLATIONS.en['asset.riskAsset.tooltip'];
+      expect(tip).not.toContain('falls below the drawdown threshold');
+      expect(tip).toContain('remains above (milder than) the drawdown threshold');
+    });
   });
 
   describe('Version interpolation and fallback', () => {

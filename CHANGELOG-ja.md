@@ -5,6 +5,19 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v3.0.3] - 2026-11-27
+
+### 修正
+- **破産後ドローダウン系列の統計歪みおよびレート下限ガード**: `src/core/simulation.ts` において破産月以降の `dds` 要素が `0`（0%）のまま残っていた不具合を修正し、`dds.fill(-1.0, t)` により破産後も `-100%` として一貫集計されるようにしました。あわせて `simulation.ts` と `headless-params.ts` に `expectedReturn`・`inflationRate`・`guardrailReduction` の安全な下限クランプを追加し、`normalizeHeadlessParams` の全 19 数値・5 真偽値パラメータに対する `NaN` / `±Infinity` / `null` / 空文字 / 非数値文字列 / `undefined` サニタイズを強化しました。
+- **集計パーセンタイル順および CLI 引数パースの是正**: `src/core/aggregation.ts` で未ソート `percentiles` 入力時にも `multiSelectTrue` へ昇順 `ks` を渡すよう修正し、`50` が含まれない場合や空配列時にも最終月から真の中央値（`finalMedian`）を算出するようにしました。また `src/cli.ts` で暗黙のデフォルト `run` サブコマンド（`node dist/cli.js <file.json>`）をサポートし、値なし・フラグ誤消費の `--out` および JSON 配列ルートを終了コード `1` で拒否するようにしました。
+- **フロントエンド状態管理・リーク・非同期レース・UI/セキュリティ不具合の修正**: `isResultDirty` を `src/core/state.ts` へ一本化し、「条件変更あり」警告バッジと共有ガードを復旧しました。`src/app/ui-helpers.ts` に孤立ツールチップ DOM・`scroll` リスナーの自動解放を導入し `src/comparison-ui.ts` の重複実装を削除しました。`src/docs-app.ts` の `loadDoc()` へ `AbortController` と世代番号ガードを追加しました。`runSimulation` に任意の `progressCallback?: ProgressCallback | null` 引数を追加してグローバル進捗コールバックの破壊を解消し、比較タブの再入ガード・分析実行中の言語切替ガード・英語モード現金バッファ OFF→ON 時の `$100K` 復元・分析タブ「シナリオ総数」二重表示解消・`asset.riskAsset.tooltip` 英語誤訳訂正・`s.error` HTML エスケープ・画像保存見出し `<svg>` アイコン保持・失敗時の `lastExecutedParams` 保護・ゼロ除算 `NaN` 防止・`window.open` への `noopener,noreferrer` 付与を実装しました。
+- **ドキュメント整合性・検証スクリプト・CI 最小権限化・テスト修正**: `docs/reference/metrics-glossary.md` の停滞期間定義、`mathematical-model.md` / `reproducibility.md` の KaTeX インライン数式エスケープ、`headless-api.md` / `parameter-reference.md` の SPA 内 Currency Semantics 内部リンク、`getting-started.md` の見出し階層、`cli-usage.md` の終了コード、`testing-guide.md` の CI 記述およびテスト件数表を修正しました。`scripts/smoke-subpath-server.mjs` を `verifyConfinedPath` へ統一し、検証スクリプト 4 本を `fileURLToPath` 化、`.github/workflows/deploy.yml` の `build` ジョブ権限を `contents: read` へ最小化、`tests/unit/dev-middleware.test.ts` の偽陽性ストリーム検証を是正しました。
+
+### 追加
+- **回帰テストスイートの拡充（443 テスト）**: 破産後ドローダウン系列、Headless パラメータサニタイズ、未ソートパーセンタイル、CLI デフォルト実行、Dirty 状態同期、ツールチップ解放、HTML エスケープ、KaTeX 保持、実ストリーム開発ミドルウェア検証など 21 件の単体・統合テストを追加しました。
+
+> **シミュレーションの生存判定（`successRate`）、最終資産中央値（`finalMedian`）、最大ドローダウン（`maxDD`）、最長停滞期間（`maxUw`）、および乱数再現性は v2.x および v3.0.0〜v3.0.2 とビット単位で完全に一致します（破産翌月以降の月次 `ddPercentileData` のみ `0` から `-1.0` へ是正）。**
+
 ## [v3.0.2] - 2026-10-31
 
 ### 修正

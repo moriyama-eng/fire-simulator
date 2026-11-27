@@ -81,58 +81,70 @@ export function normalizeHeadlessParams(raw?: Record<string, unknown> | Partial<
     // Fill missing fields with HEADLESS_DEFAULTS
     const p: HeadlessParams = { ...HEADLESS_DEFAULTS, ...raw };
 
-    // ----- Sanitize floats (NaN/Inf fall back to default value) -----
+    // ----- Sanitize floats (NaN/Inf/null/empty/boolean fall back to default value) -----
     const safeFloat = (key: keyof HeadlessParams): number => {
-        const v = Number(p[key]);
+        const rawVal: unknown = p[key];
+        if (rawVal === null || rawVal === '' || typeof rawVal === 'boolean') {
+            return HEADLESS_DEFAULTS[key] as number;
+        }
+        const v = Number(rawVal);
         return Number.isFinite(v) ? v : (HEADLESS_DEFAULTS[key] as number);
     };
 
-    p.expectedReturn = safeFloat('expectedReturn');
+    // ----- Normalize booleans strictly (only literal true enables a flag) -----
+    p.cashBufferToggle = p.cashBufferToggle === true;
+    p.guardrailToggle  = p.guardrailToggle === true;
+    p.useArInflation   = p.useArInflation === true;
+    p.useTDistribution = p.useTDistribution === true;
+    p.simDfManual      = p.simDfManual === true;
+
+    p.expectedReturn = Math.max(-99.99, safeFloat('expectedReturn'));
     p.volatility     = safeFloat('volatility');
-    p.inflationRate  = safeFloat('inflationRate');
+    p.inflationRate  = Math.max(-99.99, safeFloat('inflationRate'));
 
     // ----- Clamps (sources: getParamsFromInputs / comparison-runner / new guards) -----
 
     // simPaths: clamp to [5000, 50000] and round (matches getParamsFromInputs)
-    p.simPaths = clampSimPaths(p.simPaths);
+    p.simPaths = clampSimPaths(safeFloat('simPaths'));
 
     // simYears: minimum 1 (prevents negative dataLen)
-    p.simYears = Math.max(1, Math.round(Number(p.simYears)));
+    p.simYears = Math.max(1, Math.round(safeFloat('simYears')));
 
-    // seedNum: clamp to [1, 99999999] (consistent with comparison-state.ts setCommonSeed)
-    p.seedNum = Math.min(99999999, Math.max(1, Math.floor(Number(p.seedNum) || HEADLESS_DEFAULTS.seedNum)));
+    // seedNum: clamp to [1, 99999999] (preserve 0 -> default fallback for backwards compatibility)
+    const rawSeed = safeFloat('seedNum');
+    p.seedNum = Math.min(99999999, Math.max(1, Math.floor(rawSeed === 0 ? HEADLESS_DEFAULTS.seedNum : rawSeed)));
 
     // Monetary values: guard against negatives
-    p.initialRiskAsset  = Math.max(0, Number(p.initialRiskAsset));
-    p.initialCashBuffer = Math.max(0, Number(p.initialCashBuffer));
-    p.monthlyExpense    = Math.max(0, Number(p.monthlyExpense));
+    p.initialRiskAsset  = Math.max(0, safeFloat('initialRiskAsset'));
+    p.initialCashBuffer = Math.max(0, safeFloat('initialCashBuffer'));
+    p.monthlyExpense    = Math.max(0, safeFloat('monthlyExpense'));
 
     // Negative-clamp (matches getParamsFromInputs / comparison-runner)
-    p.drawdownTrigger    = clampNonPositive(p.drawdownTrigger);
-    p.drawdownReplenish  = clampNonPositive(p.drawdownReplenish);
-    p.guardrailTrigger   = clampNonPositive(p.guardrailTrigger);
-    p.guardrailReduction = clampNonPositive(p.guardrailReduction);
-    p.guardrailRelease   = clampNonPositive(p.guardrailRelease);
+    p.drawdownTrigger    = clampNonPositive(safeFloat('drawdownTrigger'));
+    p.drawdownReplenish  = clampNonPositive(safeFloat('drawdownReplenish'));
+    p.guardrailTrigger   = clampNonPositive(safeFloat('guardrailTrigger'));
+    p.guardrailReduction = clampRange(safeFloat('guardrailReduction'), -100, 0);
+    p.guardrailRelease   = clampNonPositive(safeFloat('guardrailRelease'));
 
     // Positive-clamp (matches getParamsFromInputs)
-    p.replenishPace = clampNonNegative(p.replenishPace);
+    p.replenishPace = clampNonNegative(safeFloat('replenishPace'));
 
     // infVol: minimum 0 (matches comparison-runner)
-    p.infVol = clampNonNegative(p.infVol);
+    p.infVol = clampNonNegative(safeFloat('infVol'));
 
     // infAr: clamp to [0, 1.0] (matches comparison-runner)
-    p.infAr = clampRange(p.infAr, 0, 1.0);
+    p.infAr = clampRange(safeFloat('infAr'), 0, 1.0);
 
     // simDfNum: minimum 2.5 (matches getParamsFromInputs)
-    p.simDfNum = clampMinDf(p.simDfNum);
+    p.simDfNum = clampMinDf(safeFloat('simDfNum'));
 
     // targetAssetRatio: clamp to [0, 500] (matches comparison-runner)
-    p.targetAssetRatio = clampRange(p.targetAssetRatio, 0, 500);
+    p.targetAssetRatio = clampRange(safeFloat('targetAssetRatio'), 0, 500);
 
     // ----- Guardrail cross-validation -----
     // When guardrailToggle is true and guardrailRelease < guardrailTrigger,
     // snap guardrailRelease to guardrailTrigger (matches actions.ts in the UI path).
-    p.guardrailRelease = resolveGuardrailRelease(Boolean(p.guardrailToggle), p.guardrailTrigger, p.guardrailRelease);
+    p.guardrailRelease = resolveGuardrailRelease(p.guardrailToggle, p.guardrailTrigger, p.guardrailRelease);
 
     // currency: accept only 'JPY' or 'USD' (label-only, no conversion)
     if (p.currency !== 'JPY' && p.currency !== 'USD') {

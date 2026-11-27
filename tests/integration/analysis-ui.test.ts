@@ -231,4 +231,22 @@ describe('Target table high success rate and out of range', () => {
     renderAnalysisTab();
     expect(document.getElementById('targetTableWrapper')?.textContent).toContain(t('analysis.outOfRange'));
   });
+
+  it('renders numeric-only #scenarioCount without duplicating prefix label', () => {
+    AS.setSelectedFactors(['expected_return_pct']);
+    renderAnalysisTab();
+    expect(document.getElementById('scenarioCount')?.textContent).toBe('5');
+  });
+
+  it('guards against NaN bar widths when all scenarios have zero final_p10_jpy and zero worst10_max_dd', () => {
+    AS.setAnalysisResult({
+      baseScenario: { metrics: makeBaseMetrics({ success_rate_pct: 50, final_p10_jpy: 0, worst10_max_dd: 0 }) },
+      perFactorResults: {
+        expected_return_pct: [-2, -1, 1, 2].map(level => makeScenarioPoint(level, { final_p10_jpy: 0, worst10_max_dd: 0 })),
+      },
+    } as unknown as AnalysisResult);
+    renderAnalysisTab();
+    const html = document.getElementById('compareCardsContainer')?.innerHTML || '';
+    expect(html).not.toContain('NaN');
+  });
 });

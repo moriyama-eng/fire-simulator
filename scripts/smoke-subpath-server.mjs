@@ -1,7 +1,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { MIME_MAP } from './lib/confinement.mjs';
+import { fileURLToPath } from 'node:url';
+import { MIME_MAP, verifyConfinedPath } from './lib/confinement.mjs';
 
 function getMime(filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -58,39 +59,23 @@ export async function runSubpathSmoke(clientDist = path.resolve(process.cwd(), '
       return;
     }
 
-    // Fixed-point decode for traversal inspection
-    let decodedPath = pathname;
-    let prev = '';
-    let iter = 0;
-    while (decodedPath !== prev && iter < 10) {
-      prev = decodedPath;
-      iter++;
-      try {
-        decodedPath = decodeURIComponent(decodedPath);
-      } catch {
-        res.writeHead(404, { 'X-Content-Type-Options': 'nosniff' });
-        res.end('Not Found');
-        return;
-      }
+    const rawSubPath = pathname.slice('/fire-simulator/'.length);
+    const relPath = rawSubPath === '' ? 'index.html' : rawSubPath;
+
+    let filePath;
+    try {
+      filePath = verifyConfinedPath(clientDist, relPath, { refuseSymlinks: true });
+    } catch {
+      res.writeHead(404, { 'X-Content-Type-Options': 'nosniff' });
+      res.end('Not Found');
+      return;
     }
 
-    const subPath = decodedPath.slice('/fire-simulator/'.length);
-
-    // Negative confinement check on request path
-    const segments = subPath.split(/[\\/]/);
-    for (const seg of segments) {
-      const segLower = seg.toLowerCase();
-      if (seg === '..' || /^[A-Za-z]:/.test(seg) || segLower === 'internal' || segLower.startsWith('internal.')) {
-        res.writeHead(404, { 'X-Content-Type-Options': 'nosniff' });
-        res.end('Not Found');
-        return;
-      }
-    }
+    const confinedRel = path.relative(clientDist, filePath).replace(/\\/g, '/');
 
     // Docs security: no HTML or script files allowed under docs/
-    if (subPath.startsWith('docs/')) {
-      const docsRel = subPath.slice('docs/'.length);
-      const ext = path.extname(docsRel).toLowerCase();
+    if (confinedRel.startsWith('docs/')) {
+      const ext = path.extname(confinedRel).toLowerCase();
       if (!MIME_MAP[ext]) {
         res.writeHead(404, { 'X-Content-Type-Options': 'nosniff' });
         res.end('Not Found');
@@ -98,14 +83,7 @@ export async function runSubpathSmoke(clientDist = path.resolve(process.cwd(), '
       }
     }
 
-    let filePath;
-    if (subPath === '' || subPath === 'index.html') {
-      filePath = path.resolve(clientDist, 'index.html');
-    } else {
-      filePath = path.resolve(clientDist, subPath);
-    }
-
-    if (!filePath.startsWith(clientDist) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
       res.writeHead(404, { 'X-Content-Type-Options': 'nosniff' });
       res.end('Not Found');
       return;
@@ -256,7 +234,7 @@ export async function runSubpathSmoke(clientDist = path.resolve(process.cwd(), '
 }
 
 const isDirectRun = process.argv[1] && (
-  path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 );
 
 if (isDirectRun) {

@@ -6,6 +6,7 @@ import type { ComparisonScenarioInputs } from './comparison-state.js';
 import type { AggregatedMetrics } from './types/simulation.js';
 import type { SortableInstance } from './types/global.js';
 import { runAllScenarios } from './comparison-runner.js';
+import { initTooltips } from './app/ui-helpers.js';
 import { getParamsFromInputs, calcAutoDf } from './core/params.js';
 import { getCurrentSimParams } from './params-accessor.js';
 import { t, getLanguage, formatCurrency, formatPercent, formatYears, formatNumber } from './i18n.js';
@@ -262,44 +263,6 @@ function restoreActiveElement(info: ActiveElementInfo | null): void {
         }
     }
 }
-function initTooltips() {
-    let tooltipContainer = document.getElementById('tooltip-container');
-    if (!tooltipContainer) {
-        tooltipContainer = document.createElement('div');
-        tooltipContainer.id = 'tooltip-container';
-        tooltipContainer.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;";
-        document.body.appendChild(tooltipContainer);
-    }
-    document.querySelectorAll('.tooltip-container').forEach(triggerNode => {
-        if (!(triggerNode instanceof HTMLElement)) return;
-        const trigger = triggerNode as HTMLElement & { _tooltipInitialized?: boolean };
-        const tooltip = trigger.querySelector('.tooltip-text');
-        if (!(tooltip instanceof HTMLElement)) return;
-        if (tooltip.parentElement !== tooltipContainer) tooltipContainer.appendChild(tooltip);
-        if (trigger._tooltipInitialized) return;
-        trigger._tooltipInitialized = true;
-        const positionTooltip = (): void => {
-            const triggerRect = trigger.getBoundingClientRect();
-            const tooltipHeight = tooltip.offsetHeight;
-            const tooltipWidth = tooltip.offsetWidth;
-            const viewportWidth = window.innerWidth;
-            let left = triggerRect.left + triggerRect.width / 2;
-            const tooltipMargin = 16;
-            if (left + tooltipWidth / 2 > viewportWidth - tooltipMargin) left = viewportWidth - tooltipWidth / 2 - tooltipMargin;
-            if (left - tooltipWidth / 2 < tooltipMargin) left = tooltipWidth / 2 + tooltipMargin;
-            tooltip.style.left = `${left}px`;
-            tooltip.style.top = `${triggerRect.top - tooltipHeight - tooltipMargin}px`;
-            tooltip.style.transform = 'translateX(-50%)';
-        };
-        const show = (): void => { positionTooltip(); tooltip.style.visibility = 'visible'; tooltip.style.opacity = '1'; window.addEventListener('scroll', positionTooltip); };
-        const hide = (): void => { tooltip.style.visibility = 'hidden'; tooltip.style.opacity = '0'; window.removeEventListener('scroll', positionTooltip); };
-        trigger.addEventListener('mouseenter', show);
-        trigger.addEventListener('mouseleave', hide);
-        trigger.addEventListener('focusin', show);
-        trigger.addEventListener('focusout', hide);
-    });
-}
-
 export function renderComparisonTab(): void {
     const container = document.getElementById('comparisonTableContainer');
     if (!container) return;
@@ -522,7 +485,7 @@ export function renderComparisonTab(): void {
             const isPending = !s.result || s.error;
             const pendingClass = isPending ? 'pending-col' : '';
             if (s.error) {
-                rowHtml += `<td class="p-3 border-b border-slate-700 text-right ${pendingClass}"><span class="text-rose-400 text-xs font-semibold">⚠️ ${s.error}</span></td>`;
+                rowHtml += `<td class="p-3 border-b border-slate-700 text-right ${pendingClass}"><span class="text-rose-400 text-xs font-semibold">⚠️ ${escapeHtml(s.error)}</span></td>`;
             } else if (val === null) {
                 rowHtml += `<td class="p-3 border-b border-slate-700 text-right ${pendingClass}"></td>`;
             } else {

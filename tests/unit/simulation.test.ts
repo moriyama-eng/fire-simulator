@@ -267,4 +267,35 @@ describe('bankruptcy remaining months and AR inflation', () => {
         expect(res.totals).toBeInstanceOf(Float32Array);
         expect(typeof res.bankrupt).toBe('boolean');
     });
+
+    it('fills all post-bankruptcy months in dds with -1.0', () => {
+        const params = makeBankruptcyParams();
+        const res = runSinglePath(zeroRngs(), params);
+        expect(res.bankrupt).toBe(true);
+        const bankruptMonth = res.totals.findIndex((v: number, i: number) => i > 0 && v === 0);
+        expect(bankruptMonth).toBeGreaterThan(0);
+        for (let m = bankruptMonth; m < res.dds.length; m++) {
+            expect(res.dds[m]).toBe(-1.0);
+        }
+    });
+
+    it('guards against extreme negative expectedReturn, inflationRate, and guardrailReduction', () => {
+        const params = makeBankruptcyParams({
+            initialRiskAsset: 100_000_000,
+            monthlyExpense: 100_000,
+            expectedReturn: -150,
+            inflationRate: -150,
+            guardrailToggle: true,
+            guardrailTrigger: -5,
+            guardrailRelease: -1,
+            guardrailReduction: -150,
+        });
+        const res = runSinglePath(zeroRngs(), params);
+        for (let m = 0; m < res.totals.length; m++) {
+            expect(Number.isFinite(res.totals[m])).toBe(true);
+            expect(Number.isFinite(res.dds[m])).toBe(true);
+        }
+        // Guardrail reduction clamped to -100% must never add negative expense (increase assets beyond initial)
+        expect(res.totals[res.totals.length - 1]).toBeLessThanOrEqual(params.initialRiskAsset);
+    });
 });

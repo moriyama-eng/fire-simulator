@@ -143,5 +143,19 @@ describe('comparison-runner', () => {
             await runAllScenarios(() => {}, () => {}, () => {}, errorSpy);
             expect(errorSpy).toHaveBeenCalledTimes(3);
         });
+
+        it('guards against re-entry when already running and passes null progressCallback to runSimulation', async () => {
+            CS.initScenarios(makeMockScenarioInputs(), mockT);
+            CS.setIsRunning(true);
+            const allDone = vi.fn();
+            await runAllScenarios(() => {}, () => {}, allDone, () => {});
+            expect(runSimulationMock).not.toHaveBeenCalled();
+            expect(allDone).not.toHaveBeenCalled();
+
+            CS.setIsRunning(false);
+            await runAllScenarios(() => {}, () => {}, allDone, () => {});
+            expect(runSimulationMock).toHaveBeenCalledTimes(1);
+            expect(runSimulationMock.mock.calls[0][2]).toBeNull();
+        });
     });
 });

@@ -338,7 +338,7 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "header.docs": "Docs",
     "asset.title": "Asset Settings",
     "asset.riskAsset": "Initial risk assets",
-    "asset.riskAsset.tooltip": "Total amount of risk assets (stocks, investments) at the start of the simulation.<br>If the total asset drawdown falls below the drawdown threshold, monthly withdrawals are taken from risk assets.",
+    "asset.riskAsset.tooltip": "Total amount of risk assets (stocks, investments) at the start of the simulation.<br>While the total asset drawdown remains above (milder than) the drawdown threshold, monthly withdrawals are taken from risk assets.",
     "asset.cashBuffer": "Initial cash buffer",
     "asset.cashBuffer.tooltip": "Total amount of cash (risk-free assets) at the start of the simulation.<br>When drawdown reaches the threshold, withdrawals are taken from the cash buffer instead of selling risk assets.<br>When total assets reach a new high, the cash buffer is replenished from risk assets.<br><span class=\"text-amber-300\">※ Monthly decisions are based on end-of-month total assets (after withdrawal) and applied the following month.</span>",
     "asset.expense": "Initial monthly withdrawal",
@@ -596,7 +596,7 @@ function getAppVersion(): string {
       }
     }
   } catch (_e) { /* In test environments, document may be special */ }
-  return '3.0.2'; // Fallback (sync with the actual latest version)
+  return '3.0.3'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION: string = getAppVersion();
 

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const EXPECTED_TARGETS = [
   {
@@ -114,7 +115,7 @@ export async function verifyCdnSri() {
 }
 
 const isDirectRun = process.argv[1] && (
-  path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 );
 
 if (isDirectRun) {

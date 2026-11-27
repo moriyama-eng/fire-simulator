@@ -1,7 +1,6 @@
 # Parameter Reference
 
-Complete list of all 26 simulation input parameters accepted by the CLI and the headless API.
-Source of truth: `HEADLESS_DEFAULTS` in `src/core/headless-params.ts`.
+Complete list of all 25 simulation input parameters in `HEADLESS_DEFAULTS` (`src/core/headless-params.ts`), plus the separate `percentiles` option accepted by the CLI and the headless API.
 
 For CLI usage and subcommand options, see [CLI Usage Guide](../guide/cli-usage.md).
 
@@ -42,4 +41,11 @@ For CLI usage and subcommand options, see [CLI Usage Guide](../guide/cli-usage.m
 - `currency` is a metadata label only. It does not affect any monetary calculation. See [Headless API Reference](./headless-api.md) for details.
 - `cashBufferToggle` and `guardrailToggle` must be `true` for their associated parameters (`drawdownTrigger`, etc.) to take effect. The normalizer cross-validates these: if `guardrailTrigger > guardrailRelease` after sign normalization, `guardrailRelease` is adjusted automatically.
 - `simDfManual: false` (default) means `simDfNum` is ignored and degrees of freedom are derived automatically from `volatility`.
-- `percentiles` accepts up to 5 values in the range (0, 100) exclusive.
+- `percentiles` is normalized separately from `HEADLESS_DEFAULTS` (`normalizeHeadlessPercentiles`) and accepts up to 5 integer values in the range `1`–`99`.
+
+## Currency Semantics
+
+| Interface | Monetary Input Units | Display Conversion | `currency` Field Behavior |
+|---|---|---|---|
+| **Browser UI** | JPY mode: 億円 / 万円; EN mode: M USD / K USD (internally scaled with 1 USD = 100 JPY display convention) | UI language toggle converts display units | Derived from UI language (`ja` → JPY, `en` → USD) |
+| **CLI / Headless API** | Base currency units as-is (JPY yen or USD dollars) | None (raw values preserved) | Metadata label only (`'JPY'` or `'USD'`); no exchange-rate conversion |

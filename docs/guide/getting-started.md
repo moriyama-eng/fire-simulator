@@ -14,14 +14,6 @@ The FIRE Monte Carlo Simulator is a browser-based personal asset accumulation an
 | **Analysis / Comparison tabs** | Side-by-side scenario study; sensitivity analysis across up to 10 factors |
 | **CLI / Headless** | Automation; batch runs; AI-agent workflows |
 
-## Browser UI Quickstart
-
-### 1. Open the simulator
-
-Visit **[https://moriyama-eng.github.io/fire-simulator/](https://moriyama-eng.github.io/fire-simulator/)** — no installation required.
-
-Opening `index.html` directly in a browser (via `file://`) is not supported because modern browsers cannot parse raw TypeScript modules or bundle ES module Web Workers without an HTTP server and bundler. For local execution from source, use the Vite development server (`npm run dev`) or the production preview server (`npm run preview`).
-
 ## Prerequisites
 
 If developing or running the simulator locally from a cloned repository:
@@ -47,6 +39,14 @@ If developing or running the simulator locally from a cloned repository:
   npm run build
   npm run preview
   ```
+
+## Browser UI Quickstart
+
+### 1. Open the simulator
+
+Visit **[https://moriyama-eng.github.io/fire-simulator/](https://moriyama-eng.github.io/fire-simulator/)** — no installation required.
+
+Opening `index.html` directly in a browser (via `file://`) is not supported because modern browsers cannot parse raw TypeScript modules or bundle ES module Web Workers without an HTTP server and bundler. For local execution from source, use the Vite development server (`npm run dev`) or the production preview server (`npm run preview`).
 
 ### 2. Set your parameters
 

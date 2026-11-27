@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export function assertBuildArtifacts(projectRoot = process.cwd()) {
   console.log('Asserting build artifacts in', projectRoot);
@@ -30,7 +31,7 @@ export function assertBuildArtifacts(projectRoot = process.cwd()) {
 }
 
 const isDirectRun = process.argv[1] && (
-  path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 );
 
 if (isDirectRun) {

@@ -1,9 +1,10 @@
 // ====================================================================
 // src/app/state.ts
 // Global state variable management module
-// Does not import any other module (prevents circular imports)
+// Delegates dirty flag to core/state.ts (single source of truth; no circular imports)
 // ====================================================================
 
+import { getIsResultDirty as coreGetIsResultDirty, setDirty as coreSetDirty } from '../core/state.js';
 import type { ChartInstance } from '../types/global.js';
 import type { AggregatedMetrics } from '../types/simulation.js';
 import type { SimulationParams } from '../types/params.js';
@@ -16,7 +17,6 @@ let belowInitChart: ChartInstance | null = null;  // Chart for the consecutive p
 let sellChart: ChartInstance | null = null;       // Chart for the consecutive risk asset sell period
 let lastSimResult: AggregatedMetrics | null = null;
 let isRunning = false;
-let isResultDirty = false;  // Flag indicating un-executed state after input change
 let lastExecutedParams: SimulationParams | null = null;      // Parameters of the last successful execution
 
 // Getters
@@ -28,7 +28,7 @@ export function getBelowInitChart(): ChartInstance | null { return belowInitChar
 export function getSellChart(): ChartInstance | null { return sellChart; }
 export function getLastSimResult(): AggregatedMetrics | null { return lastSimResult; }
 export function getIsRunning(): boolean { return isRunning; }
-export function getIsResultDirty(): boolean { return isResultDirty; }
+export function getIsResultDirty(): boolean { return coreGetIsResultDirty(); }
 export function getLastExecutedParams(): SimulationParams | null { return lastExecutedParams; }
 
 // Setters
@@ -40,5 +40,5 @@ export function setBelowInitChart(val: ChartInstance | null): void { belowInitCh
 export function setSellChart(val: ChartInstance | null): void { sellChart = val; }
 export function setLastSimResult(val: AggregatedMetrics | null): void { lastSimResult = val; }
 export function setIsRunning(val: boolean): void { isRunning = val; }
-export function setIsResultDirty(val: boolean): void { isResultDirty = val; }
+export function setIsResultDirty(val: boolean): void { coreSetDirty(val); }
 export function setLastExecutedParams(val: SimulationParams | null): void { lastExecutedParams = val; }

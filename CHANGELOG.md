@@ -5,6 +5,19 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v3.0.3] - 2026-11-27
+
+### Fixed
+- **Post-Bankruptcy Drawdown Series & Rate Lower-Bound Guards**: Fixed `src/core/simulation.ts` so bankrupt paths fill all remaining months in `dds` with `-1.0` (-100% drawdown) instead of leaving `0%` after bankruptcy, correcting `ddPercentileData` distortion in later years. Added defensive lower-bound clamps for `expectedReturn`, `inflationRate`, and `guardrailReduction` across `simulation.ts` and `headless-params.ts`, and hardened `normalizeHeadlessParams` to sanitize `NaN`, `±Infinity`, `null`, empty strings, non-numeric strings, explicit `undefined`, and non-boolean flags.
+- **Aggregation Percentile Ordering & CLI Argument Parsing**: Fixed `src/core/aggregation.ts` to sort `ks` before `multiSelectTrue` (preserving caller percentile order) and compute `finalMedian` directly from final-month totals when `50` is omitted or `percentiles` is empty. Fixed `src/cli.ts` to support the implicit default `run` subcommand (`node dist/cli.js <file.json>`), reject missing/flag `--out` values, and reject JSON array roots with exit code `1`.
+- **Frontend Dirty State, Tooltip Leaks, Docs Race & Tab Concurrency**: Consolidated `isResultDirty` in `src/core/state.ts` so dirty warning badges and share/compare/copy guards work reliably. Eliminated orphaned tooltip DOM nodes and `window` `scroll` listener leaks in `src/app/ui-helpers.ts` (removing duplicate implementation in `src/comparison-ui.ts`). Added `AbortController` + request sequence guards to `loadDoc()` in `src/docs-app.ts`. Extended `runSimulation` with an optional per-call `progressCallback?: ProgressCallback | null` so analysis/comparison tabs never clobber the main progress callback, added re-entry and analysis-running language-switch guards, fixed English-mode cash buffer OFF→ON default restoration (`$100K`), removed duplicate `#scenarioCount` prefix, corrected inverted English `asset.riskAsset.tooltip`, escaped `s.error` HTML, preserved capture heading `<svg>` icons, guarded `lastExecutedParams` against failed runs, prevented `0/0` `NaN` bar widths, and added `'noopener,noreferrer'` to `window.open`.
+- **Documentation Integrity, Security Scripts, CI & Tests**: Fixed `Stagnation Period` definition in `docs/reference/metrics-glossary.md`, KaTeX inline escaping in `mathematical-model.md` and `reproducibility.md`, SPA-safe internal link for Currency Semantics (`parameter-reference.md` / `headless-api.md`), heading hierarchy in `getting-started.md`, exit codes in `cli-usage.md`, and CI documentation in `testing-guide.md`. Unified `scripts/smoke-subpath-server.mjs` onto `verifyConfinedPath`, switched 4 verification scripts to `fileURLToPath`, restricted `.github/workflows/deploy.yml` `build` job to `contents: read`, and fixed false-positive stream assertions in `tests/unit/dev-middleware.test.ts`.
+
+### Added
+- **Expanded Regression Test Suite (443 Tests)**: Added 21 unit and integration regression tests covering post-bankruptcy drawdown series, headless parameter sanitization, unsorted percentiles, CLI defaults, dirty state sync, tooltip cleanup, HTML escaping, KaTeX escaping, and real-stream dev-middleware verification.
+
+> **Core path survival (`successRate`), final wealth (`finalMedian`), maximum drawdown (`maxDD`), stagnation duration (`maxUw`), and PRNG reproducibility remain bit-for-bit identical to v2.x and v3.0.0–v3.0.2; only post-bankruptcy monthly `ddPercentileData` entries are corrected from `0` to `-1.0`.**
+
 ## [v3.0.2] - 2026-10-31
 
 ### Fixed
