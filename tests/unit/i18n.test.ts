@@ -34,6 +34,10 @@ describe('i18n module', () => {
     expect(formatCurrency(12345678, '円')).toBe('$123.5K');
     expect(formatCurrency(1234567890, '円')).toBe('$12.3M');
     expect(formatCurrency(-123456, '円')).toBe('-$1.2K');
+    // Rounding boundary rollovers ($999.6 -> $1K, $999,950 -> $1M, $999,950,000 -> $1B)
+    expect(formatCurrency(99_960, '円')).toBe('$1K');
+    expect(formatCurrency(99_995_000, '円')).toBe('$1M');
+    expect(formatCurrency(99_995_000_000, '円')).toBe('$1B');
   });
 
   it('should format percentages correctly', () => {
@@ -70,6 +74,12 @@ describe('i18n module', () => {
       const tip = TRANSLATIONS.en['asset.riskAsset.tooltip'];
       expect(tip).not.toContain('falls below the drawdown threshold');
       expect(tip).toContain('remains above (milder than) the drawdown threshold');
+    });
+
+    it('should describe replenishment start condition in cb.ddReplenish.tooltip (EN)', () => {
+      const tip = TRANSLATIONS.en['cb.ddReplenish.tooltip'];
+      expect(tip).toContain('reach a new high');
+      expect(tip).toContain('replenishment mode begins');
     });
   });
 

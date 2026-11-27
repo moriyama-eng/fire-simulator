@@ -16,7 +16,6 @@ export interface WorkerInputMessage {
 export interface WorkerProgressMessage {
   type: 'progress';
   completed: number;
-  pathsCompleted?: number;
 }
 
 export interface WorkerCompleteMessage {
@@ -103,7 +102,6 @@ if (isWorkerGlobal) {
       const progressMsg: WorkerProgressMessage = {
         type: 'progress',
         completed,
-        pathsCompleted: completed,
       };
       workerScope.postMessage(progressMsg);
     });

@@ -86,11 +86,11 @@ export function resolveDocLink(
       if (!/^[a-z0-9-]+$/i.test(targetCategory) || !/^[a-z0-9-]+$/i.test(targetDoc)) {
         return { type: 'dangerous' };
       }
-      const query = targetUrl.search || '';
+      const extraQuery = targetUrl.search ? '&' + targetUrl.search.slice(1) : '';
       const hash = targetUrl.hash || '';
       return {
         type: 'spa',
-        url: `docs.html?doc=${targetCategory}/${targetDoc}${query}${hash}`
+        url: `docs.html?doc=${targetCategory}/${targetDoc}${extraQuery}${hash}`
       };
     }
 

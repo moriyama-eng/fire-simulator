@@ -118,6 +118,7 @@ The application loads the following external libraries at runtime:
 - [Chart.js](https://www.chartjs.org/) — chart rendering
 - [SortableJS](https://sortablejs.github.io/Sortable/) — drag-and-drop UI
 - [html2canvas](https://html2canvas.hertzen.com/) — in-browser screenshot export
+- [KaTeX](https://katex.org/) — mathematical formula rendering in documentation (`docs.html`)
 
 Loading these external libraries is distinct from any transmission of simulation input data or results.
 
@@ -160,7 +161,7 @@ The following are intentional scope limitations, not planned future features:
 
 ## Version / Update History
 
-**Current release: v3.0.3**
+**Current release: v3.0.4**
 
 For the full update history, see [CHANGELOG.md](./CHANGELOG.md).
 

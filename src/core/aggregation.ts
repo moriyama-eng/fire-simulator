@@ -115,6 +115,11 @@ export function aggregateResultsProduction({
         ? totalPercentileData[medianPIdx][dataLen - 1]
         : quickselectSafe(finalMonthTotals, medianIdx, 0, finalMonthTotals.length - 1);
 
+    const toFloat32Array = (arr: Float32Array | ArrayLike<number> | undefined, len: number): Float32Array => {
+        if (arr instanceof Float32Array) return arr;
+        return arr ? Float32Array.from(arr) : new Float32Array(len);
+    };
+
     return {
         percentiles,
         totalPercentileData,
@@ -124,10 +129,10 @@ export function aggregateResultsProduction({
         finalMedian,
         worst10MaxDd, worst5MaxDd,
         medianMaxUw, worst10MaxUw,
-        maxDdPerPath: maxDdPerPath as Float32Array,
-        maxUwPerPath: maxUwPerPath as Float32Array,
-        belowInitPeriods: (belowInitPeriods ?? new Float32Array(simPaths)) as Float32Array,
-        consecutiveSellPeriods: (consecutiveSellPeriods ?? new Float32Array(simPaths)) as Float32Array,
+        maxDdPerPath: toFloat32Array(maxDdPerPath, simPaths),
+        maxUwPerPath: toFloat32Array(maxUwPerPath, simPaths),
+        belowInitPeriods: toFloat32Array(belowInitPeriods, simPaths),
+        consecutiveSellPeriods: toFloat32Array(consecutiveSellPeriods, simPaths),
         params: { simPaths, totalMonths: dataLen - 1 },
         dataLen,
         targetAssetMaintainRate,

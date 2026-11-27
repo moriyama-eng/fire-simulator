@@ -49,11 +49,10 @@ function sleep(ms) {
 async function fetchWithRetry(url, maxRetries = 3) {
   let lastErr = null;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const arrayBuffer = await res.arrayBuffer();
       return Buffer.from(arrayBuffer);
@@ -62,6 +61,8 @@ async function fetchWithRetry(url, maxRetries = 3) {
       if (attempt < maxRetries - 1) {
         await sleep(1000 * Math.pow(2, attempt));
       }
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw new Error(`Failed to fetch ${url} after ${maxRetries} attempts: ${lastErr?.message}`);

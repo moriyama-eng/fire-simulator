@@ -14,9 +14,9 @@ This project uses two layers of automated testing with Vitest + jsdom across 45 
 
 | Layer | Directory | Execution Environment | Main Verification Targets | Count |
 |---|---|---|---|---|
-| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 38 files (382 test cases) |
-| Integration tests | `tests/integration/` | Vitest (jsdom) | DOM operations, UI state transitions, CLI subprocess execution | 7 files (61 test cases) |
-| **Total** | `tests/` | Vitest | Full test suite coverage | **45 files (443 test cases)** |
+| Unit tests | `tests/unit/` | Vitest (node default) | Pure functions, core logic, state management, CLI unit | 38 files (394 test cases) |
+| Integration tests | `tests/integration/` | Vitest (jsdom) | DOM operations, UI state transitions, CLI subprocess execution | 7 files (62 test cases) |
+| **Total** | `tests/` | Vitest | Full test suite coverage | **45 files (456 test cases)** |
 
 ### 1.1 Test Target Module Map
 
@@ -133,7 +133,7 @@ npm run test:coverage   # Run tests with coverage report (npx vitest run --cover
 ### 2.4 Automatic Execution in CI
 
 GitHub Actions (`.github/workflows/test.yml`) automatically runs on push to the `main` branch and pull requests across two jobs:
-- `test` (`ubuntu-latest` / `node 22, 24`): typecheck, CSS freshness, client build, CDN SRI verification, subpath smoke test, CLI build, test suite, and bundle/artifact assertions:
+- `test` (`ubuntu-latest` / `node 22, 24`): typecheck, CSS freshness, client build (includes `copy-docs.mjs` and `assert-client-bundle.mjs`), CDN SRI verification, subpath smoke test, coverage-enforced test suite (`pretest:coverage` runs `build:cli`), and build artifact assertions:
 ```bash
 npm run typecheck
 npm run build:css
@@ -141,9 +141,7 @@ git diff --exit-code -- css/tailwind.css
 npm run build:client
 node scripts/verify-cdn-sri.mjs
 node scripts/smoke-subpath-server.mjs
-npm run build:cli
-npm test
-node scripts/assert-client-bundle.mjs
+npm run test:coverage
 node scripts/assert-build-artifacts.mjs
 ```
 - `test-windows-confinement` (`windows-latest` / `node 22`): runs `npx vitest run tests/unit/confinement.test.ts tests/unit/copy-docs.test.ts` to validate Windows-specific path confinement and docs copy rules.
@@ -263,7 +261,7 @@ Since CI environments may be slower than local environments, extend the `timeout
 
 - Special unit test: Compares the current implementation's output with the fixed-seed execution results from v1.8.3 saved in `tests/fixtures/reference-results.json`
 - **Purpose**: To ensure that results have not changed during refactoring of the core calculation logic
-- **How to generate reference data**: Execute `tests/fixtures/generate-reference.js` in browser DevTools
+- **How to generate reference data**: Run `node tests/fixtures/generate-reference.js` (and `node tests/fixtures/generate-belowinit-reference.js` for below-init metrics) under Node 22+
 - **Note**: Reference data was generated with `paths=1000`. Since `getParamsFromInputs` clamps `simPaths` to 5000, `params.simPaths = 1000` is set directly in the test code to maintain consistency with this reference data.
 - Headless T1 uses a **separate** fixture (`tests/fixtures/headless-reference-results.json`) and must not be compared to the UI reference numbers.
 

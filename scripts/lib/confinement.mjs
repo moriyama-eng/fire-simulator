@@ -90,13 +90,28 @@ export function verifyConfinedPath(rootPath, targetPath, options = {}) {
   }
 
   if (refuseSymlinks) {
-    try {
-      const targetStat = fsImpl.lstatSync(resolvedTarget);
-      if (targetStat.isSymbolicLink()) throw new Error(`Symlinks are forbidden: ${targetPath}`);
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err;
+    // Walk every intermediate segment under resolvedRoot so symlinked parent directories are rejected too
+    let current = resolvedRoot;
+    for (const seg of segments) {
+      current = pathImpl.resolve(current, seg);
+      try {
+        const segStat = fsImpl.lstatSync(current);
+        if (segStat.isSymbolicLink()) throw new Error(`Symlinks are forbidden: ${targetPath}`);
+      } catch (err) {
+        if (err.code === 'ENOENT') break;
+        throw err;
+      }
     }
   }
+
+  const hasDeniedInternalSegment = (segs) =>
+    segs.includes('internal') ||
+    segs.some(s =>
+      s.startsWith('internal.') ||
+      s.startsWith('internal:') ||
+      s.startsWith('internal~') ||
+      s.startsWith('internal;')
+    );
 
   if (!options.skipRealpath) {
     let realTarget;
@@ -106,10 +121,7 @@ export function verifyConfinedPath(rootPath, targetPath, options = {}) {
       if (err.code === 'ENOENT') {
         if (denyInternal) {
           const relSegments = pathImpl.relative(resolvedRoot, resolvedTarget).split(pathImpl.sep).map(s => s.toLowerCase());
-          if (
-            relSegments.includes('internal') ||
-            relSegments.some(s => s.startsWith('internal.') || s.startsWith('internal:') || s.startsWith('internal~'))
-          ) {
+          if (hasDeniedInternalSegment(relSegments)) {
             throw new Error(`Path escapes root confinement: ${targetPath}`);
           }
         }
@@ -126,10 +138,7 @@ export function verifyConfinedPath(rootPath, targetPath, options = {}) {
       realRel === '..' ||
       realRel.startsWith('..' + pathImpl.sep) ||
       pathImpl.isAbsolute(realRel) ||
-      (denyInternal && (
-        relSegments.includes('internal') ||
-        relSegments.some(s => s.startsWith('internal.') || s.startsWith('internal:') || s.startsWith('internal~'))
-      ))
+      (denyInternal && hasDeniedInternalSegment(relSegments))
     ) {
       throw new Error(`Path escapes root confinement: ${targetPath}`);
     }

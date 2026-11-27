@@ -98,9 +98,10 @@ export async function copyDocs(options = {}) {
     fsImpl.rmSync(targetDocs, { recursive: true, force: true });
   }
 
-  // Atomic rename with capped retry (5 attempts, backoff: 100, 200, 400, 800, 1600ms)
+  // Atomic rename with capped retry for transient Windows/FS lock errors (5 attempts, 4 sleeps: 100, 200, 400, 800ms)
   const maxRetries = 5;
-  const backoff = [100, 200, 400, 800, 1600];
+  const backoff = [100, 200, 400, 800];
+  const TRANSIENT_FS_CODES = new Set(['EPERM', 'EBUSY', 'EACCES', 'ENOTEMPTY']);
   let renamed = false;
   let lastError = null;
 
@@ -111,6 +112,10 @@ export async function copyDocs(options = {}) {
       break;
     } catch (err) {
       lastError = err;
+      const isTransient = err && typeof err.code === 'string' && TRANSIENT_FS_CODES.has(err.code);
+      if (!isTransient) {
+        throw err;
+      }
       if (attempt < maxRetries - 1) {
         await sleep(backoff[attempt]);
       }

@@ -298,4 +298,28 @@ describe('bankruptcy remaining months and AR inflation', () => {
         // Guardrail reduction clamped to -100% must never add negative expense (increase assets beyond initial)
         expect(res.totals[res.totals.length - 1]).toBeLessThanOrEqual(params.initialRiskAsset);
     });
+
+    it('clamps simDf to at least 2.5 inside runSinglePath when called directly with df <= 2', () => {
+        const params = makeBankruptcyParams({
+            initialRiskAsset: 100_000_000,
+            monthlyExpense: 100_000,
+            useTDistribution: true,
+            simDfManual: true,
+            simDfNum: 1.5,
+        });
+        const observedDfs: number[] = [];
+        const rngs: RngGenerators = {
+            rng: () => 0.5,
+            normalGen: () => 0,
+            gammaRand: () => 1,
+            tRand: (df: number) => {
+                observedDfs.push(df);
+                return 0.5;
+            },
+        };
+        const res = runSinglePath(rngs, params);
+        expect(observedDfs.length).toBe(12);
+        expect(observedDfs.every(d => d === 2.5)).toBe(true);
+        expect(Number.isFinite(res.totals[12])).toBe(true);
+    });
 });

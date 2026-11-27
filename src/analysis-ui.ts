@@ -520,15 +520,9 @@ function renderCompareCards(): void {
 // ====================================================================
 // Event delegation
 // ====================================================================
-function handleLanguageChanged(): void {
-    if (AS.getState().isRunning) return;
-    renderAnalysisTab();
-}
-
 let delegationDone = false;
 export function setupAnalysisEventDelegation(): void {
     if (delegationDone) return;
-    document.addEventListener('languageChanged', handleLanguageChanged);
     delegationDone = true;
     const tab = document.getElementById('analysisTab');
     if (!tab) return;

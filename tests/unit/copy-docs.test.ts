@@ -120,4 +120,34 @@ describe('copyDocs module', () => {
       fsImpl: mockFs
     })).rejects.toThrow(/Failed to atomically rename/i);
   });
+
+  it('fails immediately without retrying on non-transient rename errors', async () => {
+    let renameAttempts = 0;
+    const mockFs = {
+      existsSync: vi.fn((p: string) => p.endsWith('docs')),
+      lstatSync: vi.fn((p: string) => ({
+        isSymbolicLink: () => false,
+        isDirectory: () => !p.endsWith('.md'),
+        isFile: () => p.endsWith('.md')
+      })),
+      readdirSync: vi.fn(() => []),
+      mkdirSync: vi.fn(),
+      rmSync: vi.fn(),
+      renameSync: vi.fn(() => {
+        renameAttempts++;
+        const err = new Error('ENOENT: no such file or directory');
+        (err as unknown as { code: string }).code = 'ENOENT';
+        throw err;
+      }),
+      realpathSync: vi.fn((p: string) => p)
+    };
+
+    await expect(copyDocs({
+      projectRoot: '/mock-root',
+      docsRoot: '/mock-root/docs',
+      clientDist: '/mock-root/dist/client',
+      fsImpl: mockFs
+    })).rejects.toThrow(/ENOENT/i);
+    expect(renameAttempts).toBe(1);
+  });
 });

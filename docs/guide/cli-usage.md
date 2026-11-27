@@ -194,7 +194,7 @@ The CLI output is designed so that the exact same simulation run can be reproduc
 
 1. Take the output JSON from any run mode (summary, file, or `--stdout`).
 2. Spread the top-level `params` object to the top level of a new input JSON.
-3. Attach the top-level `percentiles` array (from summary or `--stdout` mode) to the new input.
+3. Attach the top-level `percentiles` array (from summary, file, or `--stdout` mode) to the new input.
 4. Feed the reconstructed JSON into `dist/cli.js run`.
 
 ```bash

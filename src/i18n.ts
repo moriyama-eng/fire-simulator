@@ -25,7 +25,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "market.model.lognormal": "対数正規分布（伝統的な金融理論）",
     "market.model.logt": "対数t分布（現実的なリスク管理）",
     "market.dfLabel": "t分布 自由度",
-    "market.dfManual": "固定",
     "market.dfAuto": "自動",
     "market.dfAutoDisplay": "ボラティリティから自動計算: {0}",
     "market.dfTooltip": "t分布の裾の重さを制御するパラメータです。<br>値が小さいほど極端な暴落が頻発します。<br>自動モードではボラティリティから自動計算します。",
@@ -85,7 +84,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "analysis.selectedFactorsInit": "選択中: 0因子",
     "analysis.selectedFactors": "選択中: {0}因子",
     "analysis.runBtn": "分析を実行",
-    "chart.targetAssetSubNote": "※判定は月末（支出後）の総資産を基準に行われます。",
     "summary.dirtyWarning": "条件変更あり",
     "summary.successRate": "FIRE 成功率",
     "summary.finalMedian": "最終総資産 中央値",
@@ -101,7 +99,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "summary.model.label": "変動モデル",
     "summary.model.logt": "対数t分布",
     "summary.model.lognormal": "対数正規分布",
-    "summary.model.df": "自由度",
     "summary.seed": "乱数シード値",
     "summary.cbSettings": "現金バッファ設定",
     "summary.grSettings": "支出ガードレール設定",
@@ -130,8 +127,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "chart.asset.downsideTooltip": "ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>資産が下振れするリスクに焦点を当てて確認したい場合に便利です。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。",
     "chart.cash.title": "現金バッファ推移（パーセンタイル）",
     "chart.cash.tooltip": "各経過年数時点における現金バッファの残高分布をパーセンタイル（データを昇順（小さい順）に並べた際、下から数えてどの割合の位置にいるかを示す指標）で表したグラフです。<br>現金バッファが取崩され、資産が回復した際にリスク資産から現金バッファが補充される挙動を可視化しています。",
-    "chart.cash.all": "全表示",
-    "chart.cash.downsideOnly": "50%以下のみ",
     "chart.cash.downsideTooltip": "ONにすると50%以下のパーセンタイル線（悲観〜中央値シナリオ）のみを表示します。<br>現金バッファが尽きやすい悪い状況に絞って確認できます。<br>OFFにすると楽観シナリオを含む全パーセンタイル線を表示します。",
     "chart.dd.title": "最大ドローダウン 発生確率",
     "chart.dd.axisTitle": "最大ドローダウン",
@@ -186,7 +181,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "analysis.target.metric.worst10MaxDd": "最大DD 10%タイル 改善 5%pt",
     "analysis.target.metric.successRateInitial": "FIRE成功率 改善 +X%pt",
     "analysis.target.metricTooltip": "<b>FIRE成功率 改善 +X%pt</b>: FIRE成功率を現在値から指定幅改善するのに必要な因子変動を計算します。<br><b>最終総資産 10%タイル +2,000万円</b>: 全シミュレーション結果の下位10%の最終総資産を2,000万円改善するのに必要な因子変動を計算します。<br><b>最大DD 10%タイル 改善 5%pt</b>: 最大ドローダウンの悪化を5%pt改善（落ち幅を小さく）するのに必要な因子変動を計算します。",
-    "analysis.target.currentLabel": "現在の{0}: {1}",
     "analysis.target.currentPrefix": "現在の",
     "analysis.target.currentColon": ": ",
     "analysis.target.factorCol": "因子",
@@ -220,25 +214,19 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "capture.guardrail": "支出ガードレール:",
     "capture.chartTitle": "総資産推移",
     "capture.resultTitle": "シミュレーション結果",
-    "capture.execTime": "実行日時:",
     "capture.successRate": "FIRE 成功率",
     "capture.finalMedian": "最終総資産(中央値)",
     "capture.targetMaintainRate": "目標資産維持確率",
     "capture.targetLabel": "(目標: ",
     "capture.footerUrl": "https://moriyama-eng.github.io/fire-simulator/ | v{VERSION}",
-    "capture.footerCredit": "Created by @moriyama_eng",
     "unit.oku": "億円",
     "unit.man": "万円",
     "unit.percent": "%",
-    "unit.times": "倍",
-    "unit.minutes": "分",
     "unit.seconds": "秒",
     "unit.years": "年",
-    "unit.months": "ヶ月",
     "tab.simulation": "シミュレーション",
     "tab.analysis": "分析",
     "footer.title": "FIRE モンテカルロ・シミュレータ",
-    "chart.tooltip.zeroYears": "0年",
     "error.simulationFailed": "シミュレーション中にエラーが発生しました",
     "footer.copyright": "© 2026 もりやま",
     "unit.multiplier": "倍",
@@ -267,7 +255,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "comparison.moveLeft": "左に移動",
     "comparison.moveRight": "右に移動",
     "comparison.overwriteFromSim": "シミュレーションタブの現在値で上書き",
-    "comparison.displayConditionNote": "行の表示/非表示はシナリオ1の設定に連動します。",
     "comparison.auto": "自動",
     "comparison.manual": "固定",
     "comparison.fixed": "固定",
@@ -281,7 +268,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "comparison.deleteSuccess": "シナリオを削除しました",
     "comparison.deleteFailed": "シナリオの削除に失敗しました",
     "comparison.duplicateTitle": "シナリオを複製",
-    "comparison.overwriteTitle": "シミュレーションタブの現在値で上書き",
     "comparison.pendingExecution": "未実行のシナリオがあります。シミュレーションを実行してください。",
     "comparison.section.assets": "初期総資産設定",
     "comparison.autoIndicator": "(自動)",
@@ -304,9 +290,7 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "seed.fixed": "Fixed",
     "seed.random": "Random",
     "unit.percent": "%",
-    "unit.times": "trials",
     "unit.seconds": "sec",
-    "unit.minutes": "min",
     "market.expectedReturn.tooltip": "Average annual growth rate (arithmetic mean) of risk assets.",
     "market.volatility.tooltip": "Standard deviation of risk asset returns. Higher values mean larger annual fluctuations.",
     "market.inflation.tooltip": "Long-term average inflation rate. (For AR-1 model, inflation fluctuates around this value.)",
@@ -314,7 +298,7 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "sim.paths.tooltip": "Number of Monte Carlo trials. More paths increase accuracy but take longer.",
     "sim.percentile.tooltip": "Comma-separated percentiles to display (max 5). Example: 10, 25, 50, 75, 90.<br>Invalid values are removed and sorted ascending. Colors gradient from red (low) to green (high).",
     "cb.ddTrigger.tooltip": "If drawdown falls below this level, withdraw from cash buffer instead of risk assets.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal) and applied next month.</span>",
-    "cb.ddReplenish.tooltip": "When drawdown worsens past this level, replenishment mode ends.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
+    "cb.ddReplenish.tooltip": "When total assets reach a new high, replenishment mode begins and replenishes the cash buffer from risk assets each month.<br>When drawdown worsens past this level again, replenishment mode ends.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
     "cb.replenishPace.tooltip": "Each month during replenishment mode, transfer this multiple of the monthly withdrawal from risk assets to cash buffer.",
     "gr.trigger.tooltip": "If drawdown falls below this level, spending is automatically reduced next month.<br>Example: -20% triggers when assets drop 20% from peak.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
     "gr.release.tooltip": "When drawdown recovers above this level, guardrail deactivates and spending returns to normal.<br>Example: -15% deactivates when drawdown is better than -15%.<br><span class=\"text-amber-300\">※ Decision based on end-of-month total assets (after withdrawal).</span>",
@@ -352,7 +336,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "market.model.lognormal": "Log-normal distribution",
     "market.model.logt": "Log-t distribution",
     "market.dfLabel": "Degrees of freedom (t-distribution)",
-    "market.dfManual": "Fixed",
     "market.dfAuto": "Auto",
     "market.dfAutoDisplay": "Auto from volatility: {0}",
     "market.dfTooltip": "Controls the tail weight of the t-distribution. Lower values increase the frequency of extreme crashes.<br>Auto mode calculates from volatility.",
@@ -392,7 +375,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "analysis.selectedFactorsInit": "Selected: 0 factors",
     "analysis.selectedFactors": "Selected: {0} factors",
     "analysis.runBtn": "Run Analysis",
-    "chart.targetAssetSubNote": "* Judged based on end-of-month (post-expense) total assets.",
     "summary.dirtyWarning": "Input changed",
     "summary.successRate": "FIRE Success Rate",
     "summary.finalMedian": "Final Assets (Median)",
@@ -408,7 +390,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "summary.model.label": "Return model",
     "summary.model.logt": "Log-t",
     "summary.model.lognormal": "Log-normal",
-    "summary.model.df": "df",
     "summary.seed": "Random seed",
     "summary.cbSettings": "Cash buffer",
     "summary.grSettings": "Guardrail",
@@ -437,8 +418,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "chart.asset.downsideTooltip": "When ON, only shows percentiles ≤50% (pessimistic to median).<br>Focuses on downside risk.",
     "chart.cash.title": "Cash Buffer (Percentiles)",
     "chart.cash.tooltip": "Distribution of cash buffer over time.<br>Shows depletion and replenishment behavior.",
-    "chart.cash.all": "All",
-    "chart.cash.downsideOnly": "50% or below only",
     "chart.cash.downsideTooltip": "When ON, only shows percentiles ≤50% to focus on worst-case cash buffer scenarios.",
     "chart.dd.title": "Max Drawdown Probability",
     "chart.dd.axisTitle": "Max Drawdown",
@@ -448,7 +427,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "chart.uw.axisTitle": "Longest Underwater Period",
     "chart.uw.tooltipTitle": "Underwater Period Probability",
     "chart.uw.tooltip": "Probability that the longest period without reaching a new high exceeds a given length.<br>Example: x=5 years, y=20% → 20% chance of taking more than 5 years to recover.",
-    "chart.tooltip.zeroYears": "0 years",
     "chart.tooltip.year": "Year {0}",
     "chart.tooltip.yearMonth": "Year {0}, Month {1}",
     "chart.tooltip.uwPeriod": "{0}y {1}m",
@@ -489,7 +467,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "analysis.target.metric.worst10MaxDd": "Improve worst 10% max drawdown by 5%pt",
     "analysis.target.metric.successRateInitial": "Improve FIRE success rate by +X%pt",
     "analysis.target.metricTooltip": "<b>Improve success rate</b>: Calculate factor change needed to raise success rate by a target amount (auto-adjusted based on current rate).<br><b>Final assets 10th percentile +$200k</b>: Increase the 10th percentile final assets by $200,000 USD.<br><b>Improve max drawdown 10th percentile by 5%pt</b>: Reduce the severity of worst 10% drawdowns by 5 percentage points.",
-    "analysis.target.currentLabel": "Current {0}: {1}",
     "analysis.target.currentPrefix": "Current ",
     "analysis.target.currentColon": ": ",
     "analysis.target.factorCol": "Factor",
@@ -518,18 +495,15 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "capture.inflation": "Inflation rate:",
     "capture.years": "Years:",
     "capture.guardrail": "Guardrail:",
-    "capture.execTime": "Executed:",
     "capture.targetMaintainRate": "Target Asset Maintenance Rate",
     "capture.targetLabel": "(Target: ",
     "capture.footerUrl": "https://moriyama-eng.github.io/fire-simulator/ | v{VERSION}",
-    "capture.footerCredit": "Created by @moriyama_eng",
     "unit.oku": "M",
     "unit.man": "K",
     "error.simulationFailed": "Simulation failed",
     "footer.copyright": "© 2026 moriyama",
     "header.description": "Generate tens of thousands of market scenarios using Monte Carlo simulation to statistically validate your FIRE plan.",
     "unit.years": "years",
-    "unit.months": "months",
     "unit.multiplier": "x",
     "tab.simulation": "Simulation",
     "tab.analysis": "Analysis",
@@ -559,7 +533,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "comparison.moveLeft": "Move left",
     "comparison.moveRight": "Move right",
     "comparison.overwriteFromSim": "Overwrite from Simulation tab",
-    "comparison.displayConditionNote": "Row visibility follows Scenario 1 settings.",
     "comparison.auto": "Auto",
     "comparison.manual": "Fixed",
     "comparison.fixed": "Fixed",
@@ -573,7 +546,6 @@ const translations: { ja: Record<string, string>; en: Record<string, string> } =
     "comparison.deleteSuccess": "Scenario deleted",
     "comparison.deleteFailed": "Failed to delete scenario",
     "comparison.duplicateTitle": "Duplicate scenario",
-    "comparison.overwriteTitle": "Overwrite from Simulation tab",
     "comparison.pendingExecution": "Some scenarios are not executed. Please run the simulation.",
     "comparison.section.assets": "Initial Assets",
     "comparison.autoIndicator": "(Auto)",
@@ -596,7 +568,7 @@ function getAppVersion(): string {
       }
     }
   } catch (_e) { /* In test environments, document may be special */ }
-  return '3.0.3'; // Fallback (sync with the actual latest version)
+  return '3.0.4'; // Fallback (sync with the actual latest version)
 }
 const APP_VERSION: string = getAppVersion();
 
@@ -673,24 +645,25 @@ export function formatCurrency(valueInJPY: number, displayUnit?: string): string
   const usd = valueInJPY / 100;
   if (usd === 0) return '$0';
   const absUsd = Math.abs(usd);
+  const formatScaled = (scaled: number, suffix: string): string => {
+    const rounded = Number(scaled.toFixed(1));
+    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
+    return '$' + formatted + suffix;
+  };
   if (absUsd >= 1_000_000_000) {
-    const val = usd / 1_000_000_000;
-    const rounded = Number(val.toFixed(1));
-    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
-    return '$' + formatted + 'B';
+    return formatScaled(usd / 1_000_000_000, 'B');
   } else if (absUsd >= 1_000_000) {
-    const val = usd / 1_000_000;
-    const rounded = Number(val.toFixed(1));
-    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
-    return '$' + formatted + 'M';
+    const roundedM = Number((usd / 1_000_000).toFixed(1));
+    if (roundedM >= 1_000) return formatScaled(roundedM / 1_000, 'B');
+    return formatScaled(usd / 1_000_000, 'M');
   } else if (absUsd >= 1_000) {
-    const val = usd / 1_000;
-    const rounded = Number(val.toFixed(1));
-    const formatted = rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1);
-    return '$' + formatted + 'K';
+    const roundedK = Number((usd / 1_000).toFixed(1));
+    if (roundedK >= 1_000) return formatScaled(roundedK / 1_000, 'M');
+    return formatScaled(usd / 1_000, 'K');
   } else {
-    const formatted = Math.round(usd).toString();
-    return '$' + formatted;
+    const rounded = Math.round(usd);
+    if (rounded >= 1_000) return '$1K';
+    return '$' + rounded.toString();
   }
 }
 

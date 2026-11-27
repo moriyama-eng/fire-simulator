@@ -46,8 +46,8 @@ export const HEADLESS_DEFAULTS: Readonly<HeadlessParams> = Object.freeze({
 
 // ----- Percentiles normalization -----
 /**
- * Normalize a percentiles array using the same rules as formatPercentileInput:
- * - Integer values 1-99 only
+ * Normalize a percentiles array for headless execution:
+ * - Numeric inputs are rounded to integers in the range 1-99 (non-numeric, boolean, null, empty strings rejected)
  * - Deduplicated
  * - Sorted ascending
  * - Maximum 5 entries
@@ -58,6 +58,7 @@ export function normalizeHeadlessPercentiles(arr: unknown): number[] {
     if (!Array.isArray(arr) || arr.length === 0) return DEFAULT_PERCENTILES;
 
     const valid = (arr as unknown[])
+        .filter(v => v !== null && v !== '' && typeof v !== 'boolean')
         .map(v => Math.round(Number(v)))
         .filter(v => Number.isFinite(v) && v >= 1 && v <= 99);
 

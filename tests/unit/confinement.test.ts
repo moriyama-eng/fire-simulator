@@ -149,5 +149,36 @@ describe('confinement module', () => {
         });
       }).toThrow(/colon/i);
     });
+
+    it('rejects symlinked intermediate directories when refuseSymlinks is true', () => {
+      const symlinkFs = {
+        lstatSync: (p: string) => ({
+          isSymbolicLink: () => p === '/app/docs/guide',
+        }),
+        realpathSync: (p: string) => p,
+      };
+      expect(() => {
+        verifyConfinedPath('/app/docs', 'guide/getting-started.md', {
+          fsImpl: symlinkFs,
+          refuseSymlinks: true,
+          skipRealpath: true,
+          pathImpl: path.posix,
+        });
+      }).toThrow(/Symlinks are forbidden/i);
+    });
+
+    it('rejects internal; segments after realpath resolution', () => {
+      const aliasFs = {
+        lstatSync: () => ({ isSymbolicLink: () => false }),
+        realpathSync: (p: string) => (p.endsWith('alias.md') ? '/app/docs/internal;v1/secret.md' : p),
+      };
+      expect(() => {
+        verifyConfinedPath('/app/docs', 'guide/alias.md', {
+          fsImpl: aliasFs,
+          refuseSymlinks: false,
+          pathImpl: path.posix,
+        });
+      }).toThrow(/escapes root confinement/i);
+    });
   });
 });

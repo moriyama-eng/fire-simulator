@@ -31,9 +31,7 @@ jobs:
       - run: npm run build:client
       - run: node scripts/verify-cdn-sri.mjs
       - run: node scripts/smoke-subpath-server.mjs
-      - run: npm run build:cli
-      - run: npm test
-      - run: node scripts/assert-client-bundle.mjs
+      - run: npm run test:coverage
       - run: node scripts/assert-build-artifacts.mjs
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0 (using: node24)
         with:

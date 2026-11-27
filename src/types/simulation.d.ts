@@ -1,5 +1,4 @@
 // src/types/simulation.d.ts
-import type { SimulationParams } from './params.js';
 
 export interface RngGenerators {
   rng?: () => number;

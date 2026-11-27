@@ -5,6 +5,18 @@
 このプロジェクトのすべての顕著な変更はこのファイルに記録されます。
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [v3.0.4] - 2026-11-28
+
+### 修正
+- **コアパラメータのクランプ整合・Worker 堅牢化・実行時型安全性の向上**: `getParamsFromInputs`（`src/core/params.ts`）のクランプ境界を `normalizeHeadlessParams` と統一し、`src/app/actions.ts` のランダムシード生成を `[1, 99999999]` 範囲内へ揃えるとともに、ガードレール解除閾値の DOM 書き戻し判定を `safeNumber` ベースへ更新しました。`simDf` / `usedDf` の下限クランプを `src/core/simulation.ts`・`src/simulation-engine.ts`・`src/headless.ts` で `2.5` に統一し、`src/core/aggregation.ts` の安全でない `as Float32Array` キャストを実行時変換へ置換、`src/simulation-engine.ts` に `simPaths <= 0` ガード・`worker.onmessageerror` 捕捉・`error.cause` 保持・完了時 100% 進捗通知・任意 `AbortSignal` 対応を追加、`normalizeHeadlessPercentiles` の真偽値/null/空文字除外を強化しました。
+- **UI 安全性・アクセシビリティ・i18n・ドキュメントリンクの改善**: `saveImage()`（`src/app/actions.ts`）のスタイル・チャート設定変更を外側 `try / finally` で保護し、`src/docs-links.ts` のクエリ付き `.md` リンクでの `?` 二重付与を修正、`index.html` の `#simPathsNum` 重複 `max="50000"` 属性削除および 3 タブ UI への ARIA ロール（`tablist`/`tab`/`tabpanel`）付与、`languageChanged` 時の `renderAnalysisTab()` 二重実行解消、`src/i18n.ts` の未使用 14 キー整理（日英）・`cb.ddReplenish.tooltip` 英語訳の開始条件補完・`formatCurrency()` の USD 境界丸め（`$1K`/`$1M`/`$1B`）修正、および不要コード・誤コメントの整理を行いました。
+- **セキュリティスクリプト・ビルド/CI・ドキュメントパリティの改善**: `scripts/lib/confinement.mjs` に中間ディレクトリ単位のシンボリックリンク検査と `internal;` の post-realpath / ENOENT チェックを追加し、`scripts/assert-client-bundle.mjs` と `scripts/smoke-subpath-server.mjs` で Worker URL 参照不一致時のサイレントパスを防止しつつ Vite 8 バッククォート出力に対応しました。`scripts/verify-cdn-sri.mjs` のタイマー解放を `finally` へ移動し、`scripts/copy-docs.mjs` のリトライを一時的 FS エラーに限定、CI（`test.yml` / `deploy.yml`）を `npm run test:coverage` 実行へ切替え（`pretest:coverage`・`timeout-minutes: 15` 追加、重複ステップ整理）、`vitest.config.ts` のデッド設定削除と `retry: 0` 化、未使用 `@types/sortablejs` と `tests/helpers/i18n-mock.ts` の削除、フィクスチャ生成スクリプト 3 件の Node 22+ 対応、および `README.md` / `README-ja.md` / `docs/guide/overview.md` への KaTeX 追記を含む各種ドキュメント整合性修正を実施しました。
+
+### 追加
+- **回帰テストスイートの拡充（456 テスト）**: `getParamsFromInputs` クランプ境界、`simDf`/`usedDf >= 2.5`、`runSimulation` エラー/中断/進捗、`Float32Array` 変換、USD 境界丸め、英語補充ツールチップ、`.md` クエリリンク、中間シンボリックリンク・`internal;` 閉じ込め、非一時 `copy-docs` 失敗、`belowinit-charts` / `comparison-ui` 実行検証など 13 件の単体・統合テストを追加しました。
+
+> **シミュレーション計算アルゴリズムおよび数学的再現性は 100% 保持されており、コア計算結果は既存ゴールデンフィクスチャに対し v2.x および v3.0.0〜v3.0.3 とビット単位で完全に一致します。**
+
 ## [v3.0.3] - 2026-11-27
 
 ### 修正

@@ -167,7 +167,7 @@ When releasing a new version, please perform manual verification using the follo
 - [ ] Analysis tab sync check: Run in the Simulation tab → Confirm that the base scenario matches in the Analysis tab — <result or reason>
 - [ ] Variable declaration check: Confirm that no `ReferenceError` occurs in the browser's developer console (in particular, that no `comparisonTabBtn` undefined error occurs) — <result or reason>
 - [ ] Language switch double-execution prevention: Confirm that even if the language switch button is clicked multiple times, redraws are not executed in duplicate — <result or reason>
-- [ ] Final confirmation of table closing tags: Confirm that the order of `</tbody><tr></div>` is correct in the developer tools — <result or reason>
+- [ ] Final confirmation of table closing tags: Confirm that the order of `</tr></tbody></table></div>` is correct in the developer tools — <result or reason>
 - [ ] Circular import check: Confirm that no error such as `TypeError: getParams is not a function` occurs in the browser console — <result or reason>
 
 ## Cross-Browser Verification

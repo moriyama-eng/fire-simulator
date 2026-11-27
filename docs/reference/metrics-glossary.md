@@ -53,7 +53,7 @@ worst5MaxDd  = quickselectSafe(ddCopy, worst5Idx, ...)
 worst10MaxDd = quickselectSafe(ddCopy, worst10Idx, ...)
 ```
 
-Source: `src/core/aggregation.ts`, lines 73–79.
+Source: `src/core/aggregation.ts` (`aggregateResultsProduction`).
 
 ### Stagnation Period (Underwater Duration)
 
