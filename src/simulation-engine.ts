@@ -20,12 +20,28 @@ export function getProgressCallback(): ProgressCallback | null {
 export async function runSimulation(
   params: SimulationParams,
   userPercentiles?: number[],
-  progressCallback?: ProgressCallback | null
+  progressCallback?: ProgressCallback | null,
+  signal?: AbortSignal
 ): Promise<AggregatedMetrics> {
   const effectiveOnProgress = progressCallback === undefined ? onProgress : progressCallback;
+  // Intentional UI default percentiles [10, 25, 50, 75, 90] (distinct from headless [10, 30, 50, 70, 90])
   const percentiles =
     userPercentiles && userPercentiles.length > 0 ? userPercentiles : [10, 25, 50, 75, 90];
   const { simYears, simPaths } = params;
+
+  if (!Number.isFinite(simPaths) || simPaths <= 0) {
+    throw new RangeError('simPaths must be a positive finite number');
+  }
+
+  const createAbortError = (): Error => {
+    const err = new Error('Simulation aborted');
+    err.name = 'AbortError';
+    return err;
+  };
+
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
 
   // Guarantee at least 1 Worker in environments where hardwareConcurrency is 0
   const hardwareConcurrency =
@@ -44,6 +60,39 @@ export async function runSimulation(
   const workerProgress = new Array<number>(numWorkers).fill(0);
   let hasFailed = false;
 
+  const terminateAllWorkers = (): void => {
+    workers.forEach((w) => {
+      try {
+        w.terminate();
+      } catch (_) {}
+    });
+  };
+
+  let abortReject: ((err: Error) => void) | null = null;
+  const abortPromise = signal
+    ? new Promise<never>((_res, rej) => {
+        abortReject = rej;
+      })
+    : null;
+
+  const onAbort = (): void => {
+    if (hasFailed) return;
+    hasFailed = true;
+    terminateAllWorkers();
+    abortReject?.(createAbortError());
+  };
+
+  if (signal) {
+    signal.addEventListener('abort', onAbort, { once: true });
+  }
+
+  const notifyProgress = (): void => {
+    if (!effectiveOnProgress) return;
+    const totalCompleted = workerProgress.reduce((a, b) => a + b, 0);
+    const progress = Math.round((totalCompleted / simPaths) * 100);
+    effectiveOnProgress(progress);
+  };
+
   for (let i = 0; i < numWorkers; i++) {
     const pathsCount = basePaths + (i < remainder ? 1 : 0);
     if (pathsCount === 0) break;
@@ -52,31 +101,27 @@ export async function runSimulation(
     workers.push(worker);
 
     const p = new Promise<WorkerCompleteMessage>((resW, rejW) => {
+      const failWorker = (err: unknown): void => {
+        if (hasFailed) return;
+        hasFailed = true;
+        terminateAllWorkers();
+        rejW(new Error('error.simFailed', { cause: err }));
+      };
+
       worker.onmessage = (e: MessageEvent<WorkerOutputMessage>) => {
         const data = e.data;
         if (data.type === 'complete') {
           workerProgress[i] = pathsCount;
+          notifyProgress();
           worker.terminate();
           resW(data);
         } else if (data.type === 'progress') {
           workerProgress[i] = data.completed;
-          const totalCompleted = workerProgress.reduce((a, b) => a + b, 0);
-          const progress = Math.round((totalCompleted / simPaths) * 100);
-          if (effectiveOnProgress) effectiveOnProgress(progress);
+          notifyProgress();
         }
       };
-      worker.onerror = (err: unknown) => {
-        if (hasFailed) return;
-        hasFailed = true;
-        workers.forEach((w) => {
-          try {
-            w.terminate();
-          } catch (_) {}
-        });
-        const error = err instanceof Error ? err : new Error('error.simFailed');
-        error.message = 'error.simFailed';
-        rejW(error);
-      };
+      worker.onerror = failWorker;
+      worker.onmessageerror = failWorker;
     });
 
     worker.postMessage({
@@ -89,7 +134,16 @@ export async function runSimulation(
     currentSeedOffset += pathsCount;
   }
 
-  const results = await Promise.all(workerPromises);
+  let results: WorkerCompleteMessage[];
+  try {
+    results = abortPromise
+      ? await Promise.race([Promise.all(workerPromises), abortPromise])
+      : await Promise.all(workerPromises);
+  } finally {
+    if (signal) {
+      signal.removeEventListener('abort', onAbort);
+    }
+  }
 
   // Merge
   const mergedTotals = new Float32Array(simPaths * dataLen);
@@ -119,7 +173,7 @@ export async function runSimulation(
   }
 
   // Calculate initial total assets (in yen): risk assets + cash buffer (only when CB is ON)
-  // When CB is OFF, params.initialCashBuffer is 0 (guaranteed by getParamsFromInputs)
+  // When CB is OFF, cashBufferToggle is false so initialCashBuffer is excluded from initialTotalAssets
   const initialTotalAssets =
     params.initialRiskAsset + (params.cashBufferToggle ? params.initialCashBuffer : 0);
 
@@ -142,7 +196,7 @@ export async function runSimulation(
   result.usedSeed = params.seedNum;
   result.modelType = params.useTDistribution ? 'log-t' : 'log-normal';
   result.usedDf = Math.max(
-    2.1,
+    2.5,
     params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility)
   );
   return result;

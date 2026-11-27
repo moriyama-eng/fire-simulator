@@ -12,9 +12,9 @@ A 32-bit hash function used to expand a single integer seed into four independen
 
 ```typescript
 // src/core/random.ts
-export function splitmix32(seed) {
+export function splitmix32(seed: number): () => number {
     let s = seed | 0;
-    return function () {
+    return function (): number {
         s = (s + 0x9e3779b9) | 0;
         let t = s ^ (s >>> 16);
         t = Math.imul(t, 0x21f0aaad);
@@ -30,11 +30,11 @@ export function splitmix32(seed) {
 The primary uniform RNG. Its four 32-bit state words are initialized by four calls to `splitmix32`. It passes BigCrush and has a period of \\(2^{128} - 1\\):
 
 ```typescript
-export function xoshiro128ss(seed) {
+export function xoshiro128ss(seed: number): () => number {
     const sm = splitmix32(seed);
     let s0 = sm(), s1 = sm(), s2 = sm(), s3 = sm();
     ...
-    return function () {
+    return function (): number {
         const result = (Math.imul(rotl(Math.imul(s1, 5), 7), 9) >>> 0) / 4294967296.0;
         ...
     };
@@ -48,9 +48,9 @@ Output: uniformly distributed floats in `[0, 1)`.
 Pairs of uniform samples are converted to standard-normal draws using the Box-Muller transform. The implementation caches one of the two outputs to halve RNG calls:
 
 ```typescript
-export function createNormalGenerator(uniformRng) {
+export function createNormalGenerator(uniformRng: () => number): () => number {
     let hasCached = false; let cached = 0.0;
-    return function () {
+    return function (): number {
         if (hasCached) { hasCached = false; return cached; }
         let u = 0, v = 0;
         while (u === 0) u = uniformRng();
@@ -68,8 +68,11 @@ export function createNormalGenerator(uniformRng) {
 When `useTDistribution: true`, Student-t draws are generated using the **definition-based representation**: a standard normal `Z` divided by the square root of an independent chi-squared variate scaled by its degrees of freedom. The chi-squared variate is produced by `createGammaGenerator` (Marsaglia-Tsang Gamma algorithm), and the t-variate is:
 
 ```typescript
-export function createTGenerator(normalGen, gammaRand) {
-    return function randomT(df) {
+export function createTGenerator(
+    normalGen: () => number,
+    gammaRand: (alpha: number) => number
+): (df: number) => number {
+    return function randomT(df: number): number {
         const Z = normalGen();
         const chi2 = 2.0 * gammaRand(df / 2.0);
         return Z / Math.sqrt(chi2 / df);

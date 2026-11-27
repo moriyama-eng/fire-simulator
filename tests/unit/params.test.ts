@@ -211,4 +211,38 @@ describe('T10: Shared clamp helper functions', () => {
         expect(resolveGuardrailRelease(true, -20, -10)).toBe(-10);
         expect(resolveGuardrailRelease(false, -20, -25)).toBe(-25);
     });
+
+    it('getParamsFromInputs clamps monetary, rate, simYears, infVol, infAr, seedNum, guardrail, and targetAssetRatio bounds', () => {
+        const clamped = getParamsFromInputs({
+            initialRiskAssetNum: '-5',
+            initialCashBufferNum: '-100',
+            monthlyExpenseNum: '-10',
+            expectedReturnNum: '-150',
+            inflationRateNum: '-150',
+            simYearsNum: '0',
+            guardrailToggle: true,
+            guardrailTriggerNum: '-20',
+            guardrailReductionNum: '-150',
+            guardrailReleaseNum: '-30',
+            infVolNum: '-5',
+            infArNum: '2.5',
+            seedNum: '0',
+            targetAssetRatioNum: '999',
+        });
+        expect(clamped.initialRiskAsset).toBe(0);
+        expect(clamped.initialCashBuffer).toBe(0);
+        expect(clamped.monthlyExpense).toBe(0);
+        expect(clamped.expectedReturn).toBe(-99.99);
+        expect(clamped.inflationRate).toBe(-99.99);
+        expect(clamped.simYears).toBe(1);
+        expect(clamped.guardrailReduction).toBe(-100);
+        expect(clamped.guardrailRelease).toBe(-20);
+        expect(clamped.infVol).toBe(0);
+        expect(clamped.infAr).toBe(1.0);
+        expect(clamped.seedNum).toBe(DEFAULTS.seedNum);
+        expect(clamped.targetAssetRatio).toBe(500);
+
+        const seedBounds = getParamsFromInputs({ seedNum: '999999999' });
+        expect(seedBounds.seedNum).toBe(99999999);
+    });
 });

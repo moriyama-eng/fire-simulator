@@ -115,9 +115,8 @@ export function getParamsFromInputs(inputs: RawInputs): SimulationParams {
     let cashBufferVal = raw('initialCashBufferNum');
     let monthlyExpenseVal = raw('monthlyExpenseNum');
 
-    // In English mode, input values are in dollar units (excluding K unit values),
-    // so adjust by multiplying by 10 here to convert to the original yen unit (input value * 100,000).
-    // This, combined with the subsequent * 10_000, results in an accurate * 100,000 multiplication ($1 = 100 yen conversion).
+    // In English mode, input values are in K-dollar units ($1K = 100,000 JPY display convention),
+    // so multiply by 10 here before the subsequent * 10_000 (giving an exact * 100,000 conversion).
     if (isEn) {
         cashBufferVal = cashBufferVal * 10;
         monthlyExpenseVal = monthlyExpenseVal * 10;
@@ -126,34 +125,41 @@ export function getParamsFromInputs(inputs: RawInputs): SimulationParams {
     const targetRaw = inputs['targetAssetRatioNum'] !== undefined
         ? safeNumber(inputs['targetAssetRatioNum'], getDefaultValue('targetAssetRatioNum'))
         : NaN;
+    const guardrailToggle = Boolean(inputs.guardrailToggle);
+    const guardrailTrigger = clampNonPositive(raw('guardrailTriggerNum'));
+    const rawSeed = raw('seedNum');
 
     return {
-        initialRiskAsset: raw('initialRiskAssetNum') * 100_000_000,
-        initialCashBuffer: cashBufferVal * 10_000,
-        monthlyExpense: monthlyExpenseVal * 10_000,
-        expectedReturn: raw('expectedReturnNum'),
+        initialRiskAsset: Math.max(0, raw('initialRiskAssetNum') * 100_000_000),
+        initialCashBuffer: Math.max(0, cashBufferVal * 10_000),
+        monthlyExpense: Math.max(0, monthlyExpenseVal * 10_000),
+        expectedReturn: Math.max(-99.99, raw('expectedReturnNum')),
         volatility: raw('volatilityNum'),
-        inflationRate: raw('inflationRateNum'),
-        simYears: raw('simYearsNum'),
-        simPaths: Math.max(5000, Math.min(50000, Math.round(raw('simPathsNum')))),
+        inflationRate: Math.max(-99.99, raw('inflationRateNum')),
+        simYears: Math.max(1, Math.round(raw('simYearsNum'))),
+        simPaths: clampSimPaths(raw('simPathsNum')),
         cashBufferToggle: Boolean(inputs.cashBufferToggle),
-        drawdownTrigger: Math.min(0, raw('drawdownTriggerNum')),
-        drawdownReplenish: Math.min(0, raw('drawdownReplenishNum')),
-        replenishPace: Math.max(0, raw('replenishPaceNum')),
-        guardrailToggle: Boolean(inputs.guardrailToggle),
-        guardrailTrigger: Math.min(0, raw('guardrailTriggerNum')),
-        guardrailReduction: Math.min(0, raw('guardrailReductionNum')),
-        guardrailRelease: Math.min(0, raw('guardrailReleaseNum')),
+        drawdownTrigger: clampNonPositive(raw('drawdownTriggerNum')),
+        drawdownReplenish: clampNonPositive(raw('drawdownReplenishNum')),
+        replenishPace: clampNonNegative(raw('replenishPaceNum')),
+        guardrailToggle,
+        guardrailTrigger,
+        guardrailReduction: clampRange(raw('guardrailReductionNum'), -100, 0),
+        guardrailRelease: resolveGuardrailRelease(
+            guardrailToggle,
+            guardrailTrigger,
+            clampNonPositive(raw('guardrailReleaseNum'))
+        ),
         useArInflation: Boolean(inputs.inflationModelToggle),
-        infVol: raw('infVolNum'),
-        infAr: raw('infArNum'),
+        infVol: clampNonNegative(raw('infVolNum')),
+        infAr: clampRange(raw('infArNum'), 0, 1.0),
         useTDistribution: inputs.returnModelSelect === 'log-t',
         simDfManual: !inputs.simDfToggle,
-        simDfNum: Math.max(2.5, raw('simDfNum')),
+        simDfNum: clampMinDf(raw('simDfNum')),
         useFixedSeed: !inputs.seedToggle,
-        seedNum: raw('seedNum'),
+        seedNum: Math.min(99999999, Math.max(1, Math.floor(rawSeed === 0 ? DEFAULTS.seedNum : rawSeed))),
         // targetAssetRatio: Ratio relative to initial total assets (%), default 100%. Not a currency, so no exchange rate conversion is applied (not affected by the fixed rate of 100 yen = $1).
-        targetAssetRatio: Number.isFinite(targetRaw) ? targetRaw : DEFAULTS.targetAssetRatio
+        targetAssetRatio: clampRange(Number.isFinite(targetRaw) ? targetRaw : DEFAULTS.targetAssetRatio, 0, 500)
     };
 }
 

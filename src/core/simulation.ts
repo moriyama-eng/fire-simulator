@@ -92,7 +92,7 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     const ddReplenishThreshold = -Math.abs(drawdownReplenish / 100);
     const triggerGR = guardrailTrigger / 100;
     const releaseGR = guardrailRelease / 100;
-    const simDf = simDfManual ? simDfNum : calcAutoDf(volatility);
+    const simDf = Math.max(2.5, simDfManual ? simDfNum : calcAutoDf(volatility));
 
     // Initial total assets (nominal value, not inflation-adjusted)
     // When CB is OFF, activeInitialCashBuffer is 0, so only risk assets are the initial total assets
@@ -136,8 +136,6 @@ export function runSinglePath(rngs: RngGenerators, params: SimulationParams): Si
     let infMultiplier = 1.0;
 
     for (let t = 1; t <= totalMonths; t++) {
-        if (bankrupt) break;
-
         // Reset the soldFromRisk flag at the beginning of each month (set appropriately in the withdrawal process)
         soldFromRisk = false;
 

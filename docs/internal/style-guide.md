@@ -14,22 +14,22 @@ A more comprehensive guide may be added in a future release as needed.
 ## Formatting
 
 - Use ATX headings (`#`, `##`, `###`). One `#` per document.
-- Use fenced code blocks with a language tag: ` ```javascript ` or ` ```bash `.
+- Use fenced code blocks with a language tag: ` ```typescript ` or ` ```bash `.
 - Use tables for structured comparisons.
 - Use `> [!NOTE]`, `> [!TIP]`, `> [!WARNING]` GitHub-style alerts sparingly.
 
 ## Language
 
 All documentation in `docs/` is written in English.
-Exceptions: `README-ja.md` (Japanese README) and the `TRANSLATIONS.ja` values in `src/i18n.ts` (UI strings).
+Exceptions: `README-ja.md` (Japanese README), `CHANGELOG-ja.md` (Japanese changelog), and the `TRANSLATIONS.ja` values in `src/i18n.ts` (UI strings).
 
 ## CSS Architecture & Build Pipeline
 
 - **Tailwind CLI (v3.4.17)**: Pre-compiles CSS statically (`npm run build:css`). Tailwind Play CDN (`cdn.tailwindcss.com`) is strictly prohibited.
-- **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./src/**/*.{ts,js}`).
+- **Source Files**: `css/tailwind.src.css` (Tailwind directives) and `tailwind.config.cjs` (content scanner: `./index.html`, `./docs.html`, `./src/**/*.{ts,js}`).
 - **Generated Bundle**: `css/tailwind.css` (minified bundle, committed to repository).
 - **Custom App Styles**: `css/style.css` (custom CSS rules, `@font-face` definitions, animations, and non-utility CSS).
-- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=3.0.3">` followed by `<link rel="stylesheet" href="css/style.css?v=3.0.3">`.
+- **Cascade Order in HTML**: `<link rel="stylesheet" href="css/tailwind.css?v=3.0.4">` followed by `<link rel="stylesheet" href="css/style.css?v=3.0.4">`.
 
 ## Code References
 

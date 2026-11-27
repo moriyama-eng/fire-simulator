@@ -4,6 +4,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runSimulation } from '../../src/simulation-engine.js';
+import { renderBelowInitCdfChart, renderConsecutiveSellCdfChart } from '../../src/app/charts.js';
+import { waitFor } from '../helpers/async-utils.js';
 import { readFileSync } from 'fs';
 import type { AggregatedMetrics } from '../../src/types/simulation.js';
 
@@ -139,17 +141,41 @@ describe('Below-Initial charts integration', () => {
 
         // Switch to English
         setLanguageGlobal('en');
-        await new Promise(r => setTimeout(r, 50));
-
-        // Confirm that the text switches to English corresponding to the i18n key
-        expect(titleBelowInit?.textContent).toBe('Duration Below Initial Assets Probability');
-        expect(titleSell?.textContent).toBe('Consecutive Risk-Asset Sales While Below Initial Assets Probability');
+        await waitFor(() => {
+            expect(titleBelowInit?.textContent).toBe('Duration Below Initial Assets Probability');
+            expect(titleSell?.textContent).toBe('Consecutive Risk-Asset Sales While Below Initial Assets Probability');
+        });
 
         // Switch back to Japanese
         setLanguageGlobal('ja');
-        await new Promise(r => setTimeout(r, 50));
+        await waitFor(() => {
+            expect(titleBelowInit?.textContent).toBe('初期総資産割れ 継続期間 発生確率');
+            expect(titleSell?.textContent).toBe('初期総資産割れ時 リスク資産連続売却期間 発生確率');
+        });
+    });
 
-        expect(titleBelowInit?.textContent).toBe('初期総資産割れ 継続期間 発生確率');
-        expect(titleSell?.textContent).toBe('初期総資産割れ時 リスク資産連続売却期間 発生確率');
+    it('renders below-init and consecutive-sell CDF charts with Chart constructor', () => {
+        const chartCtor = vi.fn(function (this: Record<string, unknown>) {
+            this.destroy = vi.fn();
+            this.update = vi.fn();
+            this.resize = vi.fn();
+        });
+        const belowCanvas = document.getElementById('belowInitChartCanvas') as HTMLCanvasElement;
+        const sellCanvas = document.getElementById('sellChartCanvas') as HTMLCanvasElement;
+        const fakeCtx = {} as CanvasRenderingContext2D;
+        const belowSpy = vi.spyOn(belowCanvas, 'getContext').mockReturnValue(fakeCtx);
+        const sellSpy = vi.spyOn(sellCanvas, 'getContext').mockReturnValue(fakeCtx);
+        const prevChart = globalThis.Chart;
+        globalThis.Chart = chartCtor as unknown as typeof globalThis.Chart;
+        try {
+            const dummy = makeDummyResultWithNewMetrics();
+            renderBelowInitCdfChart(dummy);
+            renderConsecutiveSellCdfChart(dummy);
+            expect(chartCtor).toHaveBeenCalledTimes(2);
+        } finally {
+            globalThis.Chart = prevChart;
+            belowSpy.mockRestore();
+            sellSpy.mockRestore();
+        }
     });
 });

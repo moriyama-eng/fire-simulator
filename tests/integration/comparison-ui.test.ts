@@ -119,6 +119,13 @@ describe('comparison-ui integration', () => {
         const updatedScenario = CS.getScenarios()[0]!;
         expect(updatedScenario.inputs.returnModel).toBe('log-normal');
         expect(typeof updatedScenario.inputs.returnModel).toBe('string');
+
+        const runBtn = document.getElementById('runAllBtn') as HTMLButtonElement | null;
+        runBtn?.click();
+        await vi.waitFor(() => {
+            expect(CS.getScenarios()[0]?.result).not.toBeNull();
+        });
+        expect(Number.isFinite(CS.getScenarios()[0]?.result?.successRate)).toBe(true);
     });
 
     it('When the toggle is in random mode and "Run All" is clicked, the seed input value is immediately updated to the random seed value', async () => {

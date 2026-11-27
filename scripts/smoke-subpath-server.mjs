@@ -146,19 +146,20 @@ export async function runSubpathSmoke(clientDist = path.resolve(process.cwd(), '
     console.log('✓ Main script check passed');
 
     // 5. Worker check (dynamic resolution from script body)
-    const workerMatch = scriptContent.match(/new\s+URL\(["']([^"']+)["'],\s*import\.meta\.url\)/);
-    if (workerMatch) {
-      const workerRel = workerMatch[1];
-      if (workerRel.includes('assets/assets/')) {
-        throw new Error(`Worker specifier has duplicated assets path: ${workerRel}`);
-      }
-      const workerUrl = new URL(workerRel, scriptUrl).href;
-      const rWorker = await fetch(workerUrl);
-      if (rWorker.status !== 200 || !rWorker.headers.get('content-type')?.includes('javascript')) {
-        throw new Error(`Worker fetch failed: status ${rWorker.status}`);
-      }
-      console.log('✓ Worker dynamic resolution check passed');
+    const workerMatch = scriptContent.match(/new\s+URL\((["'`])([^"'`]+)\1,\s*import\.meta\.url\)/);
+    if (!workerMatch) {
+      throw new Error('Main script does not contain expected Worker URL constructor (new URL(..., import.meta.url))');
     }
+    const workerRel = workerMatch[2];
+    if (workerRel.includes('assets/assets/')) {
+      throw new Error(`Worker specifier has duplicated assets path: ${workerRel}`);
+    }
+    const workerUrl = new URL(workerRel, scriptUrl).href;
+    const rWorker = await fetch(workerUrl);
+    if (rWorker.status !== 200 || !rWorker.headers.get('content-type')?.includes('javascript')) {
+      throw new Error(`Worker fetch failed: status ${rWorker.status}`);
+    }
+    console.log('✓ Worker dynamic resolution check passed');
 
     // 6. Docs HTML check
     const rDocs = await fetch(`${baseUrl}/docs.html`);

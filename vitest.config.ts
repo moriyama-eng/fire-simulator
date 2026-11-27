@@ -5,12 +5,9 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     testTimeout: 15000,
-    retry: 2,
+    retry: 0,
     // Simplify symbols in output to avoid mojibake in Windows console
     reporters: ['default'],
-    outputFile: {
-      json: './coverage/test-results.json'
-    },
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',

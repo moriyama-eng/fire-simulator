@@ -241,10 +241,8 @@ export function setupHybridInputs(): void {
     buttons.forEach(btn => {
         let intervalId: ReturnType<typeof setInterval> | undefined;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
-        let isLongPress = false; // Flag for long press in progress (prevents overlap with click)
 
         const startIncrement = (): void => {
-            isLongPress = true;
             updateValue();
             // Start continuous update after initial delay
             timeoutId = setTimeout(() => {
@@ -255,10 +253,6 @@ export function setupHybridInputs(): void {
         const stopIncrement = (): void => {
             clearTimeout(timeoutId);
             clearInterval(intervalId);
-            // Delay clearing the flag to prevent conflict (double firing) with click event
-            setTimeout(() => {
-                isLongPress = false;
-            }, 50);
         };
 
         const updateValue = (): void => {

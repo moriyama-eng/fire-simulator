@@ -251,7 +251,7 @@ function runWorkerHarness(params: HeadlessParams, userPercentiles: number[], num
 
     result.usedSeed = params.seedNum;
     result.modelType = params.useTDistribution ? 'log-t' : 'log-normal';
-    result.usedDf = Math.max(2.1, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
+    result.usedDf = Math.max(2.5, params.simDfManual ? params.simDfNum : calcAutoDf(params.volatility));
     result.currency = params.currency ?? 'JPY';
 
     return result;

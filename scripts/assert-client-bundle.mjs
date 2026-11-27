@@ -154,17 +154,18 @@ export function assertClientBundle(clientDist = path.resolve(process.cwd(), 'dis
   const entryJsFile = path.resolve(clientDist, entryMatch[1].replace(/^\.\//, ''));
   const entryContent = fs.readFileSync(entryJsFile, 'utf-8');
 
-  // Look for worker constructor new Worker(new URL("...", import.meta.url))
-  const workerUrlMatch = entryContent.match(/new\s+URL\(["']([^"']+)["'],\s*import\.meta\.url\)/);
-  if (workerUrlMatch) {
-    const workerRel = workerUrlMatch[1];
-    if (workerRel.includes('assets/assets/')) {
-      throw new Error(`Duplicated assets path in worker specifier: ${workerRel}`);
-    }
-    const resolvedWorker = path.resolve(path.dirname(entryJsFile), workerRel);
-    if (!fs.existsSync(resolvedWorker)) {
-      throw new Error(`Worker chunk does not exist: ${resolvedWorker}`);
-    }
+  // Look for worker constructor new Worker(new URL("..."|'...'|`...`, import.meta.url))
+  const workerUrlMatch = entryContent.match(/new\s+URL\((["'`])([^"'`]+)\1,\s*import\.meta\.url\)/);
+  if (!workerUrlMatch) {
+    throw new Error('Entry JS chunk does not contain expected Worker URL constructor (new URL(..., import.meta.url))');
+  }
+  const workerRel = workerUrlMatch[2];
+  if (workerRel.includes('assets/assets/')) {
+    throw new Error(`Duplicated assets path in worker specifier: ${workerRel}`);
+  }
+  const resolvedWorker = path.resolve(path.dirname(entryJsFile), workerRel);
+  if (!fs.existsSync(resolvedWorker)) {
+    throw new Error(`Worker chunk does not exist: ${resolvedWorker}`);
   }
 
   console.log('✓ All client bundle assertions passed successfully.');

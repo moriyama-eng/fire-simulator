@@ -6,7 +6,7 @@
 //       app/state.ts, app/charts.ts, app/summary.ts, app/ui-helpers.ts
 // ====================================================================
 
-import { getParamsFromInputs } from '../core/params.js';
+import { DEFAULTS, getParamsFromInputs, safeNumber } from '../core/params.js';
 import { formatPercentileInput, parsePercentiles } from '../core/format.js';
 import { buildSimulationUrl } from '../core/url.js';
 import { getCopyUrlOptions, getShareUrlOptions, getCompareUrlOptions } from './actions-url-options.js';
@@ -98,7 +98,7 @@ export async function runMain(): Promise<void> {
     const simSeedInput = document.getElementById('seedNum') as HTMLInputElement | null;
     const seedToggle = document.getElementById('seedToggle') as HTMLInputElement | null;
     if (seedToggle?.checked || !simSeedInput?.value) {
-        if (simSeedInput) simSeedInput.value = (Date.now() >>> 0).toString();
+        if (simSeedInput) simSeedInput.value = (((Date.now() >>> 0) % 99999999) + 1).toString();
     }
 
     const params = getParamsFromDom();
@@ -106,11 +106,15 @@ export async function runMain(): Promise<void> {
     await new Promise(r => requestAnimationFrame(r));
 
     try {
-        // Validation: if the guardrail release threshold is smaller than the trigger threshold, correct it to match the trigger threshold
-        if (params.guardrailToggle && params.guardrailRelease < params.guardrailTrigger) {
-            params.guardrailRelease = params.guardrailTrigger;
+        // Validation: sync DOM when guardrail release threshold was clamped up to the trigger threshold
+        if (params.guardrailToggle) {
             const releaseInput = document.getElementById('guardrailReleaseNum') as HTMLInputElement | null;
-            if (releaseInput) releaseInput.value = params.guardrailTrigger.toFixed(1);
+            if (releaseInput) {
+                const rawRelease = safeNumber(releaseInput.value, DEFAULTS.guardrailRelease);
+                if (rawRelease < params.guardrailRelease) {
+                    releaseInput.value = params.guardrailRelease.toFixed(1);
+                }
+            }
         }
         // Auto-format the percentile input before calling parsePercentiles
         const pctInput = document.getElementById('percentileInput') as HTMLInputElement | null;
@@ -257,86 +261,93 @@ export async function saveImage(): Promise<void> {
         chartContainer.style.width = '1000px';
         chartContainer.style.height = '600px';
 
-        // Temporarily enlarge font sizes for image output
-        if (assetChart) {
-            interface ChartInternalOptions {
-                animation?: boolean | Record<string, unknown>;
-                plugins?: {
-                    legend?: { labels?: { font?: { size?: number } } };
-                };
-                scales?: {
-                    x?: { ticks?: { font?: { size?: number }; maxRotation?: number; minRotation?: number } };
-                    y?: { ticks?: { font?: { size?: number } } };
-                };
+        let chartDataUrl: string | null = null;
+        try {
+            // Temporarily enlarge font sizes for image output
+            if (assetChart) {
+                interface ChartInternalOptions {
+                    animation?: boolean | Record<string, unknown>;
+                    plugins?: {
+                        legend?: { labels?: { font?: { size?: number } } };
+                    };
+                    scales?: {
+                        x?: { ticks?: { font?: { size?: number }; maxRotation?: number; minRotation?: number } };
+                        y?: { ticks?: { font?: { size?: number } } };
+                    };
+                }
+                interface ChartInternalInstance {
+                    tooltip?: {
+                        setActiveElements(elements: unknown[], coords: { x: number; y: number }): void;
+                    };
+                    options: ChartInternalOptions;
+                    resize(): void;
+                    update(mode?: string): void;
+                }
+
+                const chartTyped = assetChart as unknown as ChartInternalInstance;
+
+                // Force-hide the tooltip
+                if (chartTyped.tooltip?.setActiveElements) {
+                    chartTyped.tooltip.setActiveElements([], { x: 0, y: 0 });
+                }
+
+                // Disable animation (to prevent flickering)
+                const origAnimation = chartTyped.options.animation;
+                const legendLabels = chartTyped.options.plugins?.legend?.labels;
+                const xTicks = chartTyped.options.scales?.x?.ticks;
+                const yTicks = chartTyped.options.scales?.y?.ticks;
+
+                const origLegendSize = legendLabels?.font?.size;
+                const origXTickSize = xTicks?.font?.size;
+                const origYTickSize = yTicks?.font?.size;
+                const origMaxRotation = xTicks?.maxRotation;
+                const origMinRotation = xTicks?.minRotation;
+
+                try {
+                    chartTyped.options.animation = false;
+
+                    // Maximize font sizes for saving (sized to harmonize with other items at 1080px width)
+                    if (legendLabels?.font) legendLabels.font.size = 38;
+                    if (xTicks?.font) xTicks.font.size = 34;
+                    if (yTicks?.font) yTicks.font.size = 34;
+
+                    // Tilt X-axis labels 36 degrees only in English mode (Japanese mode maintains horizontal display, which is auto-detected)
+                    if (!isJa && xTicks) {
+                        xTicks.maxRotation = 36;
+                        xTicks.minRotation = 36;
+                    }
+
+                    chartTyped.resize();
+                    chartTyped.update('none');
+
+                    await new Promise(r => requestAnimationFrame(r));
+                    await new Promise(r => setTimeout(r, 200));
+
+                    chartDataUrl = chartCanvas.toDataURL('image/png', 1.0);
+                } finally {
+                    // Restore font and animation settings
+                    if (legendLabels?.font && origLegendSize !== undefined) legendLabels.font.size = origLegendSize;
+                    if (xTicks?.font && origXTickSize !== undefined) xTicks.font.size = origXTickSize;
+                    if (yTicks?.font && origYTickSize !== undefined) yTicks.font.size = origYTickSize;
+                    if (!isJa && xTicks) {
+                        xTicks.maxRotation = origMaxRotation;
+                        xTicks.minRotation = origMinRotation;
+                    }
+                    chartTyped.options.animation = origAnimation;
+                }
             }
-            interface ChartInternalInstance {
-                tooltip?: {
-                    setActiveElements(elements: unknown[], coords: { x: number; y: number }): void;
-                };
-                options: ChartInternalOptions;
-                resize(): void;
-                update(mode?: string): void;
-            }
-
-            const chartTyped = assetChart as unknown as ChartInternalInstance;
-
-            // Force-hide the tooltip
-            if (chartTyped.tooltip?.setActiveElements) {
-                chartTyped.tooltip.setActiveElements([], { x: 0, y: 0 });
-            }
-
-            // Disable animation (to prevent flickering)
-            const origAnimation = chartTyped.options.animation;
-            chartTyped.options.animation = false;
-
-            const legendLabels = chartTyped.options.plugins?.legend?.labels;
-            const xTicks = chartTyped.options.scales?.x?.ticks;
-            const yTicks = chartTyped.options.scales?.y?.ticks;
-
-            const origLegendSize = legendLabels?.font?.size;
-            const origXTickSize = xTicks?.font?.size;
-            const origYTickSize = yTicks?.font?.size;
-            const origMaxRotation = xTicks?.maxRotation;
-            const origMinRotation = xTicks?.minRotation;
-
-            // Maximize font sizes for saving (sized to harmonize with other items at 1080px width)
-            if (legendLabels?.font) legendLabels.font.size = 38;
-            if (xTicks?.font) xTicks.font.size = 34;
-            if (yTicks?.font) yTicks.font.size = 34;
-            
-            // Tilt X-axis labels 36 degrees only in English mode (Japanese mode maintains horizontal display, which is auto-detected)
-            if (!isJa && xTicks) {
-                xTicks.maxRotation = 36;
-                xTicks.minRotation = 36;
-            }
-
-            chartTyped.resize();
-            chartTyped.update('none');
-
-            await new Promise(r => requestAnimationFrame(r));
-            await new Promise(r => setTimeout(r, 200));
-
-            const chartDataUrl = chartCanvas.toDataURL('image/png', 1.0);
-
-            // Restore size and font
-            if (legendLabels?.font && origLegendSize !== undefined) legendLabels.font.size = origLegendSize;
-            if (xTicks?.font && origXTickSize !== undefined) xTicks.font.size = origXTickSize;
-            if (yTicks?.font && origYTickSize !== undefined) yTicks.font.size = origYTickSize;
-            if (!isJa && xTicks) {
-                xTicks.maxRotation = origMaxRotation;
-                xTicks.minRotation = origMinRotation;
-            }
-
+        } finally {
             chartContainer.style.width = origWidth;
             chartContainer.style.height = origHeight;
             chartCard.style.overflow = origCardOverflow;
             chartCard.style.height = origCardHeight;
+            if (assetChart) {
+                assetChart.resize();
+                assetChart.update('none');
+            }
+        }
 
-            // Restore animation settings
-            chartTyped.options.animation = origAnimation;
-            chartTyped.resize();
-            chartTyped.update('none');
-
+        if (chartDataUrl !== null) {
             const capImg = document.getElementById('capChartImg') as HTMLImageElement | null;
             if (!capImg) throw new Error("Preview image element not found (capChartImg not found)");
             capImg.src = chartDataUrl;

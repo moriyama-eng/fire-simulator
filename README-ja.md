@@ -118,6 +118,7 @@ CLIはブラウザを開かずに同一シミュレーションモデルへア�
 - [Chart.js](https://www.chartjs.org/) — グラフ描画
 - [SortableJS](https://sortablejs.github.io/Sortable/) — ドラッグ＆ドロップUI
 - [html2canvas](https://html2canvas.hertzen.com/) — ブラウザ内スクリーンショット出力
+- [KaTeX](https://katex.org/) — ドキュメント（`docs.html`）での数式レンダリング
 
 これらの外部ライブラリの読み込みは、シミュレーション入力値や結果の送信とは別のものです。
 
@@ -160,7 +161,7 @@ CLIはブラウザを開かずに同一シミュレーションモデルへア�
 
 ## バージョン / 更新履歴
 
-**現行リリース: v3.0.3**
+**現行リリース: v3.0.4**
 
 全更新履歴は [CHANGELOG-ja.md](./CHANGELOG-ja.md) を参照してください。
 

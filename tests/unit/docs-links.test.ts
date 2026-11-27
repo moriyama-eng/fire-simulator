@@ -95,5 +95,12 @@ describe('docs-links module', () => {
       expect(resolveDocImageSrc('../internal::$INDEX_ALLOCATION/img.png', 'guide', 'http://localhost:5173/docs.html')).toBe('');
       expect(resolveDocImageSrc('img.png::$DATA', 'guide', 'http://localhost:5173/docs.html')).toBe('');
     });
+
+    it('preserves query parameters on .md links without doubling the ? separator', () => {
+      expect(resolveDocLink('getting-started.md?tab=cli#section', 'guide', 'http://localhost:5173/docs.html')).toEqual({
+        type: 'spa',
+        url: 'docs.html?doc=guide/getting-started&tab=cli#section'
+      });
+    });
   });
 });

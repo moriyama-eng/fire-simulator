@@ -164,4 +164,34 @@ describe('aggregateResultsProduction - targetAssetMaintainRate', () => {
         expect(emptyPct.totalPercentileData).toEqual([]);
         expect(emptyPct.finalMedian).toBe(50);
     });
+
+    it('converts plain ArrayLike<number> per-path arrays into real Float32Array instances', () => {
+        const simPaths = 4;
+        const dataLen = 2;
+        const totals = new Float32Array([100, 110, 100, 120, 100, 130, 100, 140]);
+        const cashes = new Float32Array(simPaths * dataLen);
+        const dds = new Float32Array(simPaths * dataLen);
+
+        const result = aggregateResultsProduction({
+            totalsBuffer: totals.buffer,
+            cashesBuffer: cashes.buffer,
+            ddsBuffer: dds.buffer,
+            maxDdPerPath: [-0.1, -0.2, -0.3, -0.4],
+            maxUwPerPath: [1, 2, 3, 4],
+            belowInitPeriods: [0, 1, 2, 3],
+            consecutiveSellPeriods: [0, 0, 1, 2],
+            simPaths,
+            dataLen,
+            percentiles: [50],
+            bankruptCount: 0,
+            targetAssetRatio: 100,
+            initialTotalAssets: 100,
+        });
+
+        expect(result.maxDdPerPath).toBeInstanceOf(Float32Array);
+        expect(result.maxUwPerPath).toBeInstanceOf(Float32Array);
+        expect(result.belowInitPeriods).toBeInstanceOf(Float32Array);
+        expect(result.consecutiveSellPeriods).toBeInstanceOf(Float32Array);
+        expect(Array.from(result.belowInitPeriods)).toEqual([0, 1, 2, 3]);
+    });
 });
